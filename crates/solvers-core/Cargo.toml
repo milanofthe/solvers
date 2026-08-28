@@ -1,0 +1,17 @@
+[package]
+name = "solvers-core"
+description = "Unified framework for ODE integration methods"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["embedded-methods"]
+# Bake the JSON method library into the binary via include_str!.
+embedded-methods = []

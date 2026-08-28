@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+/web/node_modules
+/web/dist
+/artifacts
+Cargo.lock
