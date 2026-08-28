@@ -294,6 +294,9 @@ fn polynomial_is_non_negative(p: &[f64]) -> bool {
 }
 
 /// Walk outwards from the origin along a direction until stability is lost.
+///
+/// Returns an infinite limit when the whole ray stays stable, which is the
+/// honest answer for an A-stable method rather than wherever the scan stopped.
 fn scan_limit(stable: impl Fn(f64) -> bool, direction: f64) -> f64 {
     let mut low = 0.0f64;
     let mut high = direction * 1e-6;
@@ -305,11 +308,11 @@ fn scan_limit(stable: impl Fn(f64) -> bool, direction: f64) -> f64 {
         low = high;
         high *= 1.6;
         if high.abs() > 1e7 {
-            return high;
+            return direction * f64::INFINITY;
         }
     }
     if stable(high) {
-        return high;
+        return direction * f64::INFINITY;
     }
     for _ in 0..100 {
         let mid = 0.5 * (low + high);
@@ -411,7 +414,7 @@ impl GeneratingPolynomials {
             .collect();
         poly_roots(&coefficients)
             .into_iter()
-            .all(|w| w.abs() <= 1.0 + 1e-8)
+            .all(|w| w.abs() <= 1.0 + 1e-10)
     }
 
     /// Zero stability, the root condition at `z = 0`.
@@ -435,23 +438,41 @@ impl GeneratingPolynomials {
 
     /// Half angle of the largest wedge around the negative real axis contained
     /// in the stability region, in degrees. Ninety means A-stable.
+    ///
+    /// Reported to two decimals so it can be held against the published values,
+    /// which for BDF3 to BDF6 are 86.03, 73.35, 51.84 and 17.84 degrees.
     pub fn alpha_angle(&self) -> f64 {
-        let radii: Vec<f64> = (0..49).map(|i| 10f64.powf(-4.0 + i as f64 / 6.0)).collect();
-        let mut best = 0.0;
-        for step in 0..=90 {
-            let degrees = step as f64;
+        let radii: Vec<f64> = (0..61).map(|i| 10f64.powf(-5.0 + i as f64 / 6.0)).collect();
+        let wedge_is_stable = |degrees: f64| {
             let angle = std::f64::consts::PI * (1.0 - degrees / 180.0);
-            let stable = radii.iter().all(|r| {
+            radii.iter().all(|r| {
                 let z = Complex::new(r * angle.cos(), r * angle.sin());
                 self.is_stable_at(z) && self.is_stable_at(z.conj())
-            });
-            if stable {
-                best = degrees;
+            })
+        };
+
+        if wedge_is_stable(90.0) {
+            return 90.0;
+        }
+        let mut low = 0.0f64;
+        let mut high = 90.0f64;
+        if !wedge_is_stable(low) {
+            return 0.0;
+        }
+        // Bisect on the wedge half angle. The region is a wedge by definition,
+        // so stability is monotone in the angle and bisection is exact.
+        for _ in 0..40 {
+            let mid = 0.5 * (low + high);
+            if wedge_is_stable(mid) {
+                low = mid;
             } else {
+                high = mid;
+            }
+            if high - low < 5e-3 {
                 break;
             }
         }
-        best
+        (low * 100.0).round() / 100.0
     }
 }
 

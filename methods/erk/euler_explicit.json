@@ -1,0 +1,25 @@
+{
+  "id": "euler_explicit",
+  "name": "Forward Euler",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 1,
+  "aliases": ["euler", "forward_euler", "explicit_euler"],
+  "description": "The first order explicit method. One evaluation per step, and the reference point every other explicit method is measured against.",
+  "tableau": {
+    "a": [
+      [0]
+    ],
+    "b": [1],
+    "c": [0]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

@@ -17,6 +17,34 @@ use crate::method::{Method, MethodKind};
 use crate::num::Complex;
 use serde::Serialize;
 
+/// A stability limit along a ray, which may legitimately be infinite.
+///
+/// JSON has no infinity, and reporting a huge number where the truth is "the
+/// whole ray is stable" would be read as a real bound, so the unbounded case
+/// gets its own value.
+#[derive(Copy, Clone, Debug, Serialize)]
+#[serde(untagged)]
+pub enum Limit {
+    Finite(f64),
+    Unbounded(Unbounded),
+}
+
+#[derive(Copy, Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Unbounded {
+    Unbounded,
+}
+
+impl From<f64> for Limit {
+    fn from(value: f64) -> Limit {
+        if value.is_finite() {
+            Limit::Finite(value)
+        } else {
+            Limit::Unbounded(Unbounded::Unbounded)
+        }
+    }
+}
+
 /// Everything that can be said about a method without running it.
 #[derive(Clone, Debug, Serialize)]
 pub struct MethodReport {
@@ -45,8 +73,8 @@ pub struct MethodReport {
     pub damping_at_infinity: Option<f64>,
     /// Half angle of the A(alpha) wedge in degrees, ninety meaning A-stable.
     pub alpha_angle: Option<f64>,
-    pub real_stability_limit: Option<f64>,
-    pub imaginary_stability_limit: Option<f64>,
+    pub real_stability_limit: Option<Limit>,
+    pub imaginary_stability_limit: Option<Limit>,
     pub zero_stable: Option<bool>,
 
     /// Effective cost of one step in right hand side evaluations.
@@ -145,8 +173,8 @@ pub fn analyze(method: &Method) -> MethodReport {
                 stiffly_accurate: Some(tableau.stiffly_accurate),
                 damping_at_infinity: Some(function.at_infinity()),
                 alpha_angle: if a_stable { Some(90.0) } else { None },
-                real_stability_limit: Some(function.real_stability_limit()),
-                imaginary_stability_limit: Some(function.imaginary_stability_limit()),
+                real_stability_limit: Some(function.real_stability_limit().into()),
+                imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),
                 zero_stable: None,
                 stage_cost,
                 discrepancies,
@@ -180,9 +208,9 @@ pub fn analyze(method: &Method) -> MethodReport {
                 }
             }
 
-            let real_limit = polynomials.as_ref().map(|p| {
-                stability::scan_real_limit(|x| p.is_stable_at(Complex::real(x)))
-            });
+            let real_limit = polynomials
+                .as_ref()
+                .map(|p| Limit::from(stability::scan_real_limit(|x| p.is_stable_at(Complex::real(x)))));
 
             MethodReport {
                 id: method.id.clone(),

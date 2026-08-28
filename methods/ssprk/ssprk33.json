@@ -1,0 +1,40 @@
+{
+  "id": "ssprk33",
+  "name": "SSPRK(3,3) Shu-Osher",
+  "class": "runge_kutta",
+  "family": "ssprk",
+  "order": 3,
+  "description": "Three-stage, 3rd order optimal SSP Runge-Kutta method.",
+  "tableau": {
+    "a": [
+      [0],
+      [1, 0],
+      ["1/4", "1/4", 0]
+    ],
+    "b": ["1/6", "1/6", "2/3"],
+    "c": [0, 1, "1/2"]
+  },
+  "references": [
+    {
+      "doi": "10.1016/0021-9991(88)90177-5",
+      "year": 1988,
+      "authors": "Shu, C.-W., & Osher, S",
+      "title": "Efficient implementation of essentially non-oscillatory shock-capturing schemes",
+      "source": "Journal of Computational Physics, 77(2), 439-471"
+    },
+    {
+      "doi": "10.1137/S003614450036757X",
+      "year": 2001,
+      "authors": "Gottlieb, S., Shu, C.-W., & Tadmor, E",
+      "title": "Strong stability-preserving high-order time discretization methods",
+      "source": "SIAM Review, 43(1), 89-112"
+    },
+    {
+      "doi": "10.1142/7498",
+      "year": 2011,
+      "authors": "Gottlieb, S., Ketcheson, D. I., & Shu, C.-W",
+      "title": "Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations",
+      "source": "World Scientific"
+    }
+  ]
+}

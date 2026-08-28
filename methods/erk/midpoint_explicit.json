@@ -1,0 +1,26 @@
+{
+  "id": "midpoint_explicit",
+  "name": "Explicit midpoint",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 2,
+  "aliases": ["explicit_midpoint", "rk2_midpoint"],
+  "description": "Two stage second order method that takes a half step to sample the slope at the centre of the interval.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/2", 0]
+    ],
+    "b": [0, 1],
+    "c": [0, "1/2"]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

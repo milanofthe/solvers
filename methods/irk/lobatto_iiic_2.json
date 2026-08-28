@@ -1,0 +1,38 @@
+{
+  "id": "lobatto_iiic_2",
+  "name": "Lobatto IIIC 2",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 2,
+  "description": "Two stage Lobatto IIIC. L-stable and stiffly accurate, with strong damping that also handles index one differential algebraic systems.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true,
+    "stage_order": 1
+  },
+  "tableau": {
+    "a": [
+      ["1/2", "-1/2"],
+      ["1/2", "1/2"]
+    ],
+    "b": ["1/2", "1/2"],
+    "c": [0, 1]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Numerical Methods for Ordinary Differential Equations",
+      "year": 2016,
+      "source": "Wiley, 3rd edition",
+      "doi": "10.1002/9781119121534"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "esdirk54",
+  "name": "ESDIRK 5(4)",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 5,
+  "embedded_order": 4,
+  "description": "Seven-stage, 5th order ESDIRK method with embedded 4th order error estimate. L-stable and stiffly accurate (ESDIRK5(4)7L[2]SA2).",
+  "tableau": {
+    "a": [
+      [0],
+      ["23/125", "23/125"],
+      [0.22210764773832475, 0.22210764773832475, "23/125"],
+      [-0.014049475381926283, -0.014049475381926283, -0.01709085093586415, "23/125"],
+      [-0.40838859254931464, -0.40838859254931464, 0.16646399821362964, 1.1662718062895745, "23/125"],
+      [-0.5392907235588114, -0.5392907235588114, -0.242234428845425, 1.4888806111225146, 0.5563122281913184, "23/125"],
+      [-0.03946606910974026, -0.03946606910974026, 0.27263649025024267, 0.4321651725202882, 0.3524160862328891, -0.16228561078393952, "23/125"]
+    ],
+    "b": [-0.03946606910974026, -0.03946606910974026, 0.27263649025024267, 0.4321651725202882, 0.3524160862328891, -0.16228561078393952, "23/125"],
+    "c": [0, "46/125", 0.6282152954766494, "49/353", 0.6999586194045747, "347/382", 1],
+    "b_embedded": [-0.08068946656664744, -0.08068946656664744, 0.18289968461343553, 0.517013873766231, 0.4265997313024543, -0.10432685796713498, 0.13919250141830897]
+  },
+  "references": [
+    {
+      "doi": "10.1016/j.apnum.2019.07.008",
+      "year": 2019,
+      "authors": "Kennedy, C. A., & Carpenter, M. H",
+      "title": "Diagonally implicit Runge-Kutta methods for stiff ODEs",
+      "source": "Applied Numerical Mathematics, 146, 221-244"
+    },
+    {
+      "doi": "10.1007/978-3-642-05221-7",
+      "year": 1996,
+      "authors": "Hairer, E., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 14"
+    }
+  ]
+}

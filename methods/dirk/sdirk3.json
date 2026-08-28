@@ -1,0 +1,43 @@
+{
+  "id": "sdirk3",
+  "name": "SDIRK 3",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 3,
+  "description": "Three stage third order singly diagonally implicit method. L-stable and stiffly accurate; the diagonal entry is the middle root of x^3 - 3x^2 + 3x/2 - 1/6.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "tableau": {
+    "a": [
+      [0.435866521508459, 0, 0],
+      [0.2820667392457705, 0.435866521508459, 0],
+      [1.20849664917601, -0.6443631706844692, 0.435866521508459]
+    ],
+    "b": [1.20849664917601, -0.6443631706844692, 0.435866521508459],
+    "c": [0.435866521508459, 0.7179332607542295, 1]
+  },
+  "references": [
+    {
+      "authors": "Noersett, S. P.",
+      "title": "Semi-explicit Runge-Kutta methods",
+      "year": 1974,
+      "source": "Report Mathematics and Computation No. 6/74, University of Trondheim"
+    },
+    {
+      "authors": "Crouzeix, M.",
+      "title": "Sur l'approximation des equations differentielles operationnelles lineaires par des methodes de Runge-Kutta",
+      "year": 1975,
+      "source": "These d'Etat, Universite Paris VI"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

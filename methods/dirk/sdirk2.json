@@ -1,0 +1,36 @@
+{
+  "id": "sdirk2",
+  "name": "SDIRK 2",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 2,
+  "description": "Two stage second order singly diagonally implicit method. L-stable and stiffly accurate, with one factorization serving both stages.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "tableau": {
+    "a": [
+      ["1 - sqrt(2)/2", 0],
+      ["sqrt(2)/2", "1 - sqrt(2)/2"]
+    ],
+    "b": ["sqrt(2)/2", "1 - sqrt(2)/2"],
+    "c": ["1 - sqrt(2)/2", 1]
+  },
+  "references": [
+    {
+      "authors": "Ehle, B. L.",
+      "title": "On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems",
+      "year": 1969,
+      "source": "Research Report CSRR 2010, University of Waterloo"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

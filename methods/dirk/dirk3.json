@@ -1,0 +1,34 @@
+{
+  "id": "dirk3",
+  "name": "DIRK 3(2)",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 3,
+  "description": "Four-stage, 3rd order L-stable DIRK method. Stiffly accurate.",
+  "tableau": {
+    "a": [
+      ["1/2"],
+      ["1/6", "1/2"],
+      ["-1/2", "1/2", "1/2"],
+      ["3/2", "-3/2", "1/2", "1/2"]
+    ],
+    "b": ["3/2", "-3/2", "1/2", "1/2"],
+    "c": ["1/2", "2/3", "1/2", 1]
+  },
+  "references": [
+    {
+      "doi": "10.1137/0714068",
+      "year": 1977,
+      "authors": "Alexander, R",
+      "title": "Diagonally implicit Runge-Kutta methods for stiff O.D.E.'s",
+      "source": "SIAM Journal on Numerical Analysis, 14(6), 1006-1021"
+    },
+    {
+      "doi": "10.1007/978-3-642-05221-7",
+      "year": 1996,
+      "authors": "Hairer, E., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 14"
+    }
+  ]
+}

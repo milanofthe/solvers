@@ -39,3 +39,14 @@ pub use problem::{Problem, Stats};
 pub fn library() -> MethodLibrary {
     MethodLibrary::embedded().expect("the embedded method library must be valid")
 }
+
+/// A shared instance of the embedded library.
+///
+/// Multistep families that cannot start themselves name a start up method by
+/// id, and this is where that lookup happens without rebuilding the library on
+/// every solver construction.
+#[cfg(feature = "embedded-methods")]
+pub fn shared_library() -> &'static MethodLibrary {
+    static LIBRARY: std::sync::OnceLock<MethodLibrary> = std::sync::OnceLock::new();
+    LIBRARY.get_or_init(library)
+}

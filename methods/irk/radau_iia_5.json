@@ -1,0 +1,40 @@
+{
+  "id": "radau_iia_5",
+  "name": "Radau IIA 5",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 5,
+  "aliases": ["radau5", "radau_iia_3s"],
+  "description": "Three stage Radau IIA, the method behind RADAU5. Fifth order, L-stable, stiffly accurate and stage order three, which is why it barely suffers order reduction.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true,
+    "stage_order": 3
+  },
+  "tableau": {
+    "a": [
+      ["(88 - 7*sqrt(6))/360", "(296 - 169*sqrt(6))/1800", "(-2 + 3*sqrt(6))/225"],
+      ["(296 + 169*sqrt(6))/1800", "(88 + 7*sqrt(6))/360", "(-2 - 3*sqrt(6))/225"],
+      ["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"]
+    ],
+    "b": ["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"],
+    "c": ["(4 - sqrt(6))/10", "(4 + sqrt(6))/10", 1]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

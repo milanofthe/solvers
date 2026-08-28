@@ -72,6 +72,15 @@ pub trait Stepper<P: Problem + ?Sized> {
         f64::INFINITY
     }
 
+    /// Chance for the stepper to shorten the step the driver proposed.
+    ///
+    /// Used by the multistep engine during start up, where the formula is still
+    /// running at reduced order and needs a smaller step to keep its local
+    /// error at the level the full order method will produce.
+    fn step_limit(&self, h: f64) -> f64 {
+        h
+    }
+
     /// Whether this stepper produces a usable error estimate.
     fn is_adaptive(&self) -> bool;
 }
@@ -177,7 +186,35 @@ pub fn stepper_for<P: Problem + ?Sized>(
             dim,
             options,
         )),
-        MethodKind::LinearMultistep(family) => Box::new(LmmStepper::new(family, dim, options)),
+        MethodKind::LinearMultistep(family) => {
+            Box::new(LmmStepper::with_startup(family, dim, options, startup_for(family, dim, options)))
+        }
+    }
+}
+
+/// Build the one step method a multistep family needs to fill its history.
+///
+/// Only families that cannot ramp their own order down to one need this; the
+/// rest start themselves. The id comes from the method file, so the choice of
+/// starter is data like everything else.
+fn startup_for(family: &crate::method::LmmFamily, dim: usize, options: &Options) -> Option<RkStepper> {
+    let id = family.startup.as_ref()?;
+    #[cfg(feature = "embedded-methods")]
+    {
+        let method = crate::shared_library().get(id)?;
+        let tableau = method.tableau()?;
+        return Some(RkStepper::new(
+            tableau,
+            method.declared_order.unwrap_or(1) as usize,
+            method.declared_embedded_order.map(|v| v as usize),
+            dim,
+            options,
+        ));
+    }
+    #[cfg(not(feature = "embedded-methods"))]
+    {
+        let _ = (id, dim, options);
+        None
     }
 }
 
@@ -321,9 +358,13 @@ pub fn integrate_with<P: Problem + ?Sized>(
             status = Status::MaxStepsExceeded;
             break;
         }
-        // Do not step past the end of the interval.
+        // `h` is the step the controller owns. What is actually taken can be
+        // shorter, because the stepper may ask for a shorter start up step and
+        // because the last step is trimmed to land on the end of the interval.
+        // Neither of those is an accuracy signal, so they must not feed back
+        // into `h`.
         let remaining = (t_end - t).abs();
-        let mut h_try = h.min(remaining);
+        let h_try = stepper.step_limit(h).min(remaining);
         if h_try <= 0.0 {
             break;
         }
@@ -387,23 +428,15 @@ pub fn integrate_with<P: Problem + ?Sized>(
                 status = Status::StepFailed;
                 break;
             }
-            if !outcome.ok && !adaptive {
-                // Fixed step integration has no controller to fall back on.
-                h_try *= 0.5;
-                h = h_try;
-                if h < options.h_min.max(1e-14) {
-                    status = Status::StepSizeUnderflow;
-                    break;
-                }
-                continue;
-            }
         }
 
-        let growth = decision.scale.min(stepper.max_growth());
-        h = (h_try * growth).min(options.h_max);
-        if !outcome.ok {
-            // A failed step is not an accuracy signal, shrink decisively.
-            h = h_try * 0.5;
+        if outcome.ok {
+            let growth = decision.scale.min(stepper.max_growth());
+            h = (h * growth).min(options.h_max);
+        } else {
+            // A failed step says nothing about accuracy, so shrink decisively
+            // rather than asking the controller.
+            h *= 0.5;
         }
         if h < options.h_min.max(1e-14) {
             status = Status::StepSizeUnderflow;

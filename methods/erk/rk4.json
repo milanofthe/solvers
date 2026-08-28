@@ -1,0 +1,33 @@
+{
+  "id": "rk4",
+  "name": "Classical Runge-Kutta",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 4,
+  "description": "Classical four-stage, 4th order explicit Runge-Kutta method.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/2", 0],
+      [0, "1/2", 0],
+      [0, 0, 1, 0]
+    ],
+    "b": ["1/6", "1/3", "1/3", "1/6"],
+    "c": [0, "1/2", "1/2", 1]
+  },
+  "references": [
+    {
+      "year": 1901,
+      "authors": "Kutta, W",
+      "title": "Beitrag zur näherungsweisen Integration totaler Differentialgleichungen",
+      "source": "Zeitschrift für Mathematik und Physik, 46, 435-453"
+    },
+    {
+      "doi": "10.1007/978-3-540-78862-1",
+      "year": 1993,
+      "authors": "Hairer, E., Nørsett, S. P., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 8"
+    }
+  ]
+}

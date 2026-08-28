@@ -1,0 +1,38 @@
+{
+  "id": "rkck54",
+  "name": "Cash-Karp 5(4)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 5,
+  "embedded_order": 4,
+  "description": "Cash-Karp 5(4) pair. Six stages, 5th order with embedded 4th order error estimate.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/5", 0],
+      ["3/40", "9/40", 0],
+      ["3/10", "-9/10", "6/5", 0],
+      ["-11/54", "5/2", "-70/27", "35/27", 0],
+      ["1631/55296", "175/512", "575/13824", "44275/110592", "253/4096", 0]
+    ],
+    "b": ["37/378", 0, "250/621", "125/594", 0, "512/1771"],
+    "c": [0, "1/5", "3/10", "3/5", 1, "7/8"],
+    "b_embedded": ["2825/27648", 0, "18575/48384", "13525/55296", "277/14336", "1/4"]
+  },
+  "references": [
+    {
+      "doi": "10.1145/79505.79507",
+      "year": 1990,
+      "authors": "Cash, J. R., & Karp, A. H",
+      "title": "A variable order Runge-Kutta method for initial value problems with rapidly varying right-hand sides",
+      "source": "ACM Transactions on Mathematical Software, 16(3), 201-222"
+    },
+    {
+      "doi": "10.1007/978-3-540-78862-1",
+      "year": 1993,
+      "authors": "Hairer, E., Nørsett, S. P., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 8"
+    }
+  ]
+}

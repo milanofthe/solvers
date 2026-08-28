@@ -1,0 +1,41 @@
+{
+  "id": "rkv65",
+  "name": "Verner 6(5)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 6,
+  "embedded_order": 5,
+  "description": "Verner 6(5) \"most robust\" pair. Nine stages, 6th order with embedded 5th order error estimate.",
+  "tableau": {
+    "a": [
+      [0],
+      ["9/50", 0],
+      ["29/324", "25/324", 0],
+      ["1/16", 0, "3/16", 0],
+      ["79129/250000", 0, "-261237/250000", "19663/15625", 0],
+      [0.2723261273648563, 0, "-25476/30875", "194159/185250", "8225/78546", 0],
+      [-0.16699418599716515, 0, "19504/30875", 0.17461044552773877, -1.0665356459086066, "902/735", 0],
+      ["2699/7410", 0, "-252/1235", -0.34883737816068644, "236875/72618", "-135/49", "15/22", 0],
+      ["11/144", 0, 0, "256/693", 0, "125/504", "125/528", "5/72", 0]
+    ],
+    "b": ["11/144", 0, 0, "256/693", 0, "125/504", "125/528", "5/72", 0],
+    "c": [0, "9/50", "1/6", "1/4", "53/100", "3/5", "4/5", 1, 1],
+    "b_embedded": ["28/477", 0, 0, "212/441", "-312500/366177", "2125/1764", 0, -0.05924237307216032, "2995/17766"]
+  },
+  "references": [
+    {
+      "doi": "10.1007/s11075-009-9290-3",
+      "year": 2010,
+      "authors": "Verner, J. H",
+      "title": "Numerically optimal Runge-Kutta pairs with interpolants",
+      "source": "Numerical Algorithms, 53(2-3), 383-396"
+    },
+    {
+      "doi": "10.1007/978-3-540-78862-1",
+      "year": 1993,
+      "authors": "Hairer, E., Nørsett, S. P., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 8"
+    }
+  ]
+}

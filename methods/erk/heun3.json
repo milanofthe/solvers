@@ -1,0 +1,26 @@
+{
+  "id": "heun3",
+  "name": "Heun 3",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 3,
+  "description": "Three stage third order method of Heun.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/3", 0],
+      [0, "2/3", 0]
+    ],
+    "b": ["1/4", 0, "3/4"],
+    "c": [0, "1/3", "2/3"]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

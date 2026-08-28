@@ -1,0 +1,37 @@
+{
+  "id": "rkf45",
+  "name": "Fehlberg 4(5)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 5,
+  "embedded_order": 4,
+  "description": "Runge-Kutta-Fehlberg 5(4) pair. Six stages, 5th order propagation with an embedded 4th order solution for local error estimation (local extrapolation, matching the ``RKCK54`` / ``RKDP54`` convention).",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/4", 0],
+      ["3/32", "9/32", 0],
+      ["1932/2197", "-7200/2197", "7296/2197", 0],
+      ["439/216", -8, "3680/513", "-845/4104", 0],
+      ["-8/27", 2, "-3544/2565", "1859/4104", "-11/40", 0]
+    ],
+    "b": ["16/135", 0, "6656/12825", "28561/56430", "-9/50", "2/55"],
+    "c": [0, "1/4", "3/8", "12/13", 1, "1/2"],
+    "b_embedded": ["25/216", 0, "1408/2565", "2197/4104", "-1/5", 0]
+  },
+  "references": [
+    {
+      "year": 1969,
+      "authors": "Fehlberg, E",
+      "title": "Low-order classical Runge-Kutta formulas with stepsize control and their application to some heat transfer problems",
+      "source": "NASA Technical Report TR R-315"
+    },
+    {
+      "doi": "10.1007/BF02241732",
+      "year": 1970,
+      "authors": "Fehlberg, E",
+      "title": "Klassische Runge-Kutta-Formeln vierter und niedrigerer Ordnung mit Schrittweiten-Kontrolle und ihre Anwendung auf Wärmeleitungsprobleme",
+      "source": "Computing, 6(1-2), 61-71"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "rkdp54",
+  "name": "Dormand-Prince 5(4)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 5,
+  "embedded_order": 4,
+  "description": "Dormand-Prince 5(4) pair (DOPRI5). Seven stages, 5th order with embedded 4th order error estimate.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/5", 0],
+      ["3/40", "9/40", 0],
+      ["44/45", "-56/15", "32/9", 0],
+      ["19372/6561", "-25360/2187", "64448/6561", "-212/729", 0],
+      ["9017/3168", "-355/33", "46732/5247", "49/176", "-5103/18656", 0],
+      ["35/384", 0, "500/1113", "125/192", "-2187/6784", "11/84", 0]
+    ],
+    "b": ["35/384", 0, "500/1113", "125/192", "-2187/6784", "11/84", 0],
+    "c": [0, "1/5", "3/10", "4/5", "8/9", 1, 1],
+    "b_embedded": ["5179/57600", 0, "7571/16695", "393/640", "-92097/339200", "187/2100", "1/40"]
+  },
+  "references": [
+    {
+      "doi": "10.1016/0771-050X(80)90013-3",
+      "year": 1980,
+      "authors": "Dormand, J. R., & Prince, P. J",
+      "title": "A family of embedded Runge-Kutta formulae",
+      "source": "Journal of Computational and Applied Mathematics, 6(1), 19-26"
+    },
+    {
+      "doi": "10.1137/S1064827594276424",
+      "year": 1997,
+      "authors": "Shampine, L. F., & Reichelt, M. W",
+      "title": "The MATLAB ODE Suite",
+      "source": "SIAM Journal on Scientific Computing, 18(1), 1-22"
+    }
+  ]
+}

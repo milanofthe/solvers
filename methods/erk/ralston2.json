@@ -1,0 +1,25 @@
+{
+  "id": "ralston2",
+  "name": "Ralston 2",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 2,
+  "description": "Second order method with the minimal truncation error bound among two stage explicit schemes.",
+  "tableau": {
+    "a": [
+      [0],
+      ["2/3", 0]
+    ],
+    "b": ["1/4", "3/4"],
+    "c": [0, "2/3"]
+  },
+  "references": [
+    {
+      "authors": "Ralston, A.",
+      "title": "Runge-Kutta methods with minimum error bounds",
+      "year": 1962,
+      "source": "Mathematics of Computation, 16(80), 431-437",
+      "doi": "10.1090/S0025-5718-1962-0150954-0"
+    }
+  ]
+}

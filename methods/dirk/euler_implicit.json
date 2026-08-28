@@ -1,0 +1,31 @@
+{
+  "id": "euler_implicit",
+  "name": "Backward Euler",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 1,
+  "aliases": ["backward_euler", "implicit_euler"],
+  "description": "The first order implicit method. L-stable and unconditionally damping, which makes it the fallback whenever a step has to succeed rather than be accurate.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true,
+    "stage_order": 1
+  },
+  "tableau": {
+    "a": [
+      [1]
+    ],
+    "b": [1],
+    "c": [1]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

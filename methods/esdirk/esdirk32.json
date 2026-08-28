@@ -1,0 +1,36 @@
+{
+  "id": "esdirk32",
+  "name": "ESDIRK 3(2)",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 3,
+  "embedded_order": 2,
+  "description": "Four-stage, 3rd order ESDIRK method with embedded 2nd order error estimate. L-stable and stiffly accurate.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/2", "1/2"],
+      ["5/8", "3/8", "1/2"],
+      ["7/18", "1/3", "-2/9", "1/2"]
+    ],
+    "b": ["7/18", "1/3", "-2/9", "1/2"],
+    "c": [0, 1, "3/2", 1],
+    "b_embedded": ["1/2", "1/2", 0, 0]
+  },
+  "references": [
+    {
+      "doi": "10.1016/j.apnum.2019.07.008",
+      "year": 2019,
+      "authors": "Kennedy, C. A., & Carpenter, M. H",
+      "title": "Diagonally implicit Runge-Kutta methods for stiff ODEs",
+      "source": "Applied Numerical Mathematics, 146, 221-244"
+    },
+    {
+      "doi": "10.1007/978-3-642-05221-7",
+      "year": 1996,
+      "authors": "Hairer, E., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 14"
+    }
+  ]
+}

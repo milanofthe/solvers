@@ -1,0 +1,35 @@
+{
+  "id": "esdirk4",
+  "name": "ESDIRK 4",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 4,
+  "description": "Six-stage, 4th order ESDIRK method. L-stable and stiffly accurate.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/4", "1/4"],
+      ["-1/36", "-1/18", "1/4"],
+      ["-21283/32000", "-5143/64000", "90909/64000", "1/4"],
+      [0.06140908775442109, -0.018214641975308643, 0.24024767032967034, -0.033442116108782775, "1/4"],
+      ["89/444", "89/804756", "-27/364", "-20000/171717", 0.7400854859039481, "1/4"]
+    ],
+    "b": ["89/444", "89/804756", "-27/364", "-20000/171717", 0.7400854859039481, "1/4"],
+    "c": [0, "1/2", "1/6", "37/40", "1/2", 1]
+  },
+  "references": [
+    {
+      "year": 2016,
+      "authors": "Kennedy, C. A., & Carpenter, M. H",
+      "title": "Diagonally implicit Runge-Kutta methods for ordinary differential equations. A review",
+      "source": "NASA/TM-2016-219173"
+    },
+    {
+      "doi": "10.1007/978-3-642-05221-7",
+      "year": 1996,
+      "authors": "Hairer, E., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 14"
+    }
+  ]
+}

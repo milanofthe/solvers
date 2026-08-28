@@ -1,0 +1,41 @@
+{
+  "id": "gauss_legendre_6",
+  "name": "Gauss-Legendre 6",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 6,
+  "aliases": ["gauss6"],
+  "description": "Three stage Gauss method, sixth order and symplectic. Highest order per stage of any Runge-Kutta method.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false,
+    "symplectic": true,
+    "symmetric": true,
+    "stage_order": 3
+  },
+  "tableau": {
+    "a": [
+      ["5/36", "2/9 - sqrt(15)/15", "5/36 - sqrt(15)/30"],
+      ["5/36 + sqrt(15)/24", "2/9", "5/36 - sqrt(15)/24"],
+      ["5/36 + sqrt(15)/30", "2/9 + sqrt(15)/15", "5/36"]
+    ],
+    "b": ["5/18", "4/9", "5/18"],
+    "c": ["1/2 - sqrt(15)/10", "1/2", "1/2 + sqrt(15)/10"]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

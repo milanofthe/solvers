@@ -1,0 +1,32 @@
+{
+  "id": "dirk2",
+  "name": "DIRK 2(1)",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 2,
+  "description": "Two-stage, 2nd order DIRK method. L-stable, SSP-optimal, symplectic.",
+  "tableau": {
+    "a": [
+      ["1/4"],
+      ["1/2", "1/4"]
+    ],
+    "b": ["1/2", "1/2"],
+    "c": ["1/4", "3/4"]
+  },
+  "references": [
+    {
+      "doi": "10.1016/j.apnum.2007.10.004",
+      "year": 2008,
+      "authors": "Ferracina, L., & Spijker, M. N",
+      "title": "Strong stability of singly-diagonally-implicit Runge-Kutta methods",
+      "source": "Applied Numerical Mathematics, 58(11), 1675-1686"
+    },
+    {
+      "doi": "10.1007/978-3-642-05221-7",
+      "year": 1996,
+      "authors": "Hairer, E., & Wanner, G",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "source": "Springer Series in Computational Mathematics, Vol. 14"
+    }
+  ]
+}

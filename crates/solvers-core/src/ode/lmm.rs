@@ -11,6 +11,7 @@
 //! member.
 
 use super::newton_matrix::NewtonMatrix;
+use super::rk::RkStepper;
 use super::{Options, StepOutcome, Stepper};
 use crate::method::{LmmCoefficients, LmmFamily};
 use crate::nonlinear::{NonlinearSolver, Residual, SolverKind};
@@ -43,6 +44,12 @@ pub struct LmmStepper {
     linear: NewtonMatrix,
     nonlinear: NonlinearSolver,
 
+    /// One step method used to fill the history for families that cannot ramp
+    /// their own order down, such as Nystrom and Milne-Simpson.
+    startup: Option<RkStepper>,
+    /// True while the last attempted step came from the start up method.
+    in_startup: bool,
+
     /// Number of steps the formula currently uses.
     order_in_use: usize,
     /// Order suggested for the next step by the error comparison.
@@ -54,6 +61,15 @@ pub struct LmmStepper {
 
 impl LmmStepper {
     pub fn new(family: &LmmFamily, dim: usize, options: &Options) -> LmmStepper {
+        LmmStepper::with_startup(family, dim, options, None)
+    }
+
+    pub fn with_startup(
+        family: &LmmFamily,
+        dim: usize,
+        options: &Options,
+        startup: Option<RkStepper>,
+    ) -> LmmStepper {
         let k = family.steps;
         LmmStepper {
             family: family.clone(),
@@ -73,6 +89,8 @@ impl LmmStepper {
             low: vec![0.0; dim],
             linear: NewtonMatrix::new(dim),
             nonlinear: NonlinearSolver::new(options.nonlinear),
+            startup,
+            in_startup: false,
             order_in_use: 1,
             next_order: 1,
             step_sizes: vec![0.0; k + 1],
@@ -144,6 +162,35 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         2.0
     }
 
+    /// Shrink the step while the formula is still ramping up its order.
+    ///
+    /// A k-step method has no history to start from, so the first steps run at
+    /// reduced order q and would contribute a local error of order q + 1 to a
+    /// solution that is meant to be order p. Taking those steps with
+    /// `h^((p+1)/(q+1))` instead puts their local error at the same level as
+    /// the full order method's, which preserves the global order without
+    /// needing a second method to start with. The variable step coefficients
+    /// then absorb the uneven history spacing on their own.
+    fn step_limit(&self, h: f64) -> f64 {
+        // A dedicated start up method already produces the right local error,
+        // so there is nothing to compensate for.
+        if self.startup.is_some() {
+            return h;
+        }
+        let target = self.family.steps;
+        let current = self.available().min(target);
+        if current >= target || h <= 0.0 {
+            return h;
+        }
+        let magnitude = h.abs();
+        if magnitude >= 1.0 {
+            return h;
+        }
+        let exponent = (target + 1) as f64 / (current + 1) as f64;
+        let reduced = magnitude.powf(exponent).max(1e-13);
+        h.signum() * reduced.min(magnitude)
+    }
+
     fn start(&mut self, problem: &P, stats: &mut Stats, t: f64, y: &[f64]) {
         self.y.copy_from_slice(y);
         self.y_new.copy_from_slice(y);
@@ -161,9 +208,37 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         problem.rhs(t, y, &mut f0);
         self.y_history.push_front(y.to_vec());
         self.f_history.push_front(f0);
+
+        self.in_startup = false;
+        if let Some(rk) = &mut self.startup {
+            <RkStepper as Stepper<P>>::start(rk, problem, stats, t, y);
+        }
     }
 
     fn attempt(&mut self, problem: &P, stats: &mut Stats, t: f64, h: f64) -> StepOutcome {
+        // Fill the history with the dedicated start up method when the family
+        // has no lower order member to fall back on.
+        if self.startup.is_some() && self.available() < self.family.min_steps {
+            self.in_startup = true;
+            self.order_in_use = self.family.min_steps;
+            let rk = self.startup.as_mut().expect("start up method present");
+            let outcome = <RkStepper as Stepper<P>>::attempt(rk, problem, stats, t, h);
+            if !outcome.ok {
+                return outcome;
+            }
+            self.y_new
+                .copy_from_slice(<RkStepper as Stepper<P>>::proposed(
+                    self.startup.as_ref().expect("start up method present"),
+                ));
+            stats.rhs_evals += 1;
+            let mut f_new = std::mem::take(&mut self.f_new);
+            problem.rhs(t + h, &self.y_new, &mut f_new);
+            self.f_new = f_new;
+            self.last_h = h;
+            return outcome;
+        }
+        self.in_startup = false;
+
         let k = self
             .next_order
             .min(self.family.steps)
@@ -263,7 +338,14 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         StepOutcome { ok: true, error }
     }
 
-    fn commit(&mut self, _t: f64, h: f64) {
+    fn commit(&mut self, t: f64, h: f64) {
+        if self.in_startup {
+            // The starter is only alive until the history is full, so it needs
+            // to follow the solution during that phase and not after.
+            if let Some(rk) = &mut self.startup {
+                <RkStepper as Stepper<P>>::commit(rk, t, h);
+            }
+        }
         self.y.copy_from_slice(&self.y_new);
         self.y_history.push_front(self.y_new.clone());
         self.f_history.push_front(self.f_new.clone());
@@ -281,7 +363,13 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         self.next_order = (self.order_in_use + 1).min(self.family.steps);
     }
 
-    fn reject(&mut self, _h: f64) {
+    fn reject(&mut self, h: f64) {
+        if self.in_startup {
+            if let Some(rk) = &mut self.startup {
+                <RkStepper as Stepper<P>>::reject(rk, h);
+            }
+            return;
+        }
         self.nonlinear.reset();
         // A rejected step at high order is often better served one order down.
         if self.order_in_use > 1 {

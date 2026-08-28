@@ -1,0 +1,28 @@
+{
+  "id": "rk38",
+  "name": "Runge-Kutta 3/8 rule",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 4,
+  "aliases": ["rk4_38"],
+  "description": "Kutta's 3/8 rule. Fourth order like the classical method, with slightly smaller error constants at the same cost.",
+  "tableau": {
+    "a": [
+      [0],
+      ["1/3", 0],
+      ["-1/3", 1, 0],
+      [1, -1, 1, 0]
+    ],
+    "b": ["1/8", "3/8", "3/8", "1/8"],
+    "c": [0, "1/3", "2/3", 1]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

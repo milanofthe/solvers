@@ -88,6 +88,14 @@ pub fn study(
         for &h in step_sizes {
             let mut options = Options::fixed_step(h);
             options.max_steps = 20_000_000;
+            // The implicit solves must be far more accurate than the
+            // discretization error, otherwise the measurement reports the
+            // iteration tolerance instead of the order of the method.
+            options.rtol = 1e-12;
+            options.atol = 1e-14;
+            options.nonlinear.tolerance = 1e-2;
+            options.nonlinear.max_iterations = 50;
+            options.max_jacobian_age = 0;
             let solution = ode::integrate(method, problem, t_span, &y0, &options);
             let error = match solution.last() {
                 Some(y) if solution.succeeded() => relative_error(y, target),
@@ -120,7 +128,7 @@ pub fn study(
 pub fn fit_order(points: &[ConvergencePoint]) -> (f64, f64) {
     let usable: Vec<&ConvergencePoint> = points
         .iter()
-        .filter(|p| p.error.is_finite() && p.error > 1e-13 && p.error < 1.0)
+        .filter(|p| p.error.is_finite() && p.error > 5e-13 && p.error < 0.5)
         .collect();
     if usable.len() < 2 {
         return (f64::NAN, f64::NAN);

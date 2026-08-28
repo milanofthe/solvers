@@ -3,6 +3,12 @@
 //! A coefficient may be written as a JSON number (`0.25`), as an arithmetic
 //! expression (`"(2 - sqrt(2))/4"`), or, for multistep families, as the marker
 //! `"free"` meaning "determine me from the order conditions".
+//!
+//! Provenance decides exactness, not appearance. A fraction written as a string
+//! is exact; a JSON floating point number is a double and stays one, even when
+//! it happens to sit close to a tidy fraction. Pretending otherwise would let a
+//! rounded transcription masquerade as an identity and make the exact order
+//! check meaningless. Integers are the one safe exception.
 
 use crate::num::{expr, Coeff};
 use serde::de::{self, Deserializer, Visitor};
@@ -46,7 +52,7 @@ impl<'de> Visitor<'de> for CoeffVisitor {
     }
 
     fn visit_f64<E: de::Error>(self, v: f64) -> Result<Coeff, E> {
-        Ok(Coeff::from_f64_rationalized(v))
+        Ok(Coeff::Approx(v))
     }
 
     fn visit_str<E: de::Error>(self, v: &str) -> Result<Coeff, E> {
@@ -106,7 +112,7 @@ impl<'de> Visitor<'de> for SlotVisitor {
     }
 
     fn visit_f64<E: de::Error>(self, v: f64) -> Result<Slot, E> {
-        Ok(Slot::Fixed(Coeff::from_f64_rationalized(v)))
+        Ok(Slot::Fixed(Coeff::Approx(v)))
     }
 
     fn visit_unit<E: de::Error>(self) -> Result<Slot, E> {
@@ -150,8 +156,11 @@ mod tests {
     #[test]
     fn reads_numbers_and_expressions() {
         let v: Vec<CoeffValue> = serde_json::from_str(r#"[0.25, "1/3", 2, "(2-sqrt(2))/4"]"#).unwrap();
-        assert!(v[0].get().is_exact());
+        // A JSON float is a double, a fraction string is exact, an integer is
+        // exact, and an irrational expression is a double again.
+        assert!(!v[0].get().is_exact());
         assert!(v[1].get().is_exact());
+        assert!(v[2].get().is_exact());
         assert_eq!(v[2].value(), 2.0);
         assert!(!v[3].get().is_exact());
     }
