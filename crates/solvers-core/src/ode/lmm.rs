@@ -6,9 +6,9 @@
 //! method, and it is what lets BDF, Adams-Bashforth, Adams-Moulton and any
 //! other pattern of free coefficients share this one implementation.
 //!
-//! The order ramps up as the history fills, so no separate start up method is
-//! needed: a k-step family run with one stored point is its own one-step
-//! member.
+//! A family whose lower order members exist ramps its order up as the history
+//! fills. One whose coefficient pattern stops making sense when truncated, such
+//! as Nystrom, names a one step method to fill the history instead.
 
 use super::newton_matrix::NewtonMatrix;
 use super::rk::RkStepper;
@@ -153,7 +153,9 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
     }
 
     fn is_adaptive(&self) -> bool {
-        self.family.steps > 1
+        // The error estimate is the same formula one step shorter, so it only
+        // exists when the family still has a member there.
+        self.family.steps > self.family.min_steps
     }
 
     fn max_growth(&self) -> f64 {
@@ -218,9 +220,9 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
     fn attempt(&mut self, problem: &P, stats: &mut Stats, t: f64, h: f64) -> StepOutcome {
         // Fill the history with the dedicated start up method when the family
         // has no lower order member to fall back on.
-        if self.startup.is_some() && self.available() < self.family.min_steps {
+        if self.startup.is_some() && self.available() < self.family.steps {
             self.in_startup = true;
-            self.order_in_use = self.family.min_steps;
+            self.order_in_use = self.family.steps;
             let rk = self.startup.as_mut().expect("start up method present");
             let outcome = <RkStepper as Stepper<P>>::attempt(rk, problem, stats, t, h);
             if !outcome.ok {
@@ -243,7 +245,7 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
             .next_order
             .min(self.family.steps)
             .min(self.available())
-            .max(1);
+            .max(self.family.min_steps.min(self.available()).max(1));
         self.order_in_use = k;
 
         let Some(family) = self.family.with_steps(k) else {
@@ -317,7 +319,7 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         // Error estimate: apply the order reduced formula to the converged
         // derivative. That costs no extra solve and has the right asymptotics.
         let mut error = 0.0;
-        if k > 1 {
+        if k > self.family.min_steps {
             if let Some(lower) = self.family.with_steps(k - 1) {
                 self.fill_step_sizes(h, k - 1);
                 if let Ok(low_coefficients) = lower.coefficients(&self.step_sizes) {
@@ -372,7 +374,7 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
         }
         self.nonlinear.reset();
         // A rejected step at high order is often better served one order down.
-        if self.order_in_use > 1 {
+        if self.order_in_use > self.family.min_steps {
             self.next_order = self.order_in_use - 1;
         }
     }

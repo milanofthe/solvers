@@ -11,8 +11,7 @@
     "alpha": [1, -1],
     "beta": ["free", "free"],
     "normalization": "alpha0",
-    "startup": "esdirk54",
-    "min_steps": 1
+    "startup": "esdirk54"
   },
   "references": [
     {

@@ -395,6 +395,27 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
 
     fn interpolate(&self, theta: f64, out: &mut [f64]) -> bool {
         let Some(dense) = &self.tableau.dense else {
+            // Without a published interpolant, a cubic Hermite through the two
+            // endpoint derivatives is available for free whenever the first
+            // stage is `f(t, y)` and the last stage is `f(t + h, y_new)`, which
+            // covers every FSAL and every stiffly accurate method.
+            if self.trivial_first_stage && self.tableau.stiffly_accurate {
+                let f0 = &self.k[0];
+                let f1 = &self.k[self.tableau.stages - 1];
+                let t2 = theta * theta;
+                let t3 = t2 * theta;
+                let h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+                let h10 = t3 - 2.0 * t2 + theta;
+                let h01 = -2.0 * t3 + 3.0 * t2;
+                let h11 = t3 - t2;
+                for i in 0..out.len() {
+                    out[i] = h00 * self.y[i]
+                        + h10 * self.last_h * f0[i]
+                        + h01 * self.y_new[i]
+                        + h11 * self.last_h * f1[i];
+                }
+                return true;
+            }
             return false;
         };
         let s = self.tableau.stages;

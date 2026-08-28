@@ -238,8 +238,9 @@ impl Method {
     pub fn is_adaptive(&self) -> bool {
         match &self.kind {
             MethodKind::RungeKutta(t) => t.has_embedded(),
-            // Multistep error estimates come from the order reduced formula.
-            MethodKind::LinearMultistep(m) => m.steps > 1,
+            // Multistep error estimates come from the order reduced formula,
+            // which only exists while the family still has a shorter member.
+            MethodKind::LinearMultistep(m) => m.steps > m.min_steps,
         }
     }
 }

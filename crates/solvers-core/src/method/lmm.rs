@@ -42,7 +42,12 @@ pub struct LmmFile {
     /// Method id used to generate the missing history at start up.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub startup: Option<String>,
-    /// Lowest step number the variable order driver may fall back to.
+    /// Lowest step count the family is still a valid method at.
+    ///
+    /// One for BDF and Adams, which have a member at every step count down to
+    /// one. Two for Nystrom and Milne-Simpson, whose alpha pattern stops making
+    /// sense when truncated. It bounds both the variable order driver and the
+    /// order reduced error estimate.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_steps: Option<usize>,
 }

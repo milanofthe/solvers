@@ -11,8 +11,7 @@
     "alpha": [1, -1],
     "beta": [0, "free"],
     "normalization": "alpha0",
-    "startup": "rkdp54",
-    "min_steps": 1
+    "startup": "rkdp54"
   },
   "references": [
     {

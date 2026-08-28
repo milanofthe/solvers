@@ -9,63 +9,7 @@ use solvers_core::analysis::convergence;
 use solvers_core::linalg::Matrix;
 use solvers_core::method::MethodLibrary;
 use solvers_core::problem::Problem;
-use solvers_core::problems::TestProblem;
-
-/// `y1' = -y1 + y2^2`, `y2' = -y2`, with the closed form solution
-/// `(2 exp(-t) - exp(-2t), exp(-t))`.
-///
-/// A linear problem would be the obvious order probe, but it only measures the
-/// order the stability function agrees with the exponential to, and for several
-/// high order methods that is higher than their true order. The quadratic term
-/// here makes the elementary differentials nonzero so the full set of tree
-/// conditions is exercised, while both eigenvalues stay at minus one so even
-/// the methods with a small stability region have room to work.
-struct Decay {
-    end: f64,
-}
-
-impl Problem for Decay {
-    fn dim(&self) -> usize {
-        2
-    }
-    fn rhs(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
-        dy[0] = -y[0] + y[1] * y[1];
-        dy[1] = -y[1];
-    }
-    fn has_analytic_jacobian(&self) -> bool {
-        true
-    }
-    fn jacobian(&self, _t: f64, y: &[f64], j: &mut Matrix<f64>) {
-        j[(0, 0)] = -1.0;
-        j[(0, 1)] = 2.0 * y[1];
-        j[(1, 0)] = 0.0;
-        j[(1, 1)] = -1.0;
-    }
-}
-
-impl TestProblem for Decay {
-    fn id(&self) -> &'static str {
-        "decay"
-    }
-    fn name(&self) -> &'static str {
-        "Decay"
-    }
-    fn description(&self) -> &'static str {
-        "Scalar decay"
-    }
-    fn t_span(&self) -> (f64, f64) {
-        (0.0, self.end)
-    }
-    fn y0(&self) -> Vec<f64> {
-        vec![1.0, 1.0]
-    }
-    fn is_stiff(&self) -> bool {
-        false
-    }
-    fn exact(&self, t: f64) -> Option<Vec<f64>> {
-        Some(vec![2.0 * (-t).exp() - (-2.0 * t).exp(), (-t).exp()])
-    }
-}
+use solvers_core::problems::{NonlinearDecay, TestProblem};
 
 /// Harmonic oscillator, whose eigenvalues sit on the imaginary axis. The two
 /// weakly stable multistep methods are only usable here.
@@ -152,7 +96,7 @@ const WEAKLY_STABLE: [&str; 2] = ["nystrom2", "milne_simpson"];
 #[test]
 fn every_method_converges_at_its_stated_order() {
     let library = MethodLibrary::embedded().unwrap();
-    let problem = Decay { end: 2.0 };
+    let problem = NonlinearDecay { end: 2.0 };
 
     let mut failures = Vec::new();
     let mut rows = Vec::new();

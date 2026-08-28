@@ -14,8 +14,7 @@
     "alpha": ["free", "free", "free", "free", "free", "free", "free"],
     "beta": [1, 0, 0, 0, 0, 0, 0],
     "normalization": "alpha0",
-    "startup": "esdirk85",
-    "min_steps": 6
+    "startup": "esdirk85"
   },
   "references": [
     {

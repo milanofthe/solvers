@@ -35,6 +35,7 @@ pub trait TestProblem: Problem {
 pub fn catalog() -> Vec<Box<dyn TestProblem>> {
     vec![
         Box::new(ExponentialDecay { lambda: 1.0 }),
+        Box::new(NonlinearDecay::default()),
         Box::new(Oscillator { omega: 3.0 }),
         Box::new(Kaps { epsilon: 1e-3 }),
         Box::new(ProtheroRobinson { lambda: -1e4 }),
@@ -98,6 +99,67 @@ impl TestProblem for ExponentialDecay {
     }
     fn exact(&self, t: f64) -> Option<Vec<f64>> {
         Some(vec![(-self.lambda * t).exp()])
+    }
+}
+
+/// `y1' = -y1 + y2^2`, `y2' = -y2`, solved by `(2e^-t - e^-2t, e^-t)`.
+///
+/// A linear problem only measures the order the stability function agrees with
+/// the exponential to, which for several high order methods is higher than
+/// their true order. The quadratic coupling here makes the elementary
+/// differentials nonzero so the full set of tree conditions is exercised, while
+/// both eigenvalues stay at minus one so even a method with a small stability
+/// region has room to work.
+pub struct NonlinearDecay {
+    pub end: f64,
+}
+
+impl Default for NonlinearDecay {
+    fn default() -> Self {
+        NonlinearDecay { end: 5.0 }
+    }
+}
+
+impl Problem for NonlinearDecay {
+    fn dim(&self) -> usize {
+        2
+    }
+    fn rhs(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
+        dy[0] = -y[0] + y[1] * y[1];
+        dy[1] = -y[1];
+    }
+    fn has_analytic_jacobian(&self) -> bool {
+        true
+    }
+    fn jacobian(&self, _t: f64, y: &[f64], j: &mut Matrix<f64>) {
+        j[(0, 0)] = -1.0;
+        j[(0, 1)] = 2.0 * y[1];
+        j[(1, 0)] = 0.0;
+        j[(1, 1)] = -1.0;
+    }
+}
+
+impl TestProblem for NonlinearDecay {
+    fn id(&self) -> &'static str {
+        "nonlinear_decay"
+    }
+    fn name(&self) -> &'static str {
+        "Nonlinear decay"
+    }
+    fn description(&self) -> &'static str {
+        "Quadratically coupled decay with a closed form solution. The reference problem for measuring the true nonlinear order of a method."
+    }
+    fn t_span(&self) -> (f64, f64) {
+        (0.0, self.end)
+    }
+    fn y0(&self) -> Vec<f64> {
+        vec![1.0, 1.0]
+    }
+    fn is_stiff(&self) -> bool {
+        false
+    }
+    fn exact(&self, t: f64) -> Option<Vec<f64>> {
+        Some(vec![2.0 * (-t).exp() - (-2.0 * t).exp(), (-t).exp()])
     }
 }
 
