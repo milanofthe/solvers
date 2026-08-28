@@ -12,6 +12,7 @@
 //! coupling is a small dense matrix acting on `s` long vectors, which
 //! `simd::stage_transform` evaluates blocked over components.
 
+use super::decouple::{DecoupledLinear, StageDecoupling};
 use super::newton_matrix::NewtonMatrix;
 use super::{Options, StepOutcome, Stepper};
 use crate::linalg::{Lu, Matrix};
@@ -59,9 +60,14 @@ pub struct RkStepper {
 }
 
 /// Linear model of the coupled `s * n` stage system.
+///
+/// When the stage matrix diagonalizes, the system is solved as `s` decoupled
+/// problems of size `n` instead; the dense factorization is the fallback for a
+/// defective or singular `A`.
 struct CoupledLinear {
     jacobian: Matrix<f64>,
     lu: Option<Lu<f64>>,
+    decoupled: Option<DecoupledLinear>,
     jacobian_valid: bool,
     factored_h: f64,
     age: u32,
@@ -87,9 +93,15 @@ impl RkStepper {
             && (0..s).all(|j| runtime.a[(0, j)].abs() < 1e-14);
 
         let coupled = if runtime.structure == Structure::FullyImplicit {
+            let decoupled = if options.decouple_stages {
+                StageDecoupling::new(&runtime.a).map(|d| DecoupledLinear::new(d, dim))
+            } else {
+                None
+            };
             Some(CoupledLinear {
                 jacobian: Matrix::zeros(dim, dim),
                 lu: None,
+                decoupled,
                 jacobian_valid: false,
                 factored_h: f64::NAN,
                 age: 0,
@@ -358,6 +370,9 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
         if let Some(c) = &mut self.coupled {
             c.jacobian_valid = false;
             c.lu = None;
+            if let Some(decoupled) = &mut c.decoupled {
+                decoupled.invalidate();
+            }
         }
     }
 
@@ -566,6 +581,20 @@ impl<'a, P: Problem + ?Sized> Residual for CoupledResidual<'a, P> {
             self.linear.age = 0;
             self.linear.lu = None;
         }
+        // The decoupled path: one factorization of size n per real eigenvalue
+        // of A^{-1} and one per conjugate pair.
+        if let Some(decoupled) = &mut self.linear.decoupled {
+            if decoupled.is_factored_for(self.h) {
+                return true;
+            }
+            if decoupled.factor(&self.linear.jacobian, self.h) {
+                self.stats.lu_decompositions += decoupled.factorization_count() as u64;
+                self.linear.factored_h = self.h;
+                return true;
+            }
+            return false;
+        }
+
         if self.linear.lu.is_some() && self.linear.factored_h == self.h {
             return true;
         }
@@ -602,6 +631,10 @@ impl<'a, P: Problem + ?Sized> Residual for CoupledResidual<'a, P> {
     }
 
     fn solve(&mut self, rhs: &mut [f64]) -> bool {
+        let h = self.h;
+        if let Some(decoupled) = &mut self.linear.decoupled {
+            return decoupled.solve(rhs, h);
+        }
         match &self.linear.lu {
             Some(lu) => lu.solve_in_place(rhs),
             None => false,
@@ -611,5 +644,8 @@ impl<'a, P: Problem + ?Sized> Residual for CoupledResidual<'a, P> {
     fn refresh(&mut self) {
         self.linear.jacobian_valid = false;
         self.linear.lu = None;
+        if let Some(decoupled) = &mut self.linear.decoupled {
+            decoupled.invalidate();
+        }
     }
 }

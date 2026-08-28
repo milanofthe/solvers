@@ -198,3 +198,42 @@ fn dense_output_matches_the_solution_on_the_grid() {
         assert!(worst < 1e-3, "{id}: interpolation error {worst:.3e}");
     }
 }
+
+#[test]
+fn decoupled_and_coupled_stage_solves_agree() {
+    // The diagonalized stage system is an optimization, so it has to produce
+    // the same trajectory as the dense factorization it replaces.
+    let library = MethodLibrary::embedded().unwrap();
+    let problem = problems::NonlinearDecay::default();
+
+    for id in ["radau_iia_3", "radau_iia_5", "gauss_legendre_4", "gauss_legendre_6", "lobatto_iiic_4"] {
+        let method = library.get(id).unwrap();
+        let span = problem.t_span();
+        let y0 = problem.y0();
+
+        let mut coupled = Options::with_tolerances(1e-10, 1e-12);
+        coupled.decouple_stages = false;
+        coupled.adaptive = false;
+        coupled.h0 = Some(0.1);
+        let mut decoupled = coupled.clone();
+        decoupled.decouple_stages = true;
+
+        let a = ode::integrate(method, &problem, span, &y0, &coupled);
+        let b = ode::integrate(method, &problem, span, &y0, &decoupled);
+        assert!(a.succeeded() && b.succeeded(), "{id}: integration failed");
+
+        let (ya, yb) = (a.last().unwrap(), b.last().unwrap());
+        for i in 0..ya.len() {
+            assert!(
+                (ya[i] - yb[i]).abs() < 1e-10 * ya[i].abs().max(1.0),
+                "{id}: component {i} differs, coupled {} vs decoupled {}",
+                ya[i],
+                yb[i]
+            );
+        }
+        println!(
+            "{id:<20} lu decompositions: coupled {:>5}  decoupled {:>5}",
+            a.stats.lu_decompositions, b.stats.lu_decompositions
+        );
+    }
+}

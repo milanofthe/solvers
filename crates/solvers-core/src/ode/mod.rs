@@ -6,10 +6,12 @@
 //! the tableau and the multistep coefficient pattern already carry everything
 //! that distinguishes the individual methods.
 
+pub mod decouple;
 pub mod lmm;
 mod newton_matrix;
 pub mod rk;
 
+pub use decouple::{DecoupledLinear, StageDecoupling};
 pub use lmm::LmmStepper;
 pub use newton_matrix::NewtonMatrix;
 pub use rk::RkStepper;
@@ -101,6 +103,10 @@ pub struct Options {
     pub nonlinear: NonlinearConfig,
     /// Steps a Jacobian may be reused for before it is refreshed.
     pub max_jacobian_age: u32,
+    /// Diagonalize the stage coupling of a fully implicit method instead of
+    /// factoring the whole `s * n` system. Off only for testing the two paths
+    /// against each other.
+    pub decouple_stages: bool,
     /// Times the solution is reported at. `None` reports every accepted step.
     pub t_eval: Option<Vec<f64>>,
 }
@@ -118,6 +124,7 @@ impl Default for Options {
             controller: ControllerConfig::default(),
             nonlinear: NonlinearConfig::default(),
             max_jacobian_age: 5,
+            decouple_stages: true,
             t_eval: None,
         }
     }
