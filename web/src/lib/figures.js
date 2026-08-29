@@ -302,39 +302,113 @@ const order = {
 		if (points.length < 2) return empty('no usable points');
 		const x = points.map((p) => p.h);
 		const y = points.map((p) => p.error);
-		const anchor = points[Math.floor(points.length / 2)];
-		const guideX = [x[0], x[x.length - 1]];
-		const guideY = guideX.map((h) => anchor.error * (h / anchor.h) ** method.order);
+
+		// The guides are anchored on the finest step, where the method is
+		// asymptotic, so the line for its own order should lie along the data all
+		// the way back to the coarse end. The neighbouring orders fan out from the
+		// same point, which turns "what slope is this" into a reading rather than
+		// an estimate.
+		const anchor = points.reduce((best, p) => (p.h < best.h ? p : best), points[0]);
+		const span = [Math.min(...x), Math.max(...x)];
+		const guideOrders = compact
+			? [method.order]
+			: [method.order - 2, method.order - 1, method.order, method.order + 1].filter((k) => k >= 1);
+
+		const guides = guideOrders.map((k) => {
+			const own = k === method.order;
+			return {
+				type: 'scatter',
+				mode: 'lines',
+				x: span,
+				y: span.map((h) => anchor.error * (h / anchor.h) ** k),
+				line: {
+					color: own ? '#f0efe9' : '#969591',
+					width: own ? 1.2 : 0.8,
+					dash: own ? 'dash' : 'dot'
+				},
+				opacity: own ? 0.8 : 0.45,
+				hoverinfo: 'skip'
+			};
+		});
+
+		const annotations = compact
+			? []
+			: guideOrders.map((k) => ({
+					x: Math.log10(span[1]),
+					y: Math.log10(anchor.error * (span[1] / anchor.h) ** k),
+					text: `h<sup>${k}</sup>`,
+					showarrow: false,
+					xanchor: 'left',
+					yanchor: 'middle',
+					xshift: 4,
+					font: {
+						family: 'JetBrains Mono, monospace',
+						size: 9,
+						color: k === method.order ? '#f0efe9' : '#969591'
+					}
+				}));
+
+		// Below the round off floor the measurement is reporting the arithmetic,
+		// not the method.
+		const floor = 1e-14;
+		const shapes =
+			compact || Math.min(...y) > floor * 30
+				? []
+				: [
+						{
+							type: 'line',
+							xref: 'paper',
+							x0: 0,
+							x1: 1,
+							yref: 'y',
+							y0: floor,
+							y1: floor,
+							line: { color: '#d9513c', width: 1, dash: 'dot' }
+						}
+					];
+
+		// The guide ends have to fit, or the labels sit on the frame. They are
+		// allowed to push the view up by a decade and a half and no further, so a
+		// steep guide cannot shrink the data it is there to be compared against.
+		const guideEnds = compact ? [] : guides.flatMap((guide) => guide.y);
+		const ceiling = Math.max(...y) * 10 ** 1.5;
+		const yRange = logRange([...y, ...guideEnds.filter((v) => v <= ceiling)], 0.16);
+
+		// Room on the right for the exponent labels.
+		const xRange = logRange(x, compact ? 0.06 : 0.1);
+		if (!compact) xRange[1] += 0.12;
 
 		return {
 			data: [
-				{
-					type: 'scatter',
-					mode: 'lines',
-					x: guideX,
-					y: guideY,
-					line: { color: '#969591', width: 1, dash: 'dot' },
-					hoverinfo: 'skip'
-				},
+				...guides,
 				{
 					type: 'scatter',
 					mode: compact ? 'lines' : 'lines+markers',
 					x,
 					y,
-					line: { color: seriesColor(0), width: 1.6 },
+					line: { color: seriesColor(0), width: 1.8 },
 					marker: { size: 5 },
-					hoverinfo: compact ? 'skip' : 'x+y'
+					hovertemplate: compact ? undefined : 'h %{x:.3e}  error %{y:.3e}<extra></extra>',
+					hoverinfo: compact ? 'skip' : undefined
 				}
 			],
-			layout: layout({
-				compact,
-				x: { type: 'log', range: logRange(x), title: compact ? undefined : { text: 'step size h' } },
-				y: {
-					type: 'log',
-					range: logRange(y, 0.12),
-					title: compact ? undefined : { text: 'relative error' }
-				}
-			}),
+			layout: {
+				...layout({
+					compact,
+					x: {
+						type: 'log',
+						range: xRange,
+						title: compact ? undefined : { text: 'step size h' }
+					},
+					y: {
+						type: 'log',
+						range: yRange,
+						title: compact ? undefined : { text: 'relative error' }
+					}
+				}),
+				annotations,
+				shapes
+			},
 			config: config({ compact })
 		};
 	}
