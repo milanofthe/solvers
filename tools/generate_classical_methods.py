@@ -11,7 +11,7 @@ import json
 import os
 import re
 
-OUT = r"C:\Repositories\solvers\methods"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "methods")
 
 INNER_ARRAY = re.compile(r"\[[^\[\]{}]*?\]", re.S)
 

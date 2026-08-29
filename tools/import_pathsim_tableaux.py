@@ -13,12 +13,18 @@ import re
 import sys
 from fractions import Fraction
 
-sys.path.insert(0, r"C:\Repositories\pathsim\src")
+# pathsim is the source of the verified tableaux; point PATHSIM_SRC at its
+# `src` directory, or keep it as a sibling checkout.
+PATHSIM = os.environ.get(
+    "PATHSIM_SRC",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "pathsim", "src"),
+)
+sys.path.insert(0, PATHSIM)
 
 import pathsim.solvers as ps
 from pathsim.solvers._rungekutta import ExplicitRungeKutta, DiagonallyImplicitRungeKutta
 
-OUT = r"C:\Repositories\solvers\methods"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "methods")
 
 FAMILIES = [
     ("esdirk", "esdirk"),
