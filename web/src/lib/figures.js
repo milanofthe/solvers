@@ -57,6 +57,49 @@ function orderStarWindow(method) {
 
 const GRID = { runge_kutta: 140, linear_multistep: 72 };
 
+/** How finely the closed form multistep boundary is traced. */
+const LOCUS_SAMPLES = 720;
+
+/**
+ * The boundary of a multistep stability region, as a closed curve.
+ *
+ * It is drawn instead of a contour through the sampled grid because the two
+ * agree wherever the region has an interior, and only this one survives where
+ * it does not. Nystrom and Milne-Simpson are stable on a segment of the
+ * imaginary axis and nowhere else, so there is no cell for a contour to cross
+ * and the grid alone would show an empty frame.
+ *
+ * The locus runs to infinity wherever sigma has a root on the unit circle, so
+ * the curve is broken there rather than drawn straight back across the frame.
+ */
+function locusTrace(locus, re, im, compact) {
+	const limit = 6 * Math.max(re[1] - re[0], im[1] - im[0]);
+	const x = [];
+	const y = [];
+	for (let i = 0; i <= locus.length; i += 2) {
+		const a = locus[i % locus.length];
+		const b = locus[(i + 1) % locus.length];
+		if (!Number.isFinite(a) || !Number.isFinite(b) || Math.hypot(a, b) > limit) {
+			if (x.length && x[x.length - 1] !== null) {
+				x.push(null);
+				y.push(null);
+			}
+			continue;
+		}
+		x.push(a);
+		y.push(b);
+	}
+	return {
+		type: 'scatter',
+		mode: 'lines',
+		x,
+		y,
+		line: { color: '#000000', width: compact ? 1 : 1.4 },
+		showlegend: false,
+		hoverinfo: 'skip'
+	};
+}
+
 export function empty(message) {
 	return {
 		data: [],
@@ -90,12 +133,18 @@ const stability = {
 		const resolution = GRID[method.class] ?? 96;
 		return engine.request(
 			'stabilityGridAuto',
-			{ id: method.id, aspect: PANEL_ASPECT, width: resolution, height: resolution },
+			{
+				id: method.id,
+				aspect: PANEL_ASPECT,
+				width: resolution,
+				height: resolution,
+				locus: method.class === 'linear_multistep' ? LOCUS_SAMPLES : 0
+			},
 			{ key: `stability:${method.id}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
-		const { data, width, height, re, im } = result;
+		const { data, width, height, re, im, locus } = result;
 		// The colour range follows the data rather than a fixed span. A method
 		// whose region is a half plane varies by a fraction of a decade across
 		// the whole window, and a fixed range would render it as one flat wash.
@@ -135,16 +184,18 @@ const stability = {
 								tickfont: { size: 9 }
 							}
 				},
-				{
-					type: 'contour',
-					z,
-					x,
-					y,
-					contours: { start: 0, end: 0, size: 1, coloring: 'none' },
-					line: { color: '#000000', width: compact ? 1 : 1.4 },
-					showscale: false,
-					hoverinfo: 'skip'
-				}
+				locus
+					? locusTrace(locus, re, im, compact)
+					: {
+							type: 'contour',
+							z,
+							x,
+							y,
+							contours: { start: 0, end: 0, size: 1, coloring: 'none' },
+							line: { color: '#000000', width: compact ? 1 : 1.4 },
+							showscale: false,
+							hoverinfo: 'skip'
+						}
 			],
 			layout: {
 				...layout({

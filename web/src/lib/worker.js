@@ -42,7 +42,7 @@ const HANDLERS = {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
-	stabilityGridAuto: ({ id, aspect, width, height }) => {
+	stabilityGridAuto: ({ id, aspect, width, height, locus = 0 }) => {
 		const view = JSON.parse(wasm.stability_window(id, aspect));
 		const data = wasm.stability_grid(
 			id,
@@ -53,7 +53,19 @@ const HANDLERS = {
 			width,
 			height
 		);
-		return { data, width, height, re: view.re, im: view.im };
+		// The boundary of a multistep region is available in closed form, so it
+		// is fetched with the grid rather than traced out of it. A region with
+		// no interior has nothing for a contour to find, and that is not a rare
+		// case: it is what the whole weakly stable half of the library looks
+		// like.
+		return {
+			data,
+			width,
+			height,
+			re: view.re,
+			im: view.im,
+			locus: locus ? wasm.boundary_locus(id, locus) : null
+		};
 	}
 };
 
@@ -64,7 +76,9 @@ self.onmessage = async (event) => {
 		const handler = HANDLERS[kind];
 		if (!handler) throw new Error(`unknown job: ${kind}`);
 		const result = handler(args ?? {});
-		const transfer = result?.data instanceof Float64Array ? [result.data.buffer] : [];
+		const transfer = Object.values(result ?? {})
+			.filter((v) => v instanceof Float64Array)
+			.map((v) => v.buffer);
 		self.postMessage({ id, ok: true, result }, transfer);
 	} catch (error) {
 		self.postMessage({ id, ok: false, error: String(error?.message ?? error) });

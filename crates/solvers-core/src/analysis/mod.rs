@@ -315,8 +315,17 @@ pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)
         }
     }
 
+    // A region with no interior is not absent, it is thin. The weakly stable
+    // families are stable on a segment of the imaginary axis and nowhere else,
+    // which no sampled grid can resolve however fine it is, so the window comes
+    // from the boundary locus instead: that segment is the whole region.
+    let chosen = if !stable.any {
+        match locus_bounds(method, scale) {
+            Some(bounds) => bounds,
+            None => return fallback,
+        }
     // The bounded set is the one that does not run off the probe.
-    let chosen = if stable.bounded() {
+    } else if stable.bounded() {
         stable
     } else if unstable.bounded() {
         unstable
@@ -342,6 +351,22 @@ pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)
     y1 += pad_y;
 
     shape_to_aspect((x0, x1), (y0, y1), aspect)
+}
+
+/// The extent of the boundary locus, ignoring the excursions to infinity that
+/// appear whenever `sigma` has a root on the unit circle.
+fn locus_bounds(method: &Method, scale: f64) -> Option<Bounds> {
+    let family = method.multistep()?;
+    let coefficients = family.uniform_coefficients().ok()?;
+    let polynomials = GeneratingPolynomials::from_coefficients(&coefficients);
+    let mut bounds = Bounds::empty();
+    for z in polynomials.boundary_locus(720) {
+        let modulus = z.abs();
+        if modulus.is_finite() && modulus <= scale {
+            bounds.include(z.re, z.im, false);
+        }
+    }
+    bounds.any.then_some(bounds)
 }
 
 #[derive(Clone, Copy)]
