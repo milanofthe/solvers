@@ -12,6 +12,7 @@
 
 import {
 	bandedScale,
+	COLORS,
 	config,
 	layout,
 	logRange,
@@ -629,7 +630,7 @@ const solution = {
 						title: compact ? undefined : { text: 'y' }
 					}
 				}),
-				shapes: originLines({ x: false, compact })
+				shapes: originLines({ x: false, compact, color: COLORS.accent })
 			},
 			config: config({ compact })
 		};
@@ -662,7 +663,7 @@ const phase = {
 					x: { range: linearRange(x), title: compact ? undefined : { text: 'y1' } },
 					y: { range: linearRange(y), title: compact ? undefined : { text: 'y2' } }
 				}),
-				shapes: originLines({ compact })
+				shapes: originLines({ compact, color: COLORS.accent })
 			},
 			config: config({ compact })
 		};

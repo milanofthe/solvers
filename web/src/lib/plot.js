@@ -161,8 +161,8 @@ export function config({ compact = false } = {}) {
  * which is the only way to keep the reference visible on the plots that need it
  * most.
  */
-export function originLines({ x = true, y = true, compact = false } = {}) {
-	const line = { color: COLORS.accent, width: 1, dash: 'dot' };
+export function originLines({ x = true, y = true, compact = false, color = '#000000' } = {}) {
+	const line = { color, width: 1, dash: 'dot' };
 	const shapes = [];
 	if (y) {
 		shapes.push({
