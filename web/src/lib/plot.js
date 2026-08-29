@@ -151,7 +151,10 @@ export function config({ compact = false } = {}) {
 		displayModeBar: false,
 		responsive: true,
 		staticPlot: compact,
-		scrollZoom: !compact
+		scrollZoom: !compact,
+		// Suppresses the "double click to zoom back out" toast Plotly shows on
+		// the first interaction with a figure.
+		showTips: false
 	};
 }
 
