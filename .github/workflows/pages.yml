@@ -1,0 +1,78 @@
+# Build the site and publish it.
+#
+# The method files are compiled into the WebAssembly module, so there is nothing
+# to serve dynamically and the whole site is one static artifact. The tests run
+# first in the same job: they share the Rust cache with the wasm build, and a
+# tableau that no longer converges at its stated order should not reach the page.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Test
+        run: cargo test --release
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build the module
+        run: wasm-pack build crates/solvers-wasm --target web --out-dir ../../web/src/lib/wasm --release --no-typescript
+
+      - name: Build the site
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      # Pages serves 404.html for a path it has no file for, which is every
+      # route of a client side router. Handing it the same shell makes a deep
+      # link work as a first request rather than only after navigation.
+      - name: Serve routes from the shell
+        run: |
+          cp web/build/index.html web/build/404.html
+          touch web/build/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
