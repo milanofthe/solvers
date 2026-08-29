@@ -1,63 +1,39 @@
 # solvers
 
-A unified framework for ordinary differential equation solvers, in Rust, with a
-browser interface that derives every property of a method from its coefficients.
+ODE integration methods as data. A Butcher tableau or a multistep coefficient
+pattern lives in a JSON file with the DOI it was published under; order, stage
+order, stability and cost are derived from those coefficients rather than
+declared.
 
-The organizing idea is that **a method is data**. A Butcher tableau or a
-multistep coefficient pattern lives in a JSON file next to the DOI of the paper
-it was published in; the code is generic over that data. What follows from it:
+74 methods: explicit and SSP Runge-Kutta, DIRK and ESDIRK, Gauss-Legendre,
+Radau IIA, Lobatto IIIA/IIIB/IIIC, BDF, Adams-Bashforth and Adams-Moulton,
+Nystrom, Milne-Simpson.
 
-- one Runge-Kutta stepper covering explicit, diagonally implicit and fully
-  implicit tableaux, dispatching on the sparsity of `A`;
-- one multistep engine that solves for its variable step coefficients from the
-  order conditions, so BDF, Adams-Bashforth, Adams-Moulton, Nystrom and
-  Milne-Simpson are the same code with a different pattern of free coefficients;
-- one set of nonlinear solvers and one parametrized error controller, shared by
-  every implicit method;
-- analyses that read the same files, so a plot cannot drift away from the method
-  it claims to describe.
+## Layout
 
-Because the properties are derived rather than declared, the library checks
-itself: `solvers verify` compares every claim in every file against what the
-coefficients actually satisfy.
+    crates/solvers-core   framework
+    crates/solvers-cli    command line
+    crates/solvers-wasm   browser bindings
+    methods/              method files
+    tools/                method file generators
+    web/                  interface
 
-## Contents
+## Build
 
-| | |
-|---|---|
-| `crates/solvers-core` | the framework: coefficients, linear algebra, steppers, controllers, analyses |
-| `crates/solvers-cli` | command line access, `solvers` |
-| `crates/solvers-wasm` | browser bindings |
-| `methods/` | the method library, one JSON file per method |
-| `web/` | the interface |
+    cargo test
+    ./build-web.sh        builds the wasm module and serves the interface
 
-## The method library
+## Command line
 
-74 methods across the classical families.
+    solvers list
+    solvers problems
+    solvers analyze rkdp54
+    solvers verify
+    solvers convergence bdf4 nonlinear_decay
+    solvers cost esdirk43 robertson
+    solvers solve radau_iia_5 robertson 1e-8
 
-| family | members |
-|---|---|
-| explicit Runge-Kutta | Euler, midpoint, Ralston 2 and 3, Heun 3, Kutta 3, classical RK4, 3/8 rule, Heun-Euler 2(1), Fehlberg 2(1)/4(5)/7(8), Bogacki-Shampine 3(2), Cash-Karp 5(4), Dormand-Prince 5(4)/8(7), Verner 6(5) |
-| SSP Runge-Kutta | SSPRK(2,2), SSPRK(3,3), SSPRK(3,4) |
-| diagonally implicit | backward Euler, implicit midpoint, trapezoidal, SDIRK 2 and 3, Crouzeix 3, Qin-Zhang 2, DIRK 2(1) and 3(2) |
-| ESDIRK | TR-BDF2, 3(2), 4, 4(3), 5(4), 8(5) |
-| Gauss-Legendre | orders 2, 4, 6, 8, 10 |
-| Radau IIA | orders 3, 5, 7, 9 |
-| Lobatto | IIIA, IIIB and IIIC at orders 2, 4 and 6 |
-| BDF | orders 1 to 6 |
-| Adams | Bashforth 1 to 8, Moulton 2 to 7 |
-| other multistep | Nystrom 2 to 4, Milne-Simpson |
-
-The collocation families are not transcribed, they are constructed. A Gauss,
-Radau or Lobatto method is what follows from a choice of nodes, so
-`tools/generate_collocation_methods.py` builds the tableau from the node
-polynomial and the collocation conditions, and the Rust side then confirms the
-order that construction is supposed to give: `2s` for Gauss, `2s - 1` for Radau
-IIA, `2s - 2` for Lobatto.
-
-A method file states the coefficients and, optionally, what the publication
-claims about them. Coefficients may be exact fractions, arithmetic expressions,
-or plain floats:
+## Method file
 
 ```json
 {
@@ -70,21 +46,20 @@ or plain floats:
     "b": ["sqrt(2)/2", "1 - sqrt(2)/2"],
     "c": ["1 - sqrt(2)/2", 1]
   },
-  "references": [{ "authors": "Ehle, B. L.", "year": 1969, "doi": "..." }]
+  "references": [{ "authors": "Ehle, B. L.", "year": 1969 }]
 }
 ```
 
-Provenance decides exactness: a fraction written as a string is exact and the
-order conditions are then verified as identities, while a float stays a float
-and is checked numerically. The report says which of the two happened.
+A fraction written as a string is exact and the order conditions are verified as
+identities; a floating point number stays one and is checked numerically.
 
-A multistep file does not store coefficients at all, only which of them are
-free:
+A multistep file declares which coefficients are free instead of their values:
 
 ```json
 {
   "id": "bdf3",
   "class": "linear_multistep",
+  "order": 3,
   "multistep": {
     "steps": 3,
     "alpha": ["free", "free", "free", "free"],
@@ -94,147 +69,34 @@ free:
 }
 ```
 
-The values are solved for at every step from the actual step size history, which
-is what makes the variable step form a property of the framework rather than of
-the individual method.
-
-## What is derived, not declared
-
-- **Order**, from the rooted tree conditions, in exact arithmetic where the
-  tableau allows it. Stage order and abscissa consistency alongside it.
-- **Stability**, from `R(z) = det(I - zA + z e b^T) / det(I - zA)`, obtained as a
-  characteristic polynomial rather than sampled. That gives the poles, the value
-  at infinity, an exact A-stability test through the E-polynomial, and the real
-  and imaginary axis limits. For multistep methods the same questions are
-  answered through the root condition, including the A(alpha) wedge angle.
-- **Cost per step**, with FSAL reuse deducted.
-
-The derived numbers reproduce the published ones: the A(alpha) angles of BDF3 to
-BDF6 come out as 86.11, 73.64, 52.09 and 17.85 degrees against the tabulated
-86.03, 73.35, 51.84 and 17.84, and RK4's stability interval as -2.785 on the
-real axis and 2.828 on the imaginary axis.
-
-## Notes on the implementation
-
-A few decisions that are not obvious and that matter:
-
-**The stiff error estimate is filtered.** An implicit method's raw embedded
-difference inherits the stiff eigenvalues of the problem, so it reports an error
-for modes the method is in fact damping perfectly. Passing it through
-`(I - h*gamma*J)^{-1}` first is what lets the step size grow past the explicit
-stability limit, which is the whole point of using an L-stable method.
-
-**Fully implicit stage systems are diagonalized.** Writing `A^{-1} = T L T^{-1}`
-turns one factorization of size `s*n` into one real and `(s-1)/2` complex ones of
-size `n`. Measured on a semi discretized diffusion problem with `n = 80`, that is
-3.9 times faster for Radau IIA 5 and 4.3 times for Gauss-Legendre 6, with results
-identical to 1e-14. What remains is a small dense transform applied across long
-vectors, which is the shape the vectorized kernels are built for.
-
-**A method with no embedded pair still runs adaptively**, through step doubling.
-It costs three steps instead of one, but it is what makes Gauss, Radau and
-Lobatto usable with an error controller at all.
-
-**Every error controller is the same digital filter** in Soederlind's form, with
-different gains. I, PI, PID, the H211 and H312 families and Gustafsson's
-predictive controller are parameter sets, not implementations.
+They are solved for at every step from the actual step size history.
 
 ## Verification
 
-```
-cargo test
-solvers verify
-```
+`cargo test` and `solvers verify`.
 
-- Every one of the 74 methods converges at its stated order, measured on a
-  nonlinear problem with a closed form solution. A linear problem is not enough:
-  it only measures the order at which the stability function agrees with the
-  exponential, which for several high order methods is higher than their true
-  order. One method, Adams-Bashforth 8, is exempt and says so: its stability
-  region forces a step size at which it is already exact to double precision, so
-  there is nothing left to measure. Its order is still checked exactly from its
-  coefficients.
-- Every method file agrees with the analysis of its own coefficients.
-- The diagonalized stage solve reproduces the dense one.
-- Every controller and every nonlinear solver drives an implicit method to
-  tolerance.
-- Radau IIA 5, ESDIRK 8(5) and BDF5 agree to seven digits on Robertson.
+Every method converges at its stated order on a nonlinear problem with a closed
+form solution, every file agrees with the analysis of its own coefficients, the
+diagonalized stage solve reproduces the dense one, and Radau IIA 5, ESDIRK 8(5)
+and BDF5 agree to seven digits on Robertson.
 
-## Command line
-
-```
-solvers list                              every method with its derived properties
-solvers problems                          the test problems
-solvers analyze rkdp54                    order and stability as JSON
-solvers verify                            check every file against its analysis
-solvers convergence bdf4 nonlinear_decay  fixed step convergence study
-solvers cost esdirk43 robertson           adaptive work precision diagram
-solvers solve radau_iia_5 robertson 1e-8  integrate and report the statistics
-```
-
-## The interface
-
-```
-./build-web.sh
-```
-
-which builds the WebAssembly module into the app and starts it on
-<http://localhost:5180>. For a static bundle, `npm run build` in `web/` writes
-one to `web/build`.
-
-SvelteKit, Tailwind and Plotly, styled to match milanrother.com. There is no
-server side: the method files are compiled into the module and every number on
-screen is produced in the page.
-
-The library is a card grid rather than a table, because the properties are what
-one browses by. Each card can be switched between five views of the same method,
-and the whole grid switches together:
-
-| view | what it draws |
-|---|---|
-| stability | banded log \|R(z)\| with the unit contour, the picture of the stability region |
-| structure | the coefficient matrix, where explicit, diagonally implicit and fully implicit are one glance apart |
-| damping | \|R\| along the negative real axis, where A-stability and L-stability are one glance apart |
-| order | measured convergence against the slope the coefficients promise |
-| cost | achieved accuracy against the work it took |
-
-The rail carries faceted filters over the derived tags, so "L-stable and stiffly
-accurate at order four and above" is three clicks. The reference problems get
-the same treatment, switchable between the solution, its phase portrait, the
-stiffness along it and the step size a reference run needed.
-
-Comparisons take either a preset or whatever is selected in the grid. The
-presets are the comparisons worth making: which explicit pair to use on a smooth
-problem, whether the extra stages of a higher order method pay for themselves,
-what BDF costs against ESDIRK on something stiff, and where order reduction
-shows up.
-
-The last two card views need a solver run per card, which is more work than a
-screenful can afford to do eagerly. Requests therefore go through a queue in
-front of a small pool of workers: cards raise their priority as they scroll into
-view, anything still queued for a view nobody is looking at any more is dropped,
-identical requests share one result, and the interactive thread never blocks.
+Adams-Bashforth 8 is exempt from the empirical order test: its stability region
+forces a step size at which it is already exact to double precision. Its order
+is still checked from its coefficients.
 
 ## References
 
-The framework follows the standard references, and every method file carries the
-DOI of its own source.
+- Hairer, Noersett, Wanner, *Solving Ordinary Differential Equations I*, 2nd ed.,
+  Springer 1993, [10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
+- Hairer, Wanner, *Solving Ordinary Differential Equations II*, 2nd ed.,
+  Springer 1996, [10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
+- Butcher, *Numerical Methods for Ordinary Differential Equations*, 3rd ed.,
+  Wiley 2016, [10.1002/9781119121534](https://doi.org/10.1002/9781119121534)
+- Soederlind, *Digital filters in adaptive time-stepping*, ACM TOMS 29(1), 2003,
+  [10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
 
-- E. Hairer, S. P. Noersett, G. Wanner, *Solving Ordinary Differential Equations
-  I: Nonstiff Problems*, 2nd ed., Springer 1993,
-  [10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
-- E. Hairer, G. Wanner, *Solving Ordinary Differential Equations II: Stiff and
-  Differential-Algebraic Problems*, 2nd ed., Springer 1996,
-  [10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
-- J. C. Butcher, *Numerical Methods for Ordinary Differential Equations*, 3rd
-  ed., Wiley 2016,
-  [10.1002/9781119121534](https://doi.org/10.1002/9781119121534)
-- G. Soederlind, *Digital filters in adaptive time-stepping*, ACM TOMS 29(1),
-  2003, [10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
-- H. F. Walker, P. Ni, *Anderson acceleration for fixed-point iterations*, SIAM
-  J. Numer. Anal. 49(4), 2011,
-  [10.1137/10078356X](https://doi.org/10.1137/10078356X)
+Every method file carries the DOI of its own source.
 
 ## License
 
-MIT.
+MIT
