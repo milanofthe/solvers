@@ -94,8 +94,6 @@
 		});
 	});
 
-	const mode = $derived(METHOD_MODES.find((m) => m.key === ui.mode) ?? METHOD_MODES[0]);
-
 	// Switching mode makes everything still queued for the old one pointless.
 	function setMode(key) {
 		if (ui.mode === key) return;
@@ -179,12 +177,8 @@
 	{/if}
 {/snippet}
 
-<header class="mb-6">
-	<h1 class="font-display text-lg text-cream">Methods</h1>
-	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
-		Every property is derived from the coefficients, not read from the file. {mode.note}
-	</p>
-	<p class="label mt-3">
+<header class="mb-4">
+	<p class="label">
 		{shown.length} of {catalog.methods.length}
 		{#if ui.selection.length > 0}
 			<span class="text-amber">&middot; {ui.selection.length} selected</span>
