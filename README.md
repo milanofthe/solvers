@@ -163,18 +163,45 @@ solvers solve radau_iia_5 robertson 1e-8  integrate and report the statistics
 ## The interface
 
 ```
-wasm-pack build crates/solvers-wasm --target web --out-dir ../../web/pkg --release
-python -m http.server 8099 --directory web
+./build-web.sh
 ```
 
-Then open <http://127.0.0.1:8099>. The method files are compiled into the
-module, so there is no server side: stability regions, convergence studies and
-work precision diagrams are all computed in the page by the same code the
-command line runs.
+which builds the WebAssembly module into the app and starts it on
+<http://localhost:5180>. For a static bundle, `npm run build` in `web/` writes
+one to `web/build`.
 
-The views are the library with its derived properties, a gallery of stability
-regions, one page per method with its tableau and references, convergence,
-work precision, and a comparison of the step size controllers.
+SvelteKit, Tailwind and Plotly, styled to match milanrother.com. There is no
+server side: the method files are compiled into the module and every number on
+screen is produced in the page.
+
+The library is a card grid rather than a table, because the properties are what
+one browses by. Each card can be switched between five views of the same method,
+and the whole grid switches together:
+
+| view | what it draws |
+|---|---|
+| stability | banded log \|R(z)\| with the unit contour, the picture of the stability region |
+| structure | the coefficient matrix, where explicit, diagonally implicit and fully implicit are one glance apart |
+| damping | \|R\| along the negative real axis, where A-stability and L-stability are one glance apart |
+| order | measured convergence against the slope the coefficients promise |
+| cost | achieved accuracy against the work it took |
+
+The rail carries faceted filters over the derived tags, so "L-stable and stiffly
+accurate at order four and above" is three clicks. The reference problems get
+the same treatment, switchable between the solution, its phase portrait, the
+stiffness along it and the step size a reference run needed.
+
+Comparisons take either a preset or whatever is selected in the grid. The
+presets are the comparisons worth making: which explicit pair to use on a smooth
+problem, whether the extra stages of a higher order method pay for themselves,
+what BDF costs against ESDIRK on something stiff, and where order reduction
+shows up.
+
+The last two card views need a solver run per card, which is more work than a
+screenful can afford to do eagerly. Requests therefore go through a queue in
+front of a small pool of workers: cards raise their priority as they scroll into
+view, anything still queued for a view nobody is looking at any more is dropped,
+identical requests share one result, and the interactive thread never blocks.
 
 ## References
 

@@ -9,9 +9,11 @@ pub mod convergence;
 pub mod cost;
 pub mod order;
 pub mod stability;
+pub mod tags;
 
 pub use order::{OrderReport, Tree};
 pub use stability::{GeneratingPolynomials, StabilityFunction, StabilityGrid};
+pub use tags::{tags, Tag};
 
 use crate::method::{Method, MethodKind};
 use crate::num::Complex;

@@ -1,0 +1,80 @@
+<script>
+	/*
+	 * The frame: a quiet rail on the left carrying the navigation and whatever
+	 * controls the current page needs, and the content to the right of it. No
+	 * tabs, no chrome around the controls; a control is a line of monospace that
+	 * turns from grey to cream when it is on.
+	 */
+	import '../app.css';
+	import { setContext } from 'svelte';
+	import { page } from '$app/state';
+	import { catalog, loadCatalogues, progress } from '$lib/store.svelte.js';
+
+	let { children } = $props();
+
+	// Pages hand their own controls to the rail as a snippet.
+	const rail = $state({ panel: null });
+	setContext('rail', rail);
+
+	loadCatalogues();
+
+	const links = [
+		{ href: '/', label: 'methods' },
+		{ href: '/problems', label: 'problems' },
+		{ href: '/compare', label: 'compare' }
+	];
+
+	function active(href) {
+		if (href === '/') return page.url.pathname === '/' || page.url.pathname.startsWith('/methods');
+		return page.url.pathname.startsWith(href);
+	}
+</script>
+
+<div class="mx-auto flex min-h-screen w-full max-w-[110rem] gap-10 px-6">
+	<aside class="sticky top-0 hidden h-screen w-48 shrink-0 flex-col overflow-y-auto py-6 md:flex">
+		<a href="/" class="font-display text-lg leading-none text-cream">solvers</a>
+		<p class="label mt-2">numerical integration</p>
+
+		<nav class="mt-6 flex flex-col">
+			{#each links as link}
+				<a
+					href={link.href}
+					class="py-[1px] font-mono text-xs transition-colors {active(link.href)
+						? 'text-cream'
+						: 'text-cream/50 hover:text-cream'}">{link.label}</a
+				>
+			{/each}
+		</nav>
+
+		{#if rail.panel}
+			<div class="mt-8 flex flex-col gap-6">
+				{@render rail.panel()}
+			</div>
+		{/if}
+
+		<div class="mt-auto pt-8">
+			<p class="font-mono text-xs text-accent">
+				{catalog.ready ? `${catalog.methods.length} methods` : 'loading'}
+				{#if progress.outstanding > 0}
+					<span class="text-amber">&middot; {progress.outstanding} computing</span>
+				{/if}
+			</p>
+			<a
+				href="https://github.com/milanofthe/solvers"
+				class="action mt-2 inline-block"
+				target="_blank"
+				rel="noreferrer">[ source ]</a
+			>
+		</div>
+	</aside>
+
+	<main class="min-w-0 flex-1 py-6">
+		{#if catalog.error}
+			<p class="font-mono text-xs text-[#d9513c]">{catalog.error}</p>
+		{:else if !catalog.ready}
+			<p class="label">starting the compute pipeline</p>
+		{:else}
+			{@render children()}
+		{/if}
+	</main>
+</div>

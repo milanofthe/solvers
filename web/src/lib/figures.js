@@ -1,0 +1,545 @@
+/*
+ * What a card draws.
+ *
+ * A card in the library is a small window onto one method, and which window it
+ * is should be the reader's choice: the same grid answers "which of these is
+ * stable here", "which of these is cheap", and "which of these actually
+ * converges at the order it claims", depending on the mode.
+ *
+ * Each mode declares what it needs from the engine and turns the answer into a
+ * figure. Nothing here computes; the engine does, on its own schedule.
+ */
+
+import { bandedScale, config, layout, logRange, linearRange, seriesColor } from './plot.js';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** The flat row major grid the core returns, as the nested array Plotly wants. */
+function reshape(data, width, height) {
+	const rows = new Array(height);
+	for (let r = 0; r < height; r += 1) {
+		rows[r] = Array.from(data.subarray(r * width, (r + 1) * width));
+	}
+	return rows;
+}
+
+function axisValues(low, high, count) {
+	const values = new Array(count);
+	for (let i = 0; i < count; i += 1) values[i] = low + ((high - low) * i) / (count - 1);
+	return values;
+}
+
+/**
+ * Window on the complex plane, sized to the method and shaped to the panel.
+ *
+ * The aspect matters: a stability region is a shape, and stretching one axis
+ * against the other turns a disc into an ellipse. Rather than letterbox the
+ * plot to force equal axes, the window is cut to the aspect the panel already
+ * has, so the data fills it and still reads as the right shape.
+ */
+const PANEL_ASPECT = 1.7;
+
+function stabilityWindow(method) {
+	const box = (left, right) => {
+		const half = (right - left) / (2 * PANEL_ASPECT);
+		return { re: [left, right], im: [-half, half] };
+	};
+	if (method.class === 'linear_multistep') {
+		const reach = method.aStable ? 9 : 6;
+		return box(-reach, reach * 0.35);
+	}
+	if (method.implicit) return box(-11, 5);
+	const reach = Math.max(4, (method.size ?? 4) * 1.05);
+	return box(-reach * 1.6, reach * 0.45);
+}
+
+const GRID = { runge_kutta: 140, linear_multistep: 72 };
+
+export function empty(message) {
+	return {
+		data: [],
+		layout: {
+			...layout({ compact: true }),
+			annotations: [
+				{
+					text: message,
+					showarrow: false,
+					font: { family: 'JetBrains Mono, monospace', size: 9, color: '#969591' },
+					xref: 'paper',
+					yref: 'paper',
+					x: 0.5,
+					y: 0.5
+				}
+			]
+		},
+		config: config({ compact: true })
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Method modes
+// ---------------------------------------------------------------------------
+
+const stability = {
+	key: 'stability',
+	label: 'stability',
+	note: 'Banded log |R(z)| on the complex plane with the unit contour on top. The region it encloses is where the method does not amplify.',
+	request(engine, method, priority) {
+		const view = stabilityWindow(method);
+		const resolution = GRID[method.class] ?? 96;
+		return engine.request(
+			'stabilityGrid',
+			{ id: method.id, re: view.re, im: view.im, width: resolution, height: resolution },
+			{ key: `stability:${method.id}`, priority }
+		);
+	},
+	figure(result, method, { compact = true } = {}) {
+		const { data, width, height, re, im } = result;
+		let reach = 1;
+		for (const value of data) {
+			if (Number.isFinite(value)) reach = Math.max(reach, Math.min(Math.abs(value), 4));
+		}
+		const z = reshape(data, width, height);
+		const x = axisValues(re[0], re[1], width);
+		const y = axisValues(im[0], im[1], height);
+		const levels = compact ? 12 : 16;
+
+		return {
+			data: [
+				{
+					type: 'heatmap',
+					z,
+					x,
+					y,
+					zmin: -reach,
+					zmax: reach,
+					colorscale: bandedScale(levels),
+					showscale: !compact,
+					zsmooth: 'best',
+					hoverinfo: 'skip',
+					colorbar: compact
+						? undefined
+						: {
+								title: { text: '|R| log', side: 'right', font: { size: 9 } },
+								thickness: 10,
+								len: 0.9,
+								outlinewidth: 1,
+								outlinecolor: 'rgba(240,239,233,0.1)',
+								tickfont: { size: 9 }
+							}
+				},
+				{
+					type: 'contour',
+					z,
+					x,
+					y,
+					contours: { start: 0, end: 0, size: 1, coloring: 'none' },
+					line: { color: '#000000', width: compact ? 1 : 1.4 },
+					showscale: false,
+					hoverinfo: 'skip'
+				}
+			],
+			layout: {
+				...layout({
+					compact,
+					title: compact ? '' : `stability region ${method.id}`,
+					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re, zeroline: true },
+					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im, zeroline: true }
+				})
+			},
+			config: config({ compact })
+		};
+	}
+};
+
+const structure = {
+	key: 'structure',
+	label: 'structure',
+	note: 'The coefficient matrix itself. A strictly lower triangle is explicit, a filled diagonal needs one solve per stage, a full matrix couples all of them.',
+	request(engine, method, priority) {
+		return engine.request(
+			'methodDetail',
+			{ id: method.id },
+			{ key: `detail:${method.id}`, priority }
+		);
+	},
+	figure(detail, method, { compact = true } = {}) {
+		const coefficients = detail.coefficients;
+		let rows;
+		let labels;
+		if (coefficients.kind === 'runge_kutta') {
+			rows = coefficients.a.map((row) => row.map((entry) => entry.value));
+			rows.push(coefficients.b.map((entry) => entry.value));
+			labels = coefficients.a.map((_, i) => `stage ${i + 1}`).concat(['b']);
+			if (coefficients.bEmbedded) {
+				rows.push(coefficients.bEmbedded.map((entry) => entry.value));
+				labels.push('b hat');
+			}
+		} else {
+			rows = [coefficients.alpha ?? [], coefficients.beta ?? []];
+			labels = ['alpha', 'beta'];
+		}
+
+		const columns = Math.max(...rows.map((row) => row.length), 1);
+		const padded = rows.map((row) => {
+			const filled = new Array(columns).fill(0);
+			row.forEach((value, i) => {
+				filled[i] = value ?? 0;
+			});
+			return filled;
+		});
+		// A signed logarithm, so a coefficient three decades smaller than its
+		// neighbours is still visible instead of reading as zero.
+		const shaped = padded.map((row) =>
+			row.map((v) => (v === 0 ? 0 : Math.sign(v) * Math.log10(1 + Math.abs(v) * 20)))
+		);
+		const reach = Math.max(...shaped.flat().map(Math.abs), 1);
+
+		return {
+			data: [
+				{
+					type: 'heatmap',
+					// Plotly draws the first row at the bottom.
+					z: shaped.slice().reverse(),
+					y: labels.slice().reverse(),
+					zmin: -reach,
+					zmax: reach,
+					colorscale: bandedScale(9, ['#d9513c', '#8a3a2c', '#1a1a18', '#0a6e63', '#00d9c0']),
+					showscale: false,
+					xgap: 1,
+					ygap: 1,
+					hoverinfo: compact ? 'skip' : 'y+z'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `coefficients of ${method.id}`,
+				x: { showticklabels: false, showgrid: false, ticks: '' },
+				y: { showgrid: false, ticks: '' }
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+const damping = {
+	key: 'damping',
+	label: 'damping',
+	note: 'How far a decaying mode is damped, along the negative real axis. Staying under one is A-stability; falling away at the right is L-stability.',
+	request(engine, method, priority) {
+		return engine.request(
+			'methodSummary',
+			{ id: method.id },
+			{ key: `summary:${method.id}`, priority }
+		);
+	},
+	figure(summary, method, { compact = true } = {}) {
+		if (!summary.damping?.length) return empty('no stability function');
+		const x = summary.dampingAxis.map((v) => Math.abs(v));
+		const y = summary.damping.map((v) => Math.max(v, 1e-8));
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: 'lines',
+					x,
+					y,
+					line: { color: seriesColor(0), width: 1.6 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: {
+				...layout({
+					compact,
+					title: compact ? '' : `damping of ${method.id}`,
+					x: { type: 'log', range: logRange(x, 0.02), title: compact ? undefined : { text: '-z' } },
+					y: {
+						type: 'log',
+						range: [-6, Math.max(1, Math.log10(Math.max(...y)) + 0.2)],
+						title: compact ? undefined : { text: '|R(z)|' }
+					}
+				}),
+				shapes: [
+					{
+						type: 'line',
+						xref: 'paper',
+						x0: 0,
+						x1: 1,
+						yref: 'y',
+						y0: 1,
+						y1: 1,
+						line: { color: '#969591', width: 1, dash: 'dot' }
+					}
+				]
+			},
+			config: config({ compact })
+		};
+	}
+};
+
+const order = {
+	key: 'order',
+	label: 'order',
+	note: 'Fixed step error against step size. The dotted line is the slope the coefficients promise; the measurement lying on it is the method converging as advertised.',
+	request(engine, method, priority, context) {
+		const p = method.order;
+		const coarse = p >= 7 ? 0.5 : p >= 5 ? 0.4 : 0.3;
+		const ratio = p >= 5 ? 0.7 : 0.6;
+		return engine.request(
+			'convergence',
+			{ id: method.id, problem: context.problem, coarse, ratio, count: 7 },
+			{ key: `convergence:${method.id}:${context.problem}`, priority }
+		);
+	},
+	figure(study, method, { compact = true } = {}) {
+		const points = study.points.filter((p) => Number.isFinite(p.error) && p.error > 1e-15);
+		if (points.length < 2) return empty('no usable points');
+		const x = points.map((p) => p.h);
+		const y = points.map((p) => p.error);
+		const anchor = points[Math.floor(points.length / 2)];
+		const guideX = [x[0], x[x.length - 1]];
+		const guideY = guideX.map((h) => anchor.error * (h / anchor.h) ** method.order);
+
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: 'lines',
+					x: guideX,
+					y: guideY,
+					line: { color: '#969591', width: 1, dash: 'dot' },
+					hoverinfo: 'skip'
+				},
+				{
+					type: 'scatter',
+					mode: compact ? 'lines' : 'lines+markers',
+					x,
+					y,
+					line: { color: seriesColor(0), width: 1.6 },
+					marker: { size: 5 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `convergence of ${method.id}`,
+				x: { type: 'log', range: logRange(x), title: compact ? undefined : { text: 'step size h' } },
+				y: {
+					type: 'log',
+					range: logRange(y, 0.12),
+					title: compact ? undefined : { text: 'relative error' }
+				}
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+const cost = {
+	key: 'cost',
+	label: 'cost',
+	note: 'Achieved accuracy against the work it took, one adaptive run per tolerance. Accuracy improves to the right, so the lower curve is the cheaper method.',
+	request(engine, method, priority, context) {
+		return engine.request(
+			'workPrecision',
+			{ id: method.id, problem: context.problem, from: -3, to: -10 },
+			{ key: `cost:${method.id}:${context.problem}`, priority }
+		);
+	},
+	figure(result, method, { compact = true } = {}) {
+		const points = result.points.filter(
+			(p) => p.succeeded && p.error > 0 && Number.isFinite(p.error)
+		);
+		if (points.length < 2) return empty('did not complete');
+		const x = points.map((p) => p.error);
+		const y = points.map((p) => p.rhs_evals);
+		const range = logRange(x);
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: compact ? 'lines' : 'lines+markers',
+					x,
+					y,
+					line: { color: seriesColor(1), width: 1.6 },
+					marker: { size: 5 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `work precision of ${method.id}`,
+				x: {
+					type: 'log',
+					range: [range[1], range[0]],
+					title: compact ? undefined : { text: 'achieved error' }
+				},
+				y: {
+					type: 'log',
+					range: logRange(y, 0.12),
+					title: compact ? undefined : { text: 'rhs evaluations' }
+				}
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+export const METHOD_MODES = [stability, structure, damping, order, cost];
+export const MODES_NEEDING_A_PROBLEM = new Set(['order', 'cost']);
+
+// ---------------------------------------------------------------------------
+// Problem modes
+// ---------------------------------------------------------------------------
+
+function profileRequest(engine, problem, priority) {
+	return engine.request(
+		'problemProfile',
+		{ id: problem.id, samples: 600 },
+		{ key: `profile:${problem.id}`, priority }
+	);
+}
+
+const solution = {
+	key: 'solution',
+	label: 'solution',
+	note: 'The components over the interval.',
+	request: profileRequest,
+	figure(profile, problem, { compact = true } = {}) {
+		const components = Math.min(profile.dim, 6);
+		const data = [];
+		for (let c = 0; c < components; c += 1) {
+			data.push({
+				type: 'scatter',
+				mode: 'lines',
+				x: profile.t,
+				y: profile.y.map((row) => row[c]),
+				name: `y${c + 1}`,
+				line: { color: seriesColor(c), width: 1.3 },
+				hoverinfo: compact ? 'skip' : 'x+y+name'
+			});
+		}
+		return {
+			data,
+			layout: layout({
+				compact,
+				title: compact ? '' : `solution of ${problem.id}`,
+				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
+				y: {
+					range: linearRange(data.flatMap((s) => s.y)),
+					title: compact ? undefined : { text: 'y' }
+				}
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+const phase = {
+	key: 'phase',
+	label: 'phase',
+	note: 'The first two components against each other.',
+	request: profileRequest,
+	figure(profile, problem, { compact = true } = {}) {
+		if (profile.dim < 2) return empty('scalar problem');
+		const x = profile.y.map((row) => row[0]);
+		const y = profile.y.map((row) => row[1]);
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: 'lines',
+					x,
+					y,
+					line: { color: seriesColor(3), width: 1.3 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `phase portrait of ${problem.id}`,
+				x: { range: linearRange(x), title: compact ? undefined : { text: 'y1' } },
+				y: { range: linearRange(y), title: compact ? undefined : { text: 'y2' } }
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+const stiffness = {
+	key: 'stiffness',
+	label: 'stiffness',
+	note: 'The spectral abscissa of the Jacobian along the solution. Where it spikes is where an explicit method has to take tiny steps.',
+	request: profileRequest,
+	figure(profile, problem, { compact = true } = {}) {
+		const y = profile.decayRate.map((v) => Math.max(v, 1e-6));
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: 'lines',
+					x: profile.t,
+					y,
+					line: { color: seriesColor(1), width: 1.3 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `stiffness of ${problem.id}`,
+				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
+				y: {
+					type: 'log',
+					range: logRange(y, 0.1),
+					title: compact ? undefined : { text: 'max(-Re lambda)' }
+				}
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+const steps = {
+	key: 'steps',
+	label: 'step size',
+	note: 'The step size a high accuracy reference run needed, which is the same information seen from the solver side.',
+	request: profileRequest,
+	figure(profile, problem, { compact = true } = {}) {
+		const times = [];
+		const sizes = [];
+		let t = profile.tSpan[0];
+		for (const h of profile.steps) {
+			times.push(t);
+			sizes.push(Math.abs(h));
+			t += h;
+		}
+		if (sizes.length < 2) return empty('no steps recorded');
+		return {
+			data: [
+				{
+					type: 'scatter',
+					mode: 'lines',
+					x: times,
+					y: sizes,
+					line: { color: seriesColor(0), width: 1.2 },
+					hoverinfo: compact ? 'skip' : 'x+y'
+				}
+			],
+			layout: layout({
+				compact,
+				title: compact ? '' : `step size on ${problem.id}`,
+				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
+				y: {
+					type: 'log',
+					range: logRange(sizes, 0.1),
+					title: compact ? undefined : { text: 'h' }
+				}
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+export const PROBLEM_MODES = [solution, phase, stiffness, steps];

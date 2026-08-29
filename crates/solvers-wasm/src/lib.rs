@@ -65,6 +65,7 @@ pub fn method_catalog() -> String {
                 "exactArithmetic": report.exact_arithmetic,
                 "discrepancies": report.discrepancies,
                 "doi": method.references.first().and_then(|r| r.doi.clone()),
+                "tags": analysis::tags(method, &report),
             })
         })
         .collect();
@@ -371,4 +372,109 @@ pub fn options_catalog() -> String {
         "classes": [MethodClass::RungeKutta, MethodClass::LinearMultistep],
     }))
     .unwrap_or_default()
+}
+
+/// The solution of a test problem together with how stiff it is along the way.
+///
+/// The stiffness trace is the spectral abscissa of the Jacobian, which is what
+/// decides whether an explicit method can be used at all and where in the
+/// interval the trouble sits.
+#[wasm_bindgen]
+pub fn problem_profile(id: &str, samples: usize) -> Result<String, JsValue> {
+    use solvers_core::linalg::Matrix;
+    use solvers_core::problem::Problem;
+
+    let problem = find_problem(id)?;
+    let span = problem.t_span();
+    let y0 = problem.y0();
+    let count = samples.clamp(32, 2000);
+
+    let mut options = Options::with_tolerances(1e-8, 1e-10);
+    options.max_steps = 2_000_000;
+    options.t_eval = Some(
+        (0..count)
+            .map(|i| span.0 + (span.1 - span.0) * i as f64 / (count - 1) as f64)
+            .collect(),
+    );
+
+    let method = reference_method(problem.is_stiff());
+    let solution = ode::integrate(method, problem.as_ref(), span, &y0, &options);
+
+    // Spectral abscissa along the trajectory, from the characteristic
+    // polynomial of the Jacobian.
+    let n = problem.dim();
+    let mut jacobian = Matrix::<f64>::zeros(n, n);
+    let mut stiffness = Vec::with_capacity(solution.t.len());
+    let mut oscillation = Vec::with_capacity(solution.t.len());
+    for (t, y) in solution.t.iter().zip(&solution.y) {
+        problem.jacobian(*t, y, &mut jacobian);
+        let coefficients: Vec<Complex> = stability::characteristic_polynomial(&jacobian)
+            .into_iter()
+            .map(Complex::real)
+            .collect();
+        let roots = solvers_core::linalg::poly_roots(&coefficients);
+        let slowest = roots.iter().fold(0.0f64, |acc, r| acc.max(-r.re));
+        let fastest = roots.iter().fold(0.0f64, |acc, r| acc.max(r.im.abs()));
+        stiffness.push(slowest);
+        oscillation.push(fastest);
+    }
+
+    let value = json!({
+        "id": id,
+        "name": problem.name(),
+        "description": problem.description(),
+        "dim": n,
+        "stiff": problem.is_stiff(),
+        "tSpan": [span.0, span.1],
+        "t": solution.t,
+        "y": solution.y,
+        "decayRate": stiffness,
+        "oscillationRate": oscillation,
+        "hasExact": problem.exact(span.0).is_some(),
+        "steps": solution.steps,
+        "stats": solution.stats,
+    });
+    Ok(serde_json::to_string(&value).unwrap_or_default())
+}
+
+/// Everything a method card needs that is cheap to compute, in one call.
+///
+/// The card grid asks for these in bulk, so batching them avoids one crossing
+/// of the boundary per card per property.
+#[wasm_bindgen]
+pub fn method_summary(id: &str) -> Result<String, JsValue> {
+    let method = find(id)?;
+    let report = analysis::analyze(method);
+    let function = method
+        .tableau()
+        .map(stability::StabilityFunction::from_tableau);
+
+    // Damping along the negative real axis, the direct read on how a method
+    // treats a stiff decaying mode: a value below one means the mode decays, and
+    // a value going to zero at the far end is what L-stability looks like.
+    let axis: Vec<f64> = (0..90).map(|i| -(10f64.powf(-1.5 + i as f64 / 20.0))).collect();
+    let damping: Vec<f64> = match (&function, method.multistep()) {
+        (Some(r), _) => axis.iter().map(|x| r.eval(Complex::real(*x)).abs()).collect(),
+        (None, Some(family)) => match family.uniform_coefficients() {
+            Ok(coefficients) => {
+                // For a multistep method the largest root modulus plays the same
+                // role the stability function does for Runge-Kutta.
+                let polynomials = stability::GeneratingPolynomials::from_coefficients(&coefficients);
+                axis.iter()
+                    .map(|x| polynomials.root_radius(Complex::real(*x)))
+                    .collect()
+            }
+            Err(_) => Vec::new(),
+        },
+        _ => Vec::new(),
+    };
+
+    let value = json!({
+        "id": method.id,
+        "report": report,
+        "tags": analysis::tags(method, &report),
+        "dampingAxis": axis,
+        "damping": damping,
+    });
+    Ok(serde_json::to_string(&value).unwrap_or_default())
 }
