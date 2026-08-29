@@ -33,18 +33,27 @@ coefficients actually satisfy.
 
 ## The method library
 
-54 methods across the classical families.
+74 methods across the classical families.
 
 | family | members |
 |---|---|
-| explicit Runge-Kutta | Euler, midpoint, Ralston, Heun, classical RK4, 3/8 rule, Fehlberg 2(1)/4(5)/7(8), Bogacki-Shampine 3(2), Cash-Karp 5(4), Dormand-Prince 5(4)/8(7), Verner 6(5) |
+| explicit Runge-Kutta | Euler, midpoint, Ralston 2 and 3, Heun 3, Kutta 3, classical RK4, 3/8 rule, Heun-Euler 2(1), Fehlberg 2(1)/4(5)/7(8), Bogacki-Shampine 3(2), Cash-Karp 5(4), Dormand-Prince 5(4)/8(7), Verner 6(5) |
 | SSP Runge-Kutta | SSPRK(2,2), SSPRK(3,3), SSPRK(3,4) |
-| diagonally implicit | backward Euler, implicit midpoint, trapezoidal, SDIRK 2 and 3, DIRK 2(1) and 3(2) |
-| ESDIRK | 3(2), 4, 4(3), 5(4), 8(5) |
-| fully implicit | Radau IIA 3 and 5, Gauss-Legendre 4 and 6, Lobatto IIIA/IIIB/IIIC |
+| diagonally implicit | backward Euler, implicit midpoint, trapezoidal, SDIRK 2 and 3, Crouzeix 3, Qin-Zhang 2, DIRK 2(1) and 3(2) |
+| ESDIRK | TR-BDF2, 3(2), 4, 4(3), 5(4), 8(5) |
+| Gauss-Legendre | orders 2, 4, 6, 8, 10 |
+| Radau IIA | orders 3, 5, 7, 9 |
+| Lobatto | IIIA, IIIB and IIIC at orders 2, 4 and 6 |
 | BDF | orders 1 to 6 |
-| Adams | Bashforth 1 to 5, Moulton 2 to 5 |
-| other multistep | Nystrom, Milne-Simpson |
+| Adams | Bashforth 1 to 8, Moulton 2 to 7 |
+| other multistep | Nystrom 2 to 4, Milne-Simpson |
+
+The collocation families are not transcribed, they are constructed. A Gauss,
+Radau or Lobatto method is what follows from a choice of nodes, so
+`tools/generate_collocation_methods.py` builds the tableau from the node
+polynomial and the collocation conditions, and the Rust side then confirms the
+order that construction is supposed to give: `2s` for Gauss, `2s - 1` for Radau
+IIA, `2s - 2` for Lobatto.
 
 A method file states the coefficients and, optionally, what the publication
 claims about them. Coefficients may be exact fractions, arithmetic expressions,
@@ -137,11 +146,14 @@ cargo test
 solvers verify
 ```
 
-- Every one of the 54 methods converges at its stated order, measured on a
+- Every one of the 74 methods converges at its stated order, measured on a
   nonlinear problem with a closed form solution. A linear problem is not enough:
   it only measures the order at which the stability function agrees with the
   exponential, which for several high order methods is higher than their true
-  order.
+  order. One method, Adams-Bashforth 8, is exempt and says so: its stability
+  region forces a step size at which it is already exact to double precision, so
+  there is nothing left to measure. Its order is still checked exactly from its
+  coefficients.
 - Every method file agrees with the analysis of its own coefficients.
 - The diagonalized stage solve reproduces the dense one.
 - Every controller and every nonlinear solver drives an implicit method to

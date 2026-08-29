@@ -1,0 +1,32 @@
+{
+  "id": "adams_bashforth_8",
+  "name": "Adams-Bashforth 8",
+  "class": "linear_multistep",
+  "family": "adams_bashforth",
+  "order": 8,
+  "aliases": ["ab8"],
+  "description": "Explicit 8 step Adams method of order 8. One evaluation per step regardless of order, which is what makes the family cheap.",
+  "multistep": {
+    "steps": 8,
+    "alpha": [1, -1, 0, 0, 0, 0, 0, 0, 0],
+    "beta": [0, "free", "free", "free", "free", "free", "free", "free", "free"],
+    "normalization": "alpha0",
+    "startup": "rkdp87"
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    },
+    {
+      "authors": "Dahlquist, G.",
+      "title": "Convergence and stability in the numerical integration of ordinary differential equations",
+      "year": 1956,
+      "source": "Mathematica Scandinavica, 4, 33-53",
+      "doi": "10.7146/math.scand.a-10454"
+    }
+  ]
+}

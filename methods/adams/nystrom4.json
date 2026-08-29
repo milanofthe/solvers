@@ -1,0 +1,25 @@
+{
+  "id": "nystrom4",
+  "name": "Nystrom 4",
+  "class": "linear_multistep",
+  "family": "nystrom",
+  "order": 4,
+  "description": "Explicit 4 step Nystrom method. The family integrates across two steps rather than one, which buys an order at the cost of a parasitic root sitting on the unit circle.",
+  "multistep": {
+    "steps": 4,
+    "alpha": [1, 0, -1, 0, 0],
+    "beta": [0, "free", "free", "free", "free"],
+    "normalization": "alpha0",
+    "startup": "rkdp54",
+    "min_steps": 2
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

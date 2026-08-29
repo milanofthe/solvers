@@ -103,6 +103,19 @@ fn pow(theta: f64, d: i32) -> f64 {
     }
 }
 
+/// The span the offsets are measured against.
+///
+/// The conditions say "integrate every polynomial up to some degree exactly",
+/// and which basis that is written in makes no difference to the answer but a
+/// great deal to the arithmetic. Written in raw powers of the offsets, an eight
+/// step method asks for entries of order `8^8`, and the system loses most of its
+/// digits before it is solved. Measuring the offsets against their own span puts
+/// every entry inside the unit interval, which is worth several digits at the
+/// step counts where it matters.
+fn span(theta: &[f64]) -> f64 {
+    theta.iter().fold(1.0f64, |acc, v| acc.max(v.abs()))
+}
+
 impl LmmFamily {
     pub fn from_file(file: &LmmFile) -> Result<LmmFamily, LmmError> {
         let k = file.steps;
@@ -192,27 +205,29 @@ impl LmmFamily {
         let mut rows: Vec<Vec<f64>> = Vec::with_capacity(m);
         let mut rhs: Vec<f64> = Vec::with_capacity(m);
 
+        let scale = span(&theta);
         let mut degree = 0i32;
         let max_degree = (2 * (k + 2)) as i32;
         while rows.len() < m && degree <= max_degree {
             let mut row = vec![0.0; m];
             for (u, &(is_alpha, j)) in unknowns.iter().enumerate() {
                 row[u] = if is_alpha {
-                    pow(theta[j], degree)
+                    pow(theta[j] / scale, degree)
                 } else {
-                    -(degree as f64) * pow(theta[j], degree - 1)
+                    -(degree as f64) / scale * pow(theta[j] / scale, degree - 1)
                 };
             }
             // Move the fixed contributions to the right hand side.
             let mut fixed = 0.0;
             for (j, slot) in self.alpha.iter().enumerate() {
                 if let Slot::Fixed(c) = slot {
-                    fixed += c.value() * pow(theta[j], degree);
+                    fixed += c.value() * pow(theta[j] / scale, degree);
                 }
             }
             for (j, slot) in self.beta.iter().enumerate() {
                 if let Slot::Fixed(c) = slot {
-                    fixed -= c.value() * (degree as f64) * pow(theta[j], degree - 1);
+                    fixed -= c.value() * (degree as f64) / scale
+                        * pow(theta[j] / scale, degree - 1);
                 }
             }
 
@@ -273,14 +288,15 @@ impl LmmFamily {
             .iter()
             .chain(beta.iter())
             .fold(1.0f64, |acc, v| acc.max(v.abs()));
+        let scale = span(theta);
         let mut order = 0usize;
         for degree in 0..=(2 * self.steps + 4) as i32 {
             let mut residual = 0.0;
             for (j, a) in alpha.iter().enumerate() {
-                residual += a * pow(theta[j], degree);
+                residual += a * pow(theta[j] / scale, degree);
             }
             for (j, b) in beta.iter().enumerate() {
-                residual -= b * (degree as f64) * pow(theta[j], degree - 1);
+                residual -= b * (degree as f64) / scale * pow(theta[j] / scale, degree - 1);
             }
             if residual.abs() > 1e-9 * magnitude {
                 return order;

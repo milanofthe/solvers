@@ -124,15 +124,35 @@ pub fn study(
 /// Least squares slope of `log(error)` against `log(h)`.
 ///
 /// Points that hit round off or diverged are dropped, because including them
-/// bends the fit and hides the real rate.
+/// bends the fit and hides the real rate. The floor sits well above machine
+/// precision: a relative error of a few times `1e-12` on a solution of order one
+/// is already several units in the last place, and a slope drawn through two
+/// such points measures the arithmetic rather than the method.
 pub fn fit_order(points: &[ConvergencePoint]) -> (f64, f64) {
-    let usable: Vec<&ConvergencePoint> = points
+    let above_floor: Vec<&ConvergencePoint> = points
         .iter()
-        .filter(|p| p.error.is_finite() && p.error > 5e-13 && p.error < 0.5)
+        .filter(|p| p.error.is_finite() && p.error > 1e-11 && p.error < 0.5)
         .collect();
-    if usable.len() < 2 {
+    if above_floor.len() < 2 {
         return (f64::NAN, f64::NAN);
     }
+
+    // Convergence data falls steadily until round off takes over, and then it
+    // wanders. A point that fails to improve on the one before it by a clear
+    // margin is the start of that wandering, and everything from there on says
+    // more about the arithmetic than about the method. The magnitude floor
+    // alone does not catch it, because noise can land just above the floor.
+    let mut decreasing: Vec<&ConvergencePoint> = Vec::new();
+    for point in &above_floor {
+        match decreasing.last() {
+            None => decreasing.push(point),
+            Some(previous) if point.error < 0.8 * previous.error => decreasing.push(point),
+            Some(_) => break,
+        }
+    }
+    // Below three points the run is too short to tell a preasymptotic wobble
+    // from round off, so nothing is thrown away.
+    let usable = if decreasing.len() >= 3 { decreasing } else { above_floor };
 
     let n = usable.len() as f64;
     let (mut sx, mut sy, mut sxx, mut sxy) = (0.0, 0.0, 0.0, 0.0);

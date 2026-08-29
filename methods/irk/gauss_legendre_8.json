@@ -1,0 +1,49 @@
+{
+  "id": "gauss_legendre_8",
+  "name": "Gauss-Legendre 8",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 8,
+  "aliases": ["gauss8"],
+  "description": "4 stage Gauss method of order 8, the highest any Runge-Kutta method of this size can reach. Symplectic and symmetric, so it preserves quadratic invariants exactly.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false,
+    "symplectic": true,
+    "symmetric": true,
+    "stage_order": 4
+  },
+  "tableau": {
+    "a": [
+      [0.086963711284363, -0.026604180084999, 0.012627462689405, -0.003555149685796],
+      [0.188118117499868, 0.163036288715637, -0.027880428602471, 0.006735500594538],
+      [0.167191921974189, 0.353953006033744, 0.163036288715636, -0.014190694931141],
+      [0.177482572254522, 0.31344511474187, 0.352676757516271, 0.086963711284364]
+    ],
+    "b": [0.173927422568726, 0.326072577431275, 0.326072577431272, 0.173927422568727],
+    "c": [0.069431844202974, 0.330009478207572, 0.669990521792428, 0.930568155797026]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Numerical Methods for Ordinary Differential Equations",
+      "year": 2016,
+      "source": "Wiley, 3rd edition",
+      "doi": "10.1002/9781119121534"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

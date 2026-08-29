@@ -1,0 +1,49 @@
+{
+  "id": "radau_iia_9",
+  "name": "Radau IIA 9",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 9,
+  "aliases": ["radau9"],
+  "description": "5 stage Radau IIA of order 9. L-stable, stiffly accurate and of stage order 5, so it barely suffers order reduction on a stiff problem.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true,
+    "stage_order": 5
+  },
+  "tableau": {
+    "a": [
+      [0.072998864317903, -0.026735331107945, 0.018676929763985, -0.012879106093306, 0.005042839233881],
+      [0.153775231479182, 0.146214867847491, -0.036444568905128, 0.021233063119304, -0.007935579902727],
+      [0.140063045684809, 0.298967129491284, 0.167585070135261, -0.033969101686622, 0.010944288744192],
+      [0.144894308109532, 0.276500068760166, 0.325797922910418, 0.128756753254886, -0.015708917378796],
+      [0.143713560791223, 0.281356015149471, 0.311826522975732, 0.223103901083566, 0.040000000000017]
+    ],
+    "b": [0.143713560791223, 0.28135601514947, 0.311826522975734, 0.223103901083565, 0.040000000000009],
+    "c": [0.057104196114518, 0.276843013638122, 0.583590432368924, 0.860240135656206, 1.000000000000008]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Numerical Methods for Ordinary Differential Equations",
+      "year": 2016,
+      "source": "Wiley, 3rd edition",
+      "doi": "10.1002/9781119121534"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

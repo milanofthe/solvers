@@ -1,0 +1,32 @@
+{
+  "id": "adams_moulton_6",
+  "name": "Adams-Moulton 6",
+  "class": "linear_multistep",
+  "family": "adams_moulton",
+  "order": 6,
+  "aliases": ["am6"],
+  "description": "Implicit 5 step Adams method of order 6. One order higher than the explicit family at the same step count, at the cost of a solve.",
+  "multistep": {
+    "steps": 5,
+    "alpha": [1, -1, 0, 0, 0, 0],
+    "beta": ["free", "free", "free", "free", "free", "free"],
+    "normalization": "alpha0",
+    "startup": "esdirk85"
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    },
+    {
+      "authors": "Dahlquist, G.",
+      "title": "Convergence and stability in the numerical integration of ordinary differential equations",
+      "year": 1956,
+      "source": "Mathematica Scandinavica, 4, 33-53",
+      "doi": "10.7146/math.scand.a-10454"
+    }
+  ]
+}

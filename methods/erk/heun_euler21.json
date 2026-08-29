@@ -1,0 +1,27 @@
+{
+  "id": "heun_euler21",
+  "name": "Heun-Euler 2(1)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 2,
+  "description": "The smallest embedded pair there is: Heun's method with Euler as its error estimate. Two evaluations per step, and the cheapest way to see step size control work.",
+  "embedded_order": 1,
+  "tableau": {
+    "a": [
+      [0],
+      [1, 0]
+    ],
+    "b": ["1/2", "1/2"],
+    "c": [0, 1],
+    "b_embedded": [1, 0]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "gauss_legendre_10",
+  "name": "Gauss-Legendre 10",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 10,
+  "aliases": ["gauss10"],
+  "description": "5 stage Gauss method of order 10, the highest any Runge-Kutta method of this size can reach. Symplectic and symmetric, so it preserves quadratic invariants exactly.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false,
+    "symplectic": true,
+    "symmetric": true,
+    "stage_order": 5
+  },
+  "tableau": {
+    "a": [
+      [0.059231721264047, -0.019570364359076, 0.011254400818643, -0.005593793660812, 0.001588112967866],
+      [0.128151005670045, 0.119657167624841, -0.024592114619642, 0.010318280670683, -0.00276899439877],
+      [0.113776288004224, 0.260004651680642, 0.142222222222222, -0.020690316430958, 0.00468715452387],
+      [0.121232436926864, 0.228996054579001, 0.309036559064086, 0.119657167624842, -0.009687563141951],
+      [0.116875329560229, 0.244908128910495, 0.273190043625801, 0.258884699608759, 0.059231721264047]
+    ],
+    "b": [0.118463442528095, 0.239314335249683, 0.284444444444444, 0.239314335249683, 0.118463442528095],
+    "c": [0.046910077030668, 0.230765344947158, 0.5, 0.769234655052841, 0.953089922969332]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Numerical Methods for Ordinary Differential Equations",
+      "year": 2016,
+      "source": "Wiley, 3rd edition",
+      "doi": "10.1002/9781119121534"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

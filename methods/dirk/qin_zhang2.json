@@ -1,0 +1,30 @@
+{
+  "id": "qin_zhang2",
+  "name": "Qin-Zhang 2",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 2,
+  "aliases": ["symplectic_dirk2"],
+  "description": "Two stage second order symplectic diagonally implicit method. One factorization per step and quadratic invariants preserved, which the Gauss methods only manage with a coupled solve.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false,
+    "symplectic": true
+  },
+  "tableau": {
+    "a": [
+      ["1/4", 0],
+      ["1/2", "1/4"]
+    ],
+    "b": ["1/2", "1/2"],
+    "c": ["1/4", "3/4"]
+  },
+  "references": [
+    {
+      "authors": "Qin, M. Z., & Zhang, M. Q.",
+      "title": "Symplectic Runge-Kutta algorithms for Hamiltonian systems",
+      "year": 1992,
+      "source": "Journal of Computational Mathematics, Supplementary Issue, 205-215"
+    }
+  ]
+}

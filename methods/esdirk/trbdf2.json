@@ -1,0 +1,32 @@
+{
+  "id": "trbdf2",
+  "name": "TR-BDF2",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 2,
+  "aliases": ["ode23tb"],
+  "description": "A trapezoidal step to the midpoint followed by a BDF2 step to the end, arranged as a three stage ESDIRK. L-stable, stiffly accurate and singly diagonal, so both implicit stages share one factorization.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "tableau": {
+    "a": [
+      [0, 0, 0],
+      ["1 - sqrt(2)/2", "1 - sqrt(2)/2", 0],
+      ["sqrt(2)/4", "sqrt(2)/4", "1 - sqrt(2)/2"]
+    ],
+    "b": ["sqrt(2)/4", "sqrt(2)/4", "1 - sqrt(2)/2"],
+    "c": [0, "2 - sqrt(2)", 1]
+  },
+  "references": [
+    {
+      "authors": "Hosea, M. E., & Shampine, L. F.",
+      "title": "Analysis and implementation of TR-BDF2",
+      "year": 1996,
+      "source": "Applied Numerical Mathematics, 20(1-2), 21-37",
+      "doi": "10.1016/0168-9274(95)00115-8"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "crouzeix3",
+  "name": "Crouzeix 3",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 3,
+  "description": "Two stage third order singly diagonally implicit method, the highest order two implicit stages can reach while staying A-stable. Not L-stable, so stiff modes are damped but not killed.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false
+  },
+  "tableau": {
+    "a": [
+      ["1/2 + sqrt(3)/6", 0],
+      ["-sqrt(3)/3", "1/2 + sqrt(3)/6"]
+    ],
+    "b": ["1/2", "1/2"],
+    "c": ["1/2 + sqrt(3)/6", "1/2 - sqrt(3)/6"]
+  },
+  "references": [
+    {
+      "authors": "Crouzeix, M.",
+      "title": "Sur l'approximation des equations differentielles operationnelles lineaires par des methodes de Runge-Kutta",
+      "year": 1975,
+      "source": "These d'Etat, Universite Paris VI"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

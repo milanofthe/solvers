@@ -11,6 +11,8 @@ import json
 import os
 import re
 
+import numpy as np
+
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "methods")
 
 INNER_ARRAY = re.compile(r"\[[^\[\]{}]*?\]", re.S)
@@ -84,6 +86,75 @@ EHLE69 = {
 }
 
 
+def _power(theta, degree):
+    """`theta^degree` with the `0^0 = 1` convention the conditions need."""
+    if degree < 0:
+        return 0.0
+    return 1.0 if degree == 0 else theta**degree
+
+
+def lmm_coefficients(alpha_slots, beta_slots):
+    """Solve the exactness conditions on a uniform grid, the same way the core
+    solves them on a real step size history."""
+    k = len(alpha_slots) - 1
+    theta = [0.0] + [-float(j) for j in range(1, k + 1)]
+    unknowns = [("a", j) for j, slot in enumerate(alpha_slots) if slot == FREE]
+    unknowns += [("b", j) for j, slot in enumerate(beta_slots) if slot == FREE]
+
+    rows, rhs, degree = [], [], 0
+    while len(unknowns) and len(rows) < len(unknowns) and degree <= 2 * (k + 2):
+        row = [
+            _power(theta[j], degree) if kind == "a" else -degree * _power(theta[j], degree - 1)
+            for kind, j in unknowns
+        ]
+        fixed = sum(
+            float(slot) * _power(theta[j], degree)
+            for j, slot in enumerate(alpha_slots)
+            if slot != FREE
+        )
+        fixed -= sum(
+            float(slot) * degree * _power(theta[j], degree - 1)
+            for j, slot in enumerate(beta_slots)
+            if slot != FREE
+        )
+        if max(abs(v) for v in row) > 1e-14:
+            rows.append(row)
+            rhs.append(-fixed)
+        degree += 1
+
+    alpha = [0.0 if slot == FREE else float(slot) for slot in alpha_slots]
+    beta = [0.0 if slot == FREE else float(slot) for slot in beta_slots]
+    if unknowns:
+        solution = np.linalg.solve(np.array(rows), np.array(rhs))
+        for value, (kind, j) in zip(solution, unknowns):
+            if kind == "a":
+                alpha[j] = value
+            else:
+                beta[j] = value
+
+    if abs(alpha[0]) > 1e-300:
+        scale = alpha[0]
+        alpha = [v / scale for v in alpha]
+        beta = [v / scale for v in beta]
+    return alpha, beta
+
+
+def lmm_order(alpha_slots, beta_slots):
+    """The highest degree the formula integrates exactly."""
+    alpha, beta = lmm_coefficients(alpha_slots, beta_slots)
+    k = len(alpha) - 1
+    theta = [0.0] + [-float(j) for j in range(1, k + 1)]
+    magnitude = max(max(abs(v) for v in alpha), max(abs(v) for v in beta), 1.0)
+    order = 0
+    for degree in range(0, 2 * k + 5):
+        residual = sum(alpha[j] * _power(theta[j], degree) for j in range(k + 1))
+        residual -= sum(beta[j] * degree * _power(theta[j], degree - 1) for j in range(k + 1))
+        if abs(residual) > 1e-9 * magnitude:
+            return order
+        order = degree
+    return order
+
+
 def render(method):
     text = json.dumps(method, indent=2, ensure_ascii=False)
     text = INNER_ARRAY.sub(lambda m: "[" + " ".join(m.group(0)[1:-1].split()) + "]", text)
@@ -121,12 +192,15 @@ def rk(identifier, name, family, order, a, b, c, **extra):
 
 
 def lmm(identifier, name, family, order, steps, alpha, beta, **extra):
+    derived = lmm_order(alpha, beta)
+    if order is not None and order != derived:
+        raise SystemExit(f"{identifier}: claims order {order} but the pattern gives {derived}")
     method = {
         "id": identifier,
         "name": name,
         "class": "linear_multistep",
         "family": family,
-        "order": order,
+        "order": derived,
     }
     for key in ("aliases", "description", "tags", "properties", "defaults"):
         if key in extra:
@@ -379,23 +453,23 @@ for k in range(1, 7):
 # Adams families
 # ---------------------------------------------------------------------------
 
-for k in range(1, 6):
+for k in range(1, 9):
     written.append(write("adams", lmm(
         f"adams_bashforth_{k}", f"Adams-Bashforth {k}", "adams_bashforth", k, k,
         alpha=[1, -1] + [0] * (k - 1),
         beta=[0] + [FREE] * k,
-        startup="rkdp54",
+        startup="rkdp54" if k <= 5 else "rkdp87",
         aliases=[f"ab{k}"],
         description=f"Explicit {k} step Adams method of order {k}. One evaluation per step regardless of order, which is what makes the family cheap.",
         references=[HNW1, DAHLQUIST56],
     )))
 
-for k in range(1, 5):
+for k in range(1, 7):
     written.append(write("adams", lmm(
         f"adams_moulton_{k + 1}", f"Adams-Moulton {k + 1}", "adams_moulton", k + 1, k,
         alpha=[1, -1] + [0] * (k - 1),
         beta=[FREE] * (k + 1),
-        startup="esdirk54",
+        startup="esdirk54" if k <= 4 else "esdirk85",
         aliases=[f"am{k + 1}"],
         description=f"Implicit {k} step Adams method of order {k + 1}. One order higher than the explicit family at the same step count, at the cost of a solve.",
         references=[HNW1, DAHLQUIST56],
@@ -424,6 +498,104 @@ written.append(write("adams", lmm(
     description="Two step implicit method of order four, the highest a two step method can reach. Only weakly stable, which is why it is used inside predictor corrector pairs rather than alone.",
     references=[HNW1, DAHLQUIST56],
 )))
+
+# ---------------------------------------------------------------------------
+# Further explicit methods
+# ---------------------------------------------------------------------------
+
+written.append(write("erk", rk(
+    "kutta3", "Kutta 3", "erk", 3,
+    a=[[0], ["1/2", 0], [-1, 2, 0]], b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
+    aliases=["rk3"],
+    description="Kutta's three stage third order method, the explicit analogue of Simpson's rule.",
+    references=[HNW1],
+)))
+
+written.append(write("erk", rk(
+    "ralston3", "Ralston 3", "erk", 3,
+    a=[[0], ["1/2", 0], [0, "3/4", 0]], b=["2/9", "1/3", "4/9"], c=[0, "1/2", "3/4"],
+    description="Third order method with the minimal truncation error bound among three stage explicit schemes, and the base the Bogacki-Shampine pair is built on.",
+    references=[{
+        "authors": "Ralston, A.",
+        "title": "Runge-Kutta methods with minimum error bounds",
+        "year": 1962,
+        "source": "Mathematics of Computation, 16(80), 431-437",
+        "doi": "10.1090/S0025-5718-1962-0150954-0",
+    }],
+)))
+
+written.append(write("erk", rk(
+    "heun_euler21", "Heun-Euler 2(1)", "erk", 2,
+    a=[[0], [1, 0]], b=["1/2", "1/2"], c=[0, 1],
+    embedded_order=1,
+    b_embedded=[1, 0],
+    description="The smallest embedded pair there is: Heun's method with Euler as its error estimate. Two evaluations per step, and the cheapest way to see step size control work.",
+    references=[HNW1],
+)))
+
+# ---------------------------------------------------------------------------
+# Further diagonally implicit methods
+# ---------------------------------------------------------------------------
+
+written.append(write("dirk", rk(
+    "crouzeix3", "Crouzeix 3", "dirk", 3,
+    a=[["1/2 + sqrt(3)/6", 0], ["-sqrt(3)/3", "1/2 + sqrt(3)/6"]],
+    b=["1/2", "1/2"],
+    c=["1/2 + sqrt(3)/6", "1/2 - sqrt(3)/6"],
+    description="Two stage third order singly diagonally implicit method, the highest order two implicit stages can reach while staying A-stable. Not L-stable, so stiff modes are damped but not killed.",
+    properties={"a_stable": True, "l_stable": False},
+    references=[CROUZEIX75, HW2],
+)))
+
+written.append(write("dirk", rk(
+    "qin_zhang2", "Qin-Zhang 2", "dirk", 2,
+    a=[["1/4", 0], ["1/2", "1/4"]], b=["1/2", "1/2"], c=["1/4", "3/4"],
+    aliases=["symplectic_dirk2"],
+    description="Two stage second order symplectic diagonally implicit method. One factorization per step and quadratic invariants preserved, which the Gauss methods only manage with a coupled solve.",
+    properties={"a_stable": True, "l_stable": False, "symplectic": True},
+    references=[{
+        "authors": "Qin, M. Z., & Zhang, M. Q.",
+        "title": "Symplectic Runge-Kutta algorithms for Hamiltonian systems",
+        "year": 1992,
+        "source": "Journal of Computational Mathematics, Supplementary Issue, 205-215",
+    }],
+)))
+
+written.append(write("esdirk", rk(
+    "trbdf2", "TR-BDF2", "esdirk", 2,
+    a=[
+        [0, 0, 0],
+        ["1 - sqrt(2)/2", "1 - sqrt(2)/2", 0],
+        ["sqrt(2)/4", "sqrt(2)/4", "1 - sqrt(2)/2"],
+    ],
+    b=["sqrt(2)/4", "sqrt(2)/4", "1 - sqrt(2)/2"],
+    c=[0, "2 - sqrt(2)", 1],
+    aliases=["ode23tb"],
+    description="A trapezoidal step to the midpoint followed by a BDF2 step to the end, arranged as a three stage ESDIRK. L-stable, stiffly accurate and singly diagonal, so both implicit stages share one factorization.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+    references=[{
+        "authors": "Hosea, M. E., & Shampine, L. F.",
+        "title": "Analysis and implementation of TR-BDF2",
+        "year": 1996,
+        "source": "Applied Numerical Mathematics, 20(1-2), 21-37",
+        "doi": "10.1016/0168-9274(95)00115-8",
+    }],
+)))
+
+# ---------------------------------------------------------------------------
+# Further multistep methods
+# ---------------------------------------------------------------------------
+
+for k in (3, 4):
+    written.append(write("adams", lmm(
+        f"nystrom{k}", f"Nystrom {k}", "nystrom", None, k,
+        alpha=[1, 0, -1] + [0] * (k - 2),
+        beta=[0] + [FREE] * k,
+        startup="rkdp54",
+        min_steps=2,
+        description=f"Explicit {k} step Nystrom method. The family integrates across two steps rather than one, which buys an order at the cost of a parasitic root sitting on the unit circle.",
+        references=[HNW1],
+    )))
 
 print(f"{len(written)} classical method files written")
 for identifier in written:

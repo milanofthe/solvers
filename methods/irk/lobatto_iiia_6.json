@@ -1,0 +1,48 @@
+{
+  "id": "lobatto_iiia_6",
+  "name": "Lobatto IIIA 6",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 6,
+  "description": "4 stage Lobatto IIIA, the collocation method on the Lobatto nodes. A-stable and symmetric with an explicit first stage.",
+  "properties": {
+    "a_stable": true,
+    "l_stable": false,
+    "stiffly_accurate": true,
+    "symmetric": true,
+    "stage_order": 4
+  },
+  "tableau": {
+    "a": [
+      [0.0, 0.0, 0.0, 0.0],
+      [0.110300566479165, 0.189699433520835, -0.033907364229144, 0.010300566479165],
+      [0.073032766854169, 0.45057403089581, 0.226967233145829, -0.026967233145831],
+      [0.083333333333334, 0.416666666666665, 0.416666666666668, 0.083333333333336]
+    ],
+    "b": [0.083333333333334, 0.416666666666665, 0.416666666666668, 0.083333333333334],
+    "c": [0.0, 0.276393202250021, 0.723606797749977, 1.000000000000002]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Numerical Methods for Ordinary Differential Equations",
+      "year": 2016,
+      "source": "Wiley, 3rd edition",
+      "doi": "10.1002/9781119121534"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}
