@@ -176,6 +176,17 @@ pub fn stability_grid(
         .collect())
 }
 
+/// The window `stability_grid` should be given for this method.
+///
+/// The caller says how wide its panel is relative to its height; where to look
+/// is worked out from the method, by probing where its region actually is.
+#[wasm_bindgen]
+pub fn stability_window(id: &str, aspect: f64) -> Result<String, JsValue> {
+    let method = find(id)?;
+    let (re, im) = analysis::suggested_window(method, aspect);
+    Ok(serde_json::to_string(&json!({ "re": [re.0, re.1], "im": [im.0, im.1] })).unwrap_or_default())
+}
+
 /// The boundary locus of a multistep method, interleaved as `re, im, re, im`.
 #[wasm_bindgen]
 pub fn boundary_locus(id: &str, samples: usize) -> Result<Vec<f64>, JsValue> {

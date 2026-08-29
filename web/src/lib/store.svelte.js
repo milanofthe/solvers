@@ -30,6 +30,7 @@ export const ui = $state({
 	query: '',
 	tags: [],
 	sort: 'family',
+	selecting: false,
 	selection: [],
 	// Problems
 	problemMode: 'solution',

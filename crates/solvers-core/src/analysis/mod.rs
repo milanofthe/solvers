@@ -280,3 +280,167 @@ pub fn stability_region(
         }
     }
 }
+
+/// A window on the complex plane that actually contains the picture.
+///
+/// A fixed window per method class is always wrong for somebody: backward Euler
+/// needs a couple of units, Radau needs a dozen, and an eight stage explicit
+/// pair needs more still. So the window is measured rather than guessed. A
+/// coarse probe is sampled, and whichever of the stable and the unstable set
+/// turns out to be bounded is the one that sets the extent; the other is the
+/// half plane the method lives in and has no extent to speak of.
+pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)) {
+    let scale = probe_scale(method);
+    let probe = (-scale, scale);
+    let samples = 72;
+
+    let fallback = shape_to_aspect((-scale * 0.6, scale * 0.4), (-scale * 0.5, scale * 0.5), aspect);
+    let Some(grid) = stability_region(method, probe, probe, samples, samples) else {
+        return fallback;
+    };
+
+    let mut stable = Bounds::empty();
+    let mut unstable = Bounds::empty();
+    for row in 0..grid.height {
+        let y = probe.0 + (probe.1 - probe.0) * row as f64 / (grid.height - 1) as f64;
+        for column in 0..grid.width {
+            let x = probe.0 + (probe.1 - probe.0) * column as f64 / (grid.width - 1) as f64;
+            let value = grid.magnitude[row * grid.width + column];
+            let edge = row == 0 || column == 0 || row + 1 == grid.height || column + 1 == grid.width;
+            if value.is_finite() && value <= 1.0 {
+                stable.include(x, y, edge);
+            } else {
+                unstable.include(x, y, edge);
+            }
+        }
+    }
+
+    // The bounded set is the one that does not run off the probe.
+    let chosen = if stable.bounded() {
+        stable
+    } else if unstable.bounded() {
+        unstable
+    } else {
+        // Neither set is bounded: the boundary is a line through the plane, as
+        // it is for a method whose region is exactly a half plane. Then the only
+        // scale that means anything is the one around the origin.
+        return fallback;
+    };
+
+    // The origin is the reference point of every one of these pictures, so it
+    // stays in view even when the interesting set sits away from it.
+    let mut x0 = chosen.x0.min(0.0);
+    let mut x1 = chosen.x1.max(0.0);
+    let mut y0 = chosen.y0.min(0.0);
+    let mut y1 = chosen.y1.max(0.0);
+
+    let pad_x = ((x1 - x0) * 0.22).max(0.4);
+    let pad_y = ((y1 - y0) * 0.22).max(0.4);
+    x0 -= pad_x;
+    x1 += pad_x;
+    y0 -= pad_y;
+    y1 += pad_y;
+
+    shape_to_aspect((x0, x1), (y0, y1), aspect)
+}
+
+#[derive(Clone, Copy)]
+struct Bounds {
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
+    touches_edge: bool,
+    any: bool,
+}
+
+impl Bounds {
+    fn empty() -> Bounds {
+        Bounds {
+            x0: f64::INFINITY,
+            x1: f64::NEG_INFINITY,
+            y0: f64::INFINITY,
+            y1: f64::NEG_INFINITY,
+            touches_edge: false,
+            any: false,
+        }
+    }
+
+    fn include(&mut self, x: f64, y: f64, edge: bool) {
+        self.x0 = self.x0.min(x);
+        self.x1 = self.x1.max(x);
+        self.y0 = self.y0.min(y);
+        self.y1 = self.y1.max(y);
+        self.touches_edge |= edge;
+        self.any = true;
+    }
+
+    fn bounded(&self) -> bool {
+        self.any && !self.touches_edge
+    }
+}
+
+/// Grow the shorter side until the box has the aspect the panel does, so the
+/// data fills the frame without a shape being stretched out of true.
+fn shape_to_aspect(re: (f64, f64), im: (f64, f64), aspect: f64) -> ((f64, f64), (f64, f64)) {
+    let width = re.1 - re.0;
+    let height = im.1 - im.0;
+    if width <= 0.0 || height <= 0.0 || !aspect.is_finite() || aspect <= 0.0 {
+        return (re, im);
+    }
+    if width / height < aspect {
+        let target = height * aspect;
+        let centre = 0.5 * (re.0 + re.1);
+        ((centre - target / 2.0, centre + target / 2.0), im)
+    } else {
+        let target = width / aspect;
+        let centre = 0.5 * (im.0 + im.1);
+        (re, (centre - target / 2.0, centre + target / 2.0))
+    }
+}
+
+/// A generous first guess at the extent, only used to place the probe.
+fn probe_scale(method: &Method) -> f64 {
+    let scale = match &method.kind {
+        MethodKind::RungeKutta(tableau) => {
+            let function = StabilityFunction::from_tableau(tableau);
+            let poles = function.poles();
+            if !poles.is_empty() {
+                // The poles are where the picture has its structure.
+                3.0 * poles.iter().fold(1.0f64, |acc, p| acc.max(p.abs()))
+            } else {
+                // An explicit method is bounded by its real axis limit.
+                let limit = function.real_stability_limit();
+                if limit.is_finite() {
+                    2.5 * limit.abs()
+                } else {
+                    12.0
+                }
+            }
+        }
+        MethodKind::LinearMultistep(family) => match family.uniform_coefficients() {
+            Ok(coefficients) => {
+                // The boundary locus traces the edge of the region directly, but
+                // it runs to infinity whenever sigma has a root on the unit
+                // circle, which is exactly the case for the methods whose region
+                // is a half plane. A middle quantile is immune to that tail and
+                // still tracks the size of the picture.
+                let polynomials = GeneratingPolynomials::from_coefficients(&coefficients);
+                let mut moduli: Vec<f64> = polynomials
+                    .boundary_locus(240)
+                    .iter()
+                    .map(|z| z.abs())
+                    .filter(|v| v.is_finite())
+                    .collect();
+                if moduli.is_empty() {
+                    return 12.0;
+                }
+                moduli.sort_by(f64::total_cmp);
+                let median = moduli[moduli.len() / 2];
+                4.0 * median
+            }
+            Err(_) => 12.0,
+        },
+    };
+    scale.clamp(2.0, 200.0)
+}

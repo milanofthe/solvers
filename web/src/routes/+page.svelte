@@ -111,6 +111,24 @@
 
 {#snippet controls()}
 	<div class="rail-group">
+		<p class="label mb-1">select</p>
+		<button
+			type="button"
+			class="facet {ui.selecting ? 'facet-on' : ''}"
+			onclick={() => (ui.selecting = !ui.selecting)}
+		>
+			<span>{ui.selecting ? 'selecting' : 'off'}</span>
+			<span class="text-accent">{ui.selection.length || ''}</span>
+		</button>
+		{#if ui.selection.length > 0}
+			<button type="button" class="facet" onclick={() => (ui.selection = [])}>
+				<span>clear</span>
+			</button>
+			<a href="/compare" class="facet facet-on"><span>compare</span></a>
+		{/if}
+	</div>
+
+	<div class="rail-group">
 		<p class="label mb-1">show</p>
 		{#each METHOD_MODES as entry}
 			<button type="button" class="facet {ui.mode === entry.key ? 'facet-on' : ''}" onclick={() => setMode(entry.key)}>
@@ -191,14 +209,3 @@
 		<MethodCard {method} />
 	{/each}
 </div>
-
-{#if ui.selection.length > 0}
-	<div
-		class="sticky bottom-4 mt-6 flex items-center gap-4 border border-cream/15 bg-charcoal-light px-3 py-2"
-	>
-		<span class="font-mono text-xs text-cream">{ui.selection.length} selected</span>
-		<span class="truncate font-mono text-xs text-accent">{ui.selection.join('  ')}</span>
-		<button type="button" class="action ml-auto" onclick={() => (ui.selection = [])}>[ clear ]</button>
-		<a href="/compare" class="action-on">[ compare ]</a>
-	</div>
-{/if}

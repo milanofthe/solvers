@@ -41,6 +41,19 @@ const HANDLERS = {
 	stabilityGrid: ({ id, re, im, width, height }) => {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
+	},
+	stabilityGridAuto: ({ id, aspect, width, height }) => {
+		const view = JSON.parse(wasm.stability_window(id, aspect));
+		const data = wasm.stability_grid(
+			id,
+			view.re[0],
+			view.re[1],
+			view.im[0],
+			view.im[1],
+			width,
+			height
+		);
+		return { data, width, height, re: view.re, im: view.im };
 	}
 };
 

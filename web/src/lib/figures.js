@@ -32,28 +32,12 @@ function axisValues(low, high, count) {
 }
 
 /**
- * Window on the complex plane, sized to the method and shaped to the panel.
- *
- * The aspect matters: a stability region is a shape, and stretching one axis
- * against the other turns a disc into an ellipse. Rather than letterbox the
- * plot to force equal axes, the window is cut to the aspect the panel already
- * has, so the data fills it and still reads as the right shape.
+ * The panel is wider than it is tall, and the window is cut to that ratio so a
+ * region fills the frame without a shape being stretched out of true. Where the
+ * window sits is not guessed here: the core probes the method and reports back
+ * a box that actually contains its region.
  */
 const PANEL_ASPECT = 1.7;
-
-function stabilityWindow(method) {
-	const box = (left, right) => {
-		const half = (right - left) / (2 * PANEL_ASPECT);
-		return { re: [left, right], im: [-half, half] };
-	};
-	if (method.class === 'linear_multistep') {
-		const reach = method.aStable ? 9 : 6;
-		return box(-reach, reach * 0.35);
-	}
-	if (method.implicit) return box(-11, 5);
-	const reach = Math.max(4, (method.size ?? 4) * 1.05);
-	return box(-reach * 1.6, reach * 0.45);
-}
 
 /** The order star lives around the origin and reaches about as far as the order. */
 function orderStarWindow(method) {
@@ -94,20 +78,25 @@ const stability = {
 	label: 'stability',
 	note: 'Banded log |R(z)| on the complex plane with the unit contour on top. The region it encloses is where the method does not amplify.',
 	request(engine, method, priority) {
-		const view = stabilityWindow(method);
 		const resolution = GRID[method.class] ?? 96;
 		return engine.request(
-			'stabilityGrid',
-			{ id: method.id, re: view.re, im: view.im, width: resolution, height: resolution },
+			'stabilityGridAuto',
+			{ id: method.id, aspect: PANEL_ASPECT, width: resolution, height: resolution },
 			{ key: `stability:${method.id}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
 		const { data, width, height, re, im } = result;
-		let reach = 1;
-		for (const value of data) {
-			if (Number.isFinite(value)) reach = Math.max(reach, Math.min(Math.abs(value), 4));
+		// The colour range follows the data rather than a fixed span. A method
+		// whose region is a half plane varies by a fraction of a decade across
+		// the whole window, and a fixed range would render it as one flat wash.
+		const sample = [];
+		for (let i = 0; i < data.length; i += Math.max(1, Math.floor(data.length / 2000))) {
+			if (Number.isFinite(data[i])) sample.push(Math.abs(data[i]));
 		}
+		sample.sort((a, b) => a - b);
+		const quantile = sample[Math.floor(sample.length * 0.97)] ?? 1;
+		const reach = Math.min(Math.max(quantile, 0.3), 4);
 		const z = reshape(data, width, height);
 		const x = axisValues(re[0], re[1], width);
 		const y = axisValues(im[0], im[1], height);

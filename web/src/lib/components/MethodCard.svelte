@@ -71,49 +71,49 @@
 		? 'border-amber'
 		: 'border-cream/10 hover:border-cream/25'}"
 >
-	<header class="flex items-baseline justify-between gap-2 px-3 pt-2">
-		<h3 class="truncate font-display text-sm text-cream" title={method.name}>{method.name}</h3>
-		<span class="shrink-0 font-mono text-xs {selected ? 'text-amber' : 'text-accent'}"
-			>{method.id}</span
-		>
-	</header>
-
-	<button
-		type="button"
-		class="mt-2 cursor-pointer text-left"
-		onclick={() => toggleSelection(method.id)}
-		aria-pressed={selected}
-		aria-label="select {method.name}"
-	>
-		<Plot {figure} class="h-40 w-full" />
-	</button>
-
-	<dl class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
-		<div><dt class="inline">order</dt> <dd class="inline text-cream">{method.order}</dd></div>
-		<div>
-			<dt class="inline">{method.class === 'runge_kutta' ? 'stages' : 'steps'}</dt>
-			<dd class="inline text-cream">{method.size}</dd>
-		</div>
-		<div><dt class="inline">cost</dt> <dd class="inline text-cream">{method.stageCost}</dd></div>
-		{#if method.dampingAtInfinity != null}
-			<div>
-				<dt class="inline">R&#8734;</dt>
-				<dd class="inline text-cream">{limit(method.dampingAtInfinity)}</dd>
-			</div>
-		{/if}
-	</dl>
-
-	<p class="px-3 pt-1 font-mono text-xs text-accent">
-		{stabilityLabel(method)}{#each shownTags as name}<span class="text-cream/25"> / </span>{name}{/each}
-	</p>
-
-	{#if method.discrepancies.length}
-		<p class="px-3 pt-1 font-mono text-xs text-[#d9513c]">{method.discrepancies[0]}</p>
-	{/if}
-
+	<!-- The card is the method, so it links to the method. While the library is
+	     in selection mode the same click picks it for a comparison instead; the
+	     href stays put, which keeps opening it in a new tab working either way. -->
 	<a
 		href="/methods/{method.id}"
-		class="action mt-auto px-3 pb-2 pt-2 hover:text-cream"
-		aria-label="coefficients and sources for {method.name}">[ coefficients ]</a
+		class="block"
+		data-selected={selected}
+		onclick={(event) => {
+			if (!ui.selecting) return;
+			event.preventDefault();
+			toggleSelection(method.id);
+		}}
 	>
+		<header class="flex items-baseline justify-between gap-2 px-3 pt-2">
+			<h3 class="truncate font-display text-sm text-cream" title={method.name}>{method.name}</h3>
+			<span class="shrink-0 font-mono text-xs {selected ? 'text-amber' : 'text-accent'}"
+				>{method.id}</span
+			>
+		</header>
+
+		<Plot {figure} class="mt-2 h-40 w-full" />
+
+		<dl class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
+			<div><dt class="inline">order</dt> <dd class="inline text-cream">{method.order}</dd></div>
+			<div>
+				<dt class="inline">{method.class === 'runge_kutta' ? 'stages' : 'steps'}</dt>
+				<dd class="inline text-cream">{method.size}</dd>
+			</div>
+			<div><dt class="inline">cost</dt> <dd class="inline text-cream">{method.stageCost}</dd></div>
+			{#if method.dampingAtInfinity != null}
+				<div>
+					<dt class="inline">R&#8734;</dt>
+					<dd class="inline text-cream">{limit(method.dampingAtInfinity)}</dd>
+				</div>
+			{/if}
+		</dl>
+
+		<p class="px-3 pb-3 pt-1 font-mono text-xs text-accent">
+			{stabilityLabel(method)}{#each shownTags as name}<span class="text-cream/25"> / </span>{name}{/each}
+		</p>
+
+		{#if method.discrepancies.length}
+			<p class="px-3 pb-3 font-mono text-xs text-[#d9513c]">{method.discrepancies[0]}</p>
+		{/if}
+	</a>
 </article>
