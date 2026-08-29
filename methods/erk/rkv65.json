@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 6,
   "embedded_order": 5,
-  "description": "Verner 6(5) \"most robust\" pair. Nine stages, 6th order with embedded 5th order error estimate.",
   "tableau": {
     "a": [
       [0],

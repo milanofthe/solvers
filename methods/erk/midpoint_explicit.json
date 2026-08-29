@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 2,
   "aliases": ["explicit_midpoint", "rk2_midpoint"],
-  "description": "Two stage second order method that takes a half step to sample the slope at the centre of the interval.",
   "tableau": {
     "a": [
       [0],

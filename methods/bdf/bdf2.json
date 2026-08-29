@@ -5,7 +5,6 @@
   "family": "bdf",
   "order": 2,
   "aliases": ["gear2"],
-  "description": "Backward differentiation formula of order 2. A-stable and the highest order BDF that is. The workhorse for stiff problems where robustness matters more than order.",
   "properties": {
     "a_stable": true
   },

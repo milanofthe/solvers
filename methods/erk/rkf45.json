@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 5,
   "embedded_order": 4,
-  "description": "Runge-Kutta-Fehlberg 5(4) pair. Six stages, 5th order propagation with an embedded 4th order solution for local error estimation (local extrapolation, matching the ``RKCK54`` / ``RKDP54`` convention).",
   "tableau": {
     "a": [
       [0],

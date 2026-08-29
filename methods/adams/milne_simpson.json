@@ -5,7 +5,6 @@
   "family": "milne_simpson",
   "order": 4,
   "aliases": ["simpson_lmm"],
-  "description": "Two step implicit method of order four, the highest a two step method can reach. Only weakly stable, which is why it is used inside predictor corrector pairs rather than alone.",
   "multistep": {
     "steps": 2,
     "alpha": [1, 0, -1],

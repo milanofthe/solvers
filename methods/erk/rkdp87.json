@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 8,
   "embedded_order": 7,
-  "description": "Dormand-Prince 8(7) pair (DOP853). Thirteen stages, 8th order with embedded 7th order error estimate.",
   "tableau": {
     "a": [
       [0],

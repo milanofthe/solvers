@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 6,
   "aliases": ["gauss6"],
-  "description": "Three stage Gauss method, sixth order and symplectic. Highest order per stage of any Runge-Kutta method.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

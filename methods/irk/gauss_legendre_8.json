@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 8,
   "aliases": ["gauss8"],
-  "description": "4 stage Gauss method of order 8, the highest any Runge-Kutta method of this size can reach. Symplectic and symmetric, so it preserves quadratic invariants exactly.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

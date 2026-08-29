@@ -353,7 +353,7 @@
 				<span class="text-accent">&times;</span>
 			</button>
 		{/each}
-		<a href="/" class="action mt-2 inline-block">[ choose in the library ]</a>
+		<a href="/" class="rail-link mt-2">choose in the library</a>
 	</div>
 {/snippet}
 

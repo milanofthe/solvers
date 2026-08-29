@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "ssprk",
   "order": 3,
-  "description": "Three-stage, 3rd order optimal SSP Runge-Kutta method.",
   "tableau": {
     "a": [
       [0],

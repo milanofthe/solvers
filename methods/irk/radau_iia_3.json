@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 3,
   "aliases": ["radau3", "radau_iia_2s"],
-  "description": "Two stage Radau IIA. L-stable, stiffly accurate, stage order two, and the cheapest fully implicit method worth using on a stiff problem.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

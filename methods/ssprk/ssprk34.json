@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "ssprk",
   "order": 3,
-  "description": "Four-stage, 3rd order SSP Runge-Kutta method with SSP coefficient 2.",
   "tableau": {
     "a": [
       [0],

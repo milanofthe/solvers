@@ -5,7 +5,6 @@
   "family": "esdirk",
   "order": 3,
   "embedded_order": 2,
-  "description": "Four-stage, 3rd order ESDIRK method with embedded 2nd order error estimate. L-stable and stiffly accurate.",
   "tableau": {
     "a": [
       [0],

@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "irk",
   "order": 4,
-  "description": "Three stage Lobatto IIIA, the collocation method on Simpson's nodes. A-stable and symmetric with an explicit first stage.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

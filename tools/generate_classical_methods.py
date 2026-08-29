@@ -178,7 +178,7 @@ def rk(identifier, name, family, order, a, b, c, **extra):
         "family": family,
         "order": order,
     }
-    for key in ("aliases", "description", "tags", "embedded_order", "properties", "defaults"):
+    for key in ("aliases", "tags", "embedded_order", "properties", "defaults"):
         if key in extra:
             method[key] = extra.pop(key)
     tableau = {"a": a, "b": b, "c": c}
@@ -202,7 +202,7 @@ def lmm(identifier, name, family, order, steps, alpha, beta, **extra):
         "family": family,
         "order": derived,
     }
-    for key in ("aliases", "description", "tags", "properties", "defaults"):
+    for key in ("aliases", "tags", "properties", "defaults"):
         if key in extra:
             method[key] = extra.pop(key)
     method["multistep"] = {
@@ -232,7 +232,6 @@ written.append(write("erk", rk(
     "euler_explicit", "Forward Euler", "erk", 1,
     a=[[0]], b=[1], c=[0],
     aliases=["euler", "forward_euler", "explicit_euler"],
-    description="The first order explicit method. One evaluation per step, and the reference point every other explicit method is measured against.",
     references=[HNW1],
 )))
 
@@ -240,14 +239,12 @@ written.append(write("erk", rk(
     "midpoint_explicit", "Explicit midpoint", "erk", 2,
     a=[[0], ["1/2", 0]], b=[0, 1], c=[0, "1/2"],
     aliases=["explicit_midpoint", "rk2_midpoint"],
-    description="Two stage second order method that takes a half step to sample the slope at the centre of the interval.",
     references=[HNW1],
 )))
 
 written.append(write("erk", rk(
     "ralston2", "Ralston 2", "erk", 2,
     a=[[0], ["2/3", 0]], b=["1/4", "3/4"], c=[0, "2/3"],
-    description="Second order method with the minimal truncation error bound among two stage explicit schemes.",
     references=[{
         "authors": "Ralston, A.",
         "title": "Runge-Kutta methods with minimum error bounds",
@@ -260,7 +257,6 @@ written.append(write("erk", rk(
 written.append(write("erk", rk(
     "heun3", "Heun 3", "erk", 3,
     a=[[0], ["1/3", 0], [0, "2/3", 0]], b=["1/4", 0, "3/4"], c=[0, "1/3", "2/3"],
-    description="Three stage third order method of Heun.",
     references=[HNW1],
 )))
 
@@ -269,7 +265,6 @@ written.append(write("erk", rk(
     a=[[0], ["1/3", 0], ["-1/3", 1, 0], [1, -1, 1, 0]],
     b=["1/8", "3/8", "3/8", "1/8"], c=[0, "1/3", "2/3", 1],
     aliases=["rk4_38"],
-    description="Kutta's 3/8 rule. Fourth order like the classical method, with slightly smaller error constants at the same cost.",
     references=[HNW1],
 )))
 
@@ -281,7 +276,6 @@ written.append(write("dirk", rk(
     "euler_implicit", "Backward Euler", "dirk", 1,
     a=[[1]], b=[1], c=[1],
     aliases=["backward_euler", "implicit_euler"],
-    description="The first order implicit method. L-stable and unconditionally damping, which makes it the fallback whenever a step has to succeed rather than be accurate.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 1},
     references=[HW2],
 )))
@@ -290,7 +284,6 @@ written.append(write("dirk", rk(
     "implicit_midpoint", "Implicit midpoint", "dirk", 2,
     a=[["1/2"]], b=[1], c=["1/2"],
     aliases=["midpoint_implicit", "gauss_legendre_2"],
-    description="One stage second order Gauss method. A-stable, symmetric and symplectic, so it preserves quadratic invariants exactly.",
     properties={"a_stable": True, "l_stable": False, "stiffly_accurate": False,
                 "symplectic": True, "symmetric": True, "stage_order": 1},
     references=[HW2],
@@ -300,7 +293,6 @@ written.append(write("dirk", rk(
     "trapezoidal", "Trapezoidal rule", "dirk", 2,
     a=[[0, 0], ["1/2", "1/2"]], b=["1/2", "1/2"], c=[0, 1],
     aliases=["crank_nicolson", "trapezoid"],
-    description="Second order A-stable rule. Symmetric but not L-stable, so stiff modes are reflected rather than damped and oscillate at the step frequency.",
     properties={"a_stable": True, "l_stable": False, "stiffly_accurate": True, "symmetric": True},
     references=[HW2],
 )))
@@ -310,7 +302,6 @@ written.append(write("dirk", rk(
     a=[["1 - sqrt(2)/2", 0], ["sqrt(2)/2", "1 - sqrt(2)/2"]],
     b=["sqrt(2)/2", "1 - sqrt(2)/2"],
     c=["1 - sqrt(2)/2", 1],
-    description="Two stage second order singly diagonally implicit method. L-stable and stiffly accurate, with one factorization serving both stages.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
     references=[EHLE69, HW2],
 )))
@@ -325,7 +316,6 @@ written.append(write("dirk", rk(
        [-(6 * GAMMA3 ** 2 - 16 * GAMMA3 + 1) / 4, (6 * GAMMA3 ** 2 - 20 * GAMMA3 + 5) / 4, GAMMA3]],
     b=[-(6 * GAMMA3 ** 2 - 16 * GAMMA3 + 1) / 4, (6 * GAMMA3 ** 2 - 20 * GAMMA3 + 5) / 4, GAMMA3],
     c=[GAMMA3, (1 + GAMMA3) / 2, 1],
-    description="Three stage third order singly diagonally implicit method. L-stable and stiffly accurate; the diagonal entry is the middle root of x^3 - 3x^2 + 3x/2 - 1/6.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
     references=[NORSETT74, CROUZEIX75, HW2],
 )))
@@ -339,7 +329,6 @@ written.append(write("irk", rk(
     a=[["5/12", "-1/12"], ["3/4", "1/4"]],
     b=["3/4", "1/4"], c=["1/3", 1],
     aliases=["radau3", "radau_iia_2s"],
-    description="Two stage Radau IIA. L-stable, stiffly accurate, stage order two, and the cheapest fully implicit method worth using on a stiff problem.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 2},
     references=[BUTCHER64, HW2],
 )))
@@ -352,7 +341,6 @@ written.append(write("irk", rk(
     b=["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"],
     c=["(4 - sqrt(6))/10", "(4 + sqrt(6))/10", 1],
     aliases=["radau5", "radau_iia_3s"],
-    description="Three stage Radau IIA, the method behind RADAU5. Fifth order, L-stable, stiffly accurate and stage order three, which is why it barely suffers order reduction.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 3},
     references=[BUTCHER64, HW2],
 )))
@@ -363,7 +351,6 @@ written.append(write("irk", rk(
     b=["1/2", "1/2"],
     c=["1/2 - sqrt(3)/6", "1/2 + sqrt(3)/6"],
     aliases=["gauss4"],
-    description="Two stage Gauss method. Fourth order from two stages, the maximum attainable, and symplectic, so it is the natural choice for Hamiltonian systems.",
     properties={"a_stable": True, "l_stable": False, "symplectic": True, "symmetric": True, "stage_order": 2},
     references=[BUTCHER64, HW2],
 )))
@@ -376,7 +363,6 @@ written.append(write("irk", rk(
     b=["5/18", "4/9", "5/18"],
     c=["1/2 - sqrt(15)/10", "1/2", "1/2 + sqrt(15)/10"],
     aliases=["gauss6"],
-    description="Three stage Gauss method, sixth order and symplectic. Highest order per stage of any Runge-Kutta method.",
     properties={"a_stable": True, "l_stable": False, "symplectic": True, "symmetric": True, "stage_order": 3},
     references=[BUTCHER64, HW2],
 )))
@@ -385,7 +371,6 @@ written.append(write("irk", rk(
     "lobatto_iiia_4", "Lobatto IIIA 4", "irk", 4,
     a=[[0, 0, 0], ["5/24", "1/3", "-1/24"], ["1/6", "2/3", "1/6"]],
     b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
-    description="Three stage Lobatto IIIA, the collocation method on Simpson's nodes. A-stable and symmetric with an explicit first stage.",
     properties={"a_stable": True, "l_stable": False, "stiffly_accurate": True, "symmetric": True, "stage_order": 3},
     references=[BUTCHER16, HW2],
 )))
@@ -394,7 +379,6 @@ written.append(write("irk", rk(
     "lobatto_iiib_4", "Lobatto IIIB 4", "irk", 4,
     a=[["1/6", "-1/6", 0], ["1/6", "1/3", 0], ["1/6", "5/6", 0]],
     b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
-    description="Three stage Lobatto IIIB. The adjoint of IIIA, and paired with it forms a symplectic partitioned method for separable Hamiltonians.",
     properties={"a_stable": True, "l_stable": False, "symmetric": True},
     references=[BUTCHER16, HW2],
 )))
@@ -403,7 +387,6 @@ written.append(write("irk", rk(
     "lobatto_iiic_2", "Lobatto IIIC 2", "irk", 2,
     a=[["1/2", "-1/2"], ["1/2", "1/2"]],
     b=["1/2", "1/2"], c=[0, 1],
-    description="Two stage Lobatto IIIC. L-stable and stiffly accurate, with strong damping that also handles index one differential algebraic systems.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 1},
     references=[BUTCHER16, HW2],
 )))
@@ -412,7 +395,6 @@ written.append(write("irk", rk(
     "lobatto_iiic_4", "Lobatto IIIC 4", "irk", 4,
     a=[["1/6", "-1/3", "1/6"], ["1/6", "5/12", "-1/12"], ["1/6", "2/3", "1/6"]],
     b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
-    description="Three stage Lobatto IIIC. Fourth order, L-stable and stiffly accurate; the damping at infinity is what IIIA lacks.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 2},
     references=[BUTCHER16, HW2],
 )))
@@ -444,7 +426,6 @@ for k in range(1, 7):
         beta=[1] + [0] * k,
         startup=BDF_STARTUP[k],
         aliases=[f"gear{k}"] if k > 1 else ["gear1"],
-        description=f"Backward differentiation formula of order {k}. {BDF_NOTES[k]}",
         properties={"a_stable": k <= 2},
         references=[CURTISS52, DAHLQUIST63, HW2],
     )))
@@ -460,7 +441,6 @@ for k in range(1, 9):
         beta=[0] + [FREE] * k,
         startup="rkdp54" if k <= 5 else "rkdp87",
         aliases=[f"ab{k}"],
-        description=f"Explicit {k} step Adams method of order {k}. One evaluation per step regardless of order, which is what makes the family cheap.",
         references=[HNW1, DAHLQUIST56],
     )))
 
@@ -471,7 +451,6 @@ for k in range(1, 7):
         beta=[FREE] * (k + 1),
         startup="esdirk54" if k <= 4 else "esdirk85",
         aliases=[f"am{k + 1}"],
-        description=f"Implicit {k} step Adams method of order {k + 1}. One order higher than the explicit family at the same step count, at the cost of a solve.",
         references=[HNW1, DAHLQUIST56],
     )))
 
@@ -485,7 +464,6 @@ written.append(write("adams", lmm(
     startup="rkdp54",
     min_steps=2,
     aliases=["explicit_midpoint_lmm", "leapfrog"],
-    description="Explicit midpoint rule as a two step method. Weakly stable: the parasitic root sits on the unit circle, so errors neither grow nor decay.",
     references=[HNW1],
 )))
 
@@ -495,7 +473,6 @@ written.append(write("adams", lmm(
     startup="rkdp54",
     min_steps=2,
     aliases=["simpson_lmm"],
-    description="Two step implicit method of order four, the highest a two step method can reach. Only weakly stable, which is why it is used inside predictor corrector pairs rather than alone.",
     references=[HNW1, DAHLQUIST56],
 )))
 
@@ -507,14 +484,12 @@ written.append(write("erk", rk(
     "kutta3", "Kutta 3", "erk", 3,
     a=[[0], ["1/2", 0], [-1, 2, 0]], b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
     aliases=["rk3"],
-    description="Kutta's three stage third order method, the explicit analogue of Simpson's rule.",
     references=[HNW1],
 )))
 
 written.append(write("erk", rk(
     "ralston3", "Ralston 3", "erk", 3,
     a=[[0], ["1/2", 0], [0, "3/4", 0]], b=["2/9", "1/3", "4/9"], c=[0, "1/2", "3/4"],
-    description="Third order method with the minimal truncation error bound among three stage explicit schemes, and the base the Bogacki-Shampine pair is built on.",
     references=[{
         "authors": "Ralston, A.",
         "title": "Runge-Kutta methods with minimum error bounds",
@@ -529,7 +504,6 @@ written.append(write("erk", rk(
     a=[[0], [1, 0]], b=["1/2", "1/2"], c=[0, 1],
     embedded_order=1,
     b_embedded=[1, 0],
-    description="The smallest embedded pair there is: Heun's method with Euler as its error estimate. Two evaluations per step, and the cheapest way to see step size control work.",
     references=[HNW1],
 )))
 
@@ -542,7 +516,6 @@ written.append(write("dirk", rk(
     a=[["1/2 + sqrt(3)/6", 0], ["-sqrt(3)/3", "1/2 + sqrt(3)/6"]],
     b=["1/2", "1/2"],
     c=["1/2 + sqrt(3)/6", "1/2 - sqrt(3)/6"],
-    description="Two stage third order singly diagonally implicit method, the highest order two implicit stages can reach while staying A-stable. Not L-stable, so stiff modes are damped but not killed.",
     properties={"a_stable": True, "l_stable": False},
     references=[CROUZEIX75, HW2],
 )))
@@ -551,7 +524,6 @@ written.append(write("dirk", rk(
     "qin_zhang2", "Qin-Zhang 2", "dirk", 2,
     a=[["1/4", 0], ["1/2", "1/4"]], b=["1/2", "1/2"], c=["1/4", "3/4"],
     aliases=["symplectic_dirk2"],
-    description="Two stage second order symplectic diagonally implicit method. One factorization per step and quadratic invariants preserved, which the Gauss methods only manage with a coupled solve.",
     properties={"a_stable": True, "l_stable": False, "symplectic": True},
     references=[{
         "authors": "Qin, M. Z., & Zhang, M. Q.",
@@ -571,7 +543,6 @@ written.append(write("esdirk", rk(
     b=["sqrt(2)/4", "sqrt(2)/4", "1 - sqrt(2)/2"],
     c=[0, "2 - sqrt(2)", 1],
     aliases=["ode23tb"],
-    description="A trapezoidal step to the midpoint followed by a BDF2 step to the end, arranged as a three stage ESDIRK. L-stable, stiffly accurate and singly diagonal, so both implicit stages share one factorization.",
     properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
     references=[{
         "authors": "Hosea, M. E., & Shampine, L. F.",
@@ -593,7 +564,6 @@ for k in (3, 4):
         beta=[0] + [FREE] * k,
         startup="rkdp54",
         min_steps=2,
-        description=f"Explicit {k} step Nystrom method. The family integrates across two steps rather than one, which buys an order at the cost of a parasitic root sitting on the unit circle.",
         references=[HNW1],
     )))
 

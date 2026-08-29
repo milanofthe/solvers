@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 3,
   "aliases": ["rk3"],
-  "description": "Kutta's three stage third order method, the explicit analogue of Simpson's rule.",
   "tableau": {
     "a": [
       [0],

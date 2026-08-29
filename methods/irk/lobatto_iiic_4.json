@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "irk",
   "order": 4,
-  "description": "Three stage Lobatto IIIC. Fourth order, L-stable and stiffly accurate; the damping at infinity is what IIIA lacks.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

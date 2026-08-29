@@ -5,7 +5,6 @@
   "family": "dirk",
   "order": 2,
   "aliases": ["symplectic_dirk2"],
-  "description": "Two stage second order symplectic diagonally implicit method. One factorization per step and quadratic invariants preserved, which the Gauss methods only manage with a coupled solve.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

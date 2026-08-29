@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 4,
   "aliases": ["rk4_38"],
-  "description": "Kutta's 3/8 rule. Fourth order like the classical method, with slightly smaller error constants at the same cost.",
   "tableau": {
     "a": [
       [0],

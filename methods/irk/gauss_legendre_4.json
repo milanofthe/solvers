@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 4,
   "aliases": ["gauss4"],
-  "description": "Two stage Gauss method. Fourth order from two stages, the maximum attainable, and symplectic, so it is the natural choice for Hamiltonian systems.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

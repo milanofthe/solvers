@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "dirk",
   "order": 3,
-  "description": "Two stage third order singly diagonally implicit method, the highest order two implicit stages can reach while staying A-stable. Not L-stable, so stiff modes are damped but not killed.",
   "properties": {
     "a_stable": true,
     "l_stable": false

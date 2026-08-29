@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "dirk",
   "order": 2,
-  "description": "Two-stage, 2nd order DIRK method. L-stable, SSP-optimal, symplectic.",
   "tableau": {
     "a": [
       ["1/4"],

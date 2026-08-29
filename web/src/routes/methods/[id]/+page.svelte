@@ -145,7 +145,7 @@
 		{/each}
 	</div>
 	<div class="rail-group">
-		<a href="/" class="action">[ back to the library ]</a>
+		<a href="/" class="rail-link">back to the library</a>
 	</div>
 {/snippet}
 
@@ -157,9 +157,6 @@
 			<h1 class="font-display text-lg text-cream">{method.name}</h1>
 			<span class="font-mono text-xs text-accent">{method.id}</span>
 		</div>
-		{#if method.description}
-			<p class="mt-2 max-w-[80ch] text-xs text-cream/60">{method.description}</p>
-		{/if}
 		{#if structureLine}
 			<p class="label mt-3">{structureLine}</p>
 		{/if}

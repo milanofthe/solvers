@@ -5,7 +5,6 @@
   "family": "adams_bashforth",
   "order": 8,
   "aliases": ["ab8"],
-  "description": "Explicit 8 step Adams method of order 8. One evaluation per step regardless of order, which is what makes the family cheap.",
   "multistep": {
     "steps": 8,
     "alpha": [1, -1, 0, 0, 0, 0, 0, 0, 0],

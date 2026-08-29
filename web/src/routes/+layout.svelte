@@ -63,9 +63,9 @@
 			</p>
 			<a
 				href="https://github.com/milanofthe/solvers"
-				class="action mt-2 inline-block"
+				class="rail-link mt-2"
 				target="_blank"
-				rel="noreferrer">[ source ]</a
+				rel="noreferrer">source</a
 			>
 		</div>
 	</aside>

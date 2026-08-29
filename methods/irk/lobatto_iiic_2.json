@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "irk",
   "order": 2,
-  "description": "Two stage Lobatto IIIC. L-stable and stiffly accurate, with strong damping that also handles index one differential algebraic systems.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

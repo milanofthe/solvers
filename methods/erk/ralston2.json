@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "erk",
   "order": 2,
-  "description": "Second order method with the minimal truncation error bound among two stage explicit schemes.",
   "tableau": {
     "a": [
       [0],

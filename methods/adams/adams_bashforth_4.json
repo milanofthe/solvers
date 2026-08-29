@@ -5,7 +5,6 @@
   "family": "adams_bashforth",
   "order": 4,
   "aliases": ["ab4"],
-  "description": "Explicit 4 step Adams method of order 4. One evaluation per step regardless of order, which is what makes the family cheap.",
   "multistep": {
     "steps": 4,
     "alpha": [1, -1, 0, 0, 0],

@@ -4,7 +4,6 @@
   "class": "linear_multistep",
   "family": "nystrom",
   "order": 3,
-  "description": "Explicit 3 step Nystrom method. The family integrates across two steps rather than one, which buys an order at the cost of a parasitic root sitting on the unit circle.",
   "multistep": {
     "steps": 3,
     "alpha": [1, 0, -1, 0],

@@ -157,7 +157,7 @@ def tableau(a, b, c):
     }
 
 
-def method(identifier, name, order, a, b, c, description, properties, aliases=None):
+def method(identifier, name, order, a, b, c, properties, aliases=None):
     entry = {
         "id": identifier,
         "name": name,
@@ -167,7 +167,6 @@ def method(identifier, name, order, a, b, c, description, properties, aliases=No
     }
     if aliases:
         entry["aliases"] = aliases
-    entry["description"] = description
     entry["properties"] = properties
     entry["tableau"] = tableau(a, b, c)
     entry["references"] = [BUTCHER64, BUTCHER16, HW2]
@@ -192,7 +191,6 @@ for s in (4, 5):
                 a,
                 b,
                 c,
-                f"{s} stage Gauss method of order {2 * s}, the highest any Runge-Kutta method of this size can reach. Symplectic and symmetric, so it preserves quadratic invariants exactly.",
                 {
                     "a_stable": True,
                     "l_stable": False,
@@ -221,7 +219,6 @@ for s in (4, 5):
                 a,
                 b,
                 c,
-                f"{s} stage Radau IIA of order {2 * s - 1}. L-stable, stiffly accurate and of stage order {s}, so it barely suffers order reduction on a stiff problem.",
                 {
                     "a_stable": True,
                     "l_stable": True,
@@ -247,7 +244,6 @@ for s in (4,):
                 collocation_matrix(c),
                 b,
                 c,
-                f"{s} stage Lobatto IIIA, the collocation method on the Lobatto nodes. A-stable and symmetric with an explicit first stage.",
                 {
                     "a_stable": True,
                     "l_stable": False,
@@ -268,7 +264,6 @@ for s in (4,):
                 lobatto_iiib_matrix(c, b),
                 b,
                 c,
-                f"{s} stage Lobatto IIIB, the adjoint of IIIA. Paired with it, the two form a symplectic partitioned method for separable Hamiltonians.",
                 {"a_stable": True, "l_stable": False, "symmetric": True},
             ),
         )
@@ -283,7 +278,6 @@ for s in (4,):
                 lobatto_iiic_matrix(c, b),
                 b,
                 c,
-                f"{s} stage Lobatto IIIC. L-stable and stiffly accurate; the damping at infinity is what IIIA lacks, and it handles index one differential algebraic systems.",
                 {
                     "a_stable": True,
                     "l_stable": True,

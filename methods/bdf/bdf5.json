@@ -5,7 +5,6 @@
   "family": "bdf",
   "order": 5,
   "aliases": ["gear5"],
-  "description": "Backward differentiation formula of order 5. A(51.84) stable. Beyond this the stability wedge closes quickly.",
   "properties": {
     "a_stable": false
   },

@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "erk",
   "order": 2,
-  "description": "The smallest embedded pair there is: Heun's method with Euler as its error estimate. Two evaluations per step, and the cheapest way to see step size control work.",
   "embedded_order": 1,
   "tableau": {
     "a": [

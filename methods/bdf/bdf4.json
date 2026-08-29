@@ -5,7 +5,6 @@
   "family": "bdf",
   "order": 4,
   "aliases": ["gear4"],
-  "description": "Backward differentiation formula of order 4. A(73.35) stable.",
   "properties": {
     "a_stable": false
   },

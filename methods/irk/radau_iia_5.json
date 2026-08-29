@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 5,
   "aliases": ["radau5", "radau_iia_3s"],
-  "description": "Three stage Radau IIA, the method behind RADAU5. Fifth order, L-stable, stiffly accurate and stage order three, which is why it barely suffers order reduction.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

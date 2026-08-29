@@ -5,7 +5,6 @@
   "family": "adams_moulton",
   "order": 6,
   "aliases": ["am6"],
-  "description": "Implicit 5 step Adams method of order 6. One order higher than the explicit family at the same step count, at the cost of a solve.",
   "multistep": {
     "steps": 5,
     "alpha": [1, -1, 0, 0, 0, 0],

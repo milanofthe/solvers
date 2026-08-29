@@ -5,7 +5,6 @@
   "family": "dirk",
   "order": 2,
   "aliases": ["midpoint_implicit", "gauss_legendre_2"],
-  "description": "One stage second order Gauss method. A-stable, symmetric and symplectic, so it preserves quadratic invariants exactly.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

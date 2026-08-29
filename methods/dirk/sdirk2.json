@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "dirk",
   "order": 2,
-  "description": "Two stage second order singly diagonally implicit method. L-stable and stiffly accurate, with one factorization serving both stages.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

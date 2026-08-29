@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 3,
   "embedded_order": 2,
-  "description": "Bogacki-Shampine 3(2) pair. Four-stage, 3rd order with FSAL property.",
   "tableau": {
     "a": [
       [0],

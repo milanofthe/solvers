@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 2,
   "embedded_order": 1,
-  "description": "Three-stage, 2nd order Runge-Kutta-Fehlberg method with embedded 1st order error estimate.",
   "tableau": {
     "a": [
       [0],

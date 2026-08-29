@@ -5,7 +5,6 @@
   "family": "bdf",
   "order": 6,
   "aliases": ["gear6"],
-  "description": "Backward differentiation formula of order 6. A(17.84) stable, and the last BDF that is zero stable at all.",
   "properties": {
     "a_stable": false
   },

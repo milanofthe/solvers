@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 5,
   "embedded_order": 4,
-  "description": "Cash-Karp 5(4) pair. Six stages, 5th order with embedded 4th order error estimate.",
   "tableau": {
     "a": [
       [0],

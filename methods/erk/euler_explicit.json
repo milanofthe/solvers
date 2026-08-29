@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 1,
   "aliases": ["euler", "forward_euler", "explicit_euler"],
-  "description": "The first order explicit method. One evaluation per step, and the reference point every other explicit method is measured against.",
   "tableau": {
     "a": [
       [0]

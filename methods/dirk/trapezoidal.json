@@ -5,7 +5,6 @@
   "family": "dirk",
   "order": 2,
   "aliases": ["crank_nicolson", "trapezoid"],
-  "description": "Second order A-stable rule. Symmetric but not L-stable, so stiff modes are reflected rather than damped and oscillate at the step frequency.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

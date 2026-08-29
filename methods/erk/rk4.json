@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "erk",
   "order": 4,
-  "description": "Classical four-stage, 4th order explicit Runge-Kutta method.",
   "tableau": {
     "a": [
       [0],

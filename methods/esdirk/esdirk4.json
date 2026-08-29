@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "esdirk",
   "order": 4,
-  "description": "Six-stage, 4th order ESDIRK method. L-stable and stiffly accurate.",
   "tableau": {
     "a": [
       [0],

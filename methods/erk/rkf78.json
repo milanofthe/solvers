@@ -5,7 +5,6 @@
   "family": "erk",
   "order": 7,
   "embedded_order": 8,
-  "description": "Runge-Kutta-Fehlberg 7(8) pair. Thirteen stages, 7th order propagation with 8th order error estimate.",
   "tableau": {
     "a": [
       [0],

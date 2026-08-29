@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "erk",
   "order": 3,
-  "description": "Third order method with the minimal truncation error bound among three stage explicit schemes, and the base the Bogacki-Shampine pair is built on.",
   "tableau": {
     "a": [
       [0],

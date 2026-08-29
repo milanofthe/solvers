@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "dirk",
   "order": 3,
-  "description": "Three stage third order singly diagonally implicit method. L-stable and stiffly accurate; the diagonal entry is the middle root of x^3 - 3x^2 + 3x/2 - 1/6.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

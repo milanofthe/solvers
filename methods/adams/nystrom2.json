@@ -5,7 +5,6 @@
   "family": "nystrom",
   "order": 2,
   "aliases": ["explicit_midpoint_lmm", "leapfrog"],
-  "description": "Explicit midpoint rule as a two step method. Weakly stable: the parasitic root sits on the unit circle, so errors neither grow nor decay.",
   "multistep": {
     "steps": 2,
     "alpha": [1, 0, -1],

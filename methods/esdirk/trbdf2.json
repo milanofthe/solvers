@@ -5,7 +5,6 @@
   "family": "esdirk",
   "order": 2,
   "aliases": ["ode23tb"],
-  "description": "A trapezoidal step to the midpoint followed by a BDF2 step to the end, arranged as a three stage ESDIRK. L-stable, stiffly accurate and singly diagonal, so both implicit stages share one factorization.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

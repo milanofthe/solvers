@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "erk",
   "order": 3,
-  "description": "Three stage third order method of Heun.",
   "tableau": {
     "a": [
       [0],

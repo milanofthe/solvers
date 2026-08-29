@@ -93,13 +93,9 @@
 		@apply font-mono text-xs uppercase tracking-[0.2em] text-accent;
 	}
 
-	/* An action reads as a bracketed word rather than as a button. */
-	.action {
-		@apply font-mono text-xs text-cream/60 transition-colors hover:text-cream;
-	}
-
-	.action-on {
-		@apply font-mono text-xs text-cream;
+	/* A link in the rail reads exactly like the rows around it. */
+	.rail-link {
+		@apply block py-[1px] text-left font-mono text-xs text-cream/50 transition-colors hover:text-cream;
 	}
 
 	/* A row in a filter list. Active is a colour, not a container. */

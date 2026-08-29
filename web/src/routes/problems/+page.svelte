@@ -43,7 +43,7 @@
 	<div class="rail-group">
 		<p class="label mb-1">selected</p>
 		<p class="font-mono text-xs text-cream">{ui.problem}</p>
-		<a href="/compare" class="action mt-2 inline-block">[ compare on it ]</a>
+		<a href="/compare" class="rail-link mt-2">compare on it</a>
 	</div>
 {/snippet}
 

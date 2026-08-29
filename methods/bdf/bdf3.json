@@ -5,7 +5,6 @@
   "family": "bdf",
   "order": 3,
   "aliases": ["gear3"],
-  "description": "Backward differentiation formula of order 3. A(86.03) stable. The usual default of a variable order BDF code.",
   "properties": {
     "a_stable": false
   },

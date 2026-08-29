@@ -5,7 +5,6 @@
   "family": "adams_bashforth",
   "order": 3,
   "aliases": ["ab3"],
-  "description": "Explicit 3 step Adams method of order 3. One evaluation per step regardless of order, which is what makes the family cheap.",
   "multistep": {
     "steps": 3,
     "alpha": [1, -1, 0, 0],

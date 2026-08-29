@@ -79,7 +79,7 @@
 				if (!group.some((name) => names.has(name))) return false;
 			}
 			if (!query) return true;
-			return [method.id, method.name, method.family, method.description ?? '', ...names]
+			return [method.id, method.name, method.family, ...names]
 				.join(' ')
 				.toLowerCase()
 				.includes(query);
@@ -191,7 +191,7 @@
 	{/each}
 
 	{#if ui.tags.length > 0}
-		<button type="button" class="action text-left" onclick={() => (ui.tags = [])}>[ clear filters ]</button>
+		<button type="button" class="rail-link" onclick={() => (ui.tags = [])}>clear filters</button>
 	{/if}
 {/snippet}
 

@@ -5,7 +5,6 @@
   "family": "irk",
   "order": 9,
   "aliases": ["radau9"],
-  "description": "5 stage Radau IIA of order 9. L-stable, stiffly accurate and of stage order 5, so it barely suffers order reduction on a stiff problem.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "dirk",
   "order": 3,
-  "description": "Four-stage, 3rd order L-stable DIRK method. Stiffly accurate.",
   "tableau": {
     "a": [
       ["1/2"],

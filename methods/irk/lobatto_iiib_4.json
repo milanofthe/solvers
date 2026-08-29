@@ -4,7 +4,6 @@
   "class": "runge_kutta",
   "family": "irk",
   "order": 4,
-  "description": "Three stage Lobatto IIIB. The adjoint of IIIA, and paired with it forms a symplectic partitioned method for separable Hamiltonians.",
   "properties": {
     "a_stable": true,
     "l_stable": false,

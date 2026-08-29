@@ -5,7 +5,6 @@
   "family": "dirk",
   "order": 1,
   "aliases": ["backward_euler", "implicit_euler"],
-  "description": "The first order implicit method. L-stable and unconditionally damping, which makes it the fallback whenever a step has to succeed rather than be accurate.",
   "properties": {
     "a_stable": true,
     "l_stable": true,

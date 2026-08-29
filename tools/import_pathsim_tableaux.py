@@ -259,9 +259,6 @@ def main():
         }
         if b_hat is not None and int(instance.m) > 0:
             method["embedded_order"] = int(instance.m)
-        description = summary(cls.__doc__)
-        if description:
-            method["description"] = description
         method["tableau"] = {
             "a": [coefficients(row) for row in trim(a)],
             "b": coefficients(b),
