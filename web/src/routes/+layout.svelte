@@ -30,12 +30,14 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen w-full max-w-[110rem] gap-10 px-6">
-	<aside class="sticky top-0 hidden h-screen w-48 shrink-0 flex-col overflow-y-auto py-6 md:flex">
+<div class="flex min-h-screen w-full">
+	<aside
+		class="sticky top-0 hidden h-screen w-72 shrink-0 flex-col overflow-y-auto border-r border-cream/10 px-5 py-6 md:flex"
+	>
 		<a href="/" class="font-display text-lg leading-none text-cream">solvers</a>
 		<p class="label mt-2">numerical integration</p>
 
-		<nav class="mt-6 flex flex-col">
+		<nav class="rail-group flex flex-col">
 			{#each links as link}
 				<a
 					href={link.href}
@@ -47,12 +49,12 @@
 		</nav>
 
 		{#if rail.panel}
-			<div class="mt-8 flex flex-col gap-6">
+			<div class="flex flex-col">
 				{@render rail.panel()}
 			</div>
 		{/if}
 
-		<div class="mt-auto pt-8">
+		<div class="rail-group mt-auto">
 			<p class="font-mono text-xs text-accent">
 				{catalog.ready ? `${catalog.methods.length} methods` : 'loading'}
 				{#if progress.outstanding > 0}
@@ -68,7 +70,7 @@
 		</div>
 	</aside>
 
-	<main class="min-w-0 flex-1 py-6">
+	<main class="min-w-0 flex-1 px-6 py-6">
 		{#if catalog.error}
 			<p class="font-mono text-xs text-[#d9513c]">{catalog.error}</p>
 		{:else if !catalog.ready}

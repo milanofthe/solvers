@@ -112,7 +112,7 @@
 </script>
 
 {#snippet controls()}
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">show</p>
 		{#each METHOD_MODES as entry}
 			<button type="button" class="facet {ui.mode === entry.key ? 'facet-on' : ''}" onclick={() => setMode(entry.key)}>
@@ -122,7 +122,7 @@
 	</div>
 
 	{#if MODES_NEEDING_A_PROBLEM.has(ui.mode)}
-		<div>
+		<div class="rail-group">
 			<p class="label mb-1">run on</p>
 			{#each catalog.problems as problem}
 				<button
@@ -139,7 +139,7 @@
 		</div>
 	{/if}
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">sort</p>
 		{#each SORTS as sort}
 			<button type="button" class="facet {ui.sort === sort.key ? 'facet-on' : ''}" onclick={() => (ui.sort = sort.key)}>
@@ -148,7 +148,7 @@
 		{/each}
 	</div>
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">search</p>
 		<input
 			type="search"
@@ -159,7 +159,7 @@
 	</div>
 
 	{#each groups as { group, names }}
-		<div>
+		<div class="rail-group">
 			<p class="label mb-1">{group}</p>
 			{#each names as [name, count]}
 				<button
@@ -179,7 +179,7 @@
 	{/if}
 {/snippet}
 
-<header class="mb-6 border-b border-cream/10 pb-4">
+<header class="mb-6">
 	<h1 class="font-display text-lg text-cream">Methods</h1>
 	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
 		Every property is derived from the coefficients, not read from the file. {mode.note}

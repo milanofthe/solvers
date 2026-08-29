@@ -119,7 +119,7 @@
 </script>
 
 {#snippet controls()}
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">panel</p>
 		{#each METHOD_MODES as entry}
 			<button
@@ -137,7 +137,7 @@
 {#if !method}
 	<p class="label">unknown method: {id}</p>
 {:else}
-	<header class="mb-6 border-b border-cream/10 pb-4">
+	<header class="mb-6">
 		<div class="flex items-baseline justify-between gap-4">
 			<h1 class="font-display text-lg text-cream">{method.name}</h1>
 			<span class="font-mono text-xs text-accent">{method.id}</span>

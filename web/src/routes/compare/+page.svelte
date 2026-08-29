@@ -279,7 +279,7 @@
 </script>
 
 {#snippet controls()}
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">show</p>
 		{#each VIEWS as view}
 			<button
@@ -292,7 +292,7 @@
 		{/each}
 	</div>
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">presets</p>
 		{#each PRESETS as entry}
 			<button
@@ -305,7 +305,7 @@
 		{/each}
 	</div>
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">problem</p>
 		{#each catalog.problems as problem}
 			<button
@@ -322,7 +322,7 @@
 	</div>
 
 	{#if ui.compareView === 'steps'}
-		<div>
+		<div class="rail-group">
 			<p class="label mb-1">controller</p>
 			{#each catalog.options.controllers as name}
 				<button
@@ -336,7 +336,7 @@
 		</div>
 	{/if}
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">selected</p>
 		{#each chosen as method}
 			<button
@@ -356,7 +356,7 @@
 	</div>
 {/snippet}
 
-<header class="mb-6 border-b border-cream/10 pb-4">
+<header class="mb-6">
 	<h1 class="font-display text-lg text-cream">Comparison</h1>
 	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
 		{preset ? preset.note : 'Whatever is selected in the library, on the problem chosen in the rail.'}

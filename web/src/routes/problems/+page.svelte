@@ -26,7 +26,7 @@
 </script>
 
 {#snippet controls()}
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">show</p>
 		{#each PROBLEM_MODES as entry}
 			<button
@@ -42,14 +42,14 @@
 		{/each}
 	</div>
 
-	<div>
+	<div class="rail-group">
 		<p class="label mb-1">selected</p>
 		<p class="font-mono text-xs text-cream">{ui.problem}</p>
 		<a href="/compare" class="action mt-2 inline-block">[ compare on it ]</a>
 	</div>
 {/snippet}
 
-<header class="mb-6 border-b border-cream/10 pb-4">
+<header class="mb-6">
 	<h1 class="font-display text-lg text-cream">Problems</h1>
 	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
 		The benchmark set the analyses run on. {mode.note}

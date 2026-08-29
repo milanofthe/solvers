@@ -114,4 +114,11 @@
 	.rule {
 		@apply border-cream/10;
 	}
+
+	/* A group in the rail. The rule is pulled out past the rail padding so it
+	   runs edge to edge, which is what makes the rail read as a stack of
+	   sections rather than as a list with gaps in it. */
+	.rail-group {
+		@apply -mx-5 mt-4 border-t border-cream/10 px-5 pt-4;
+	}
 }
