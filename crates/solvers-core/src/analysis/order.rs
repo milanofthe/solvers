@@ -239,6 +239,42 @@ fn attained_order(
     (order, exact, failing)
 }
 
+/// Every condition at one order, satisfied or not.
+///
+/// At the order just above the one a method achieves, these residuals are the
+/// leading error coefficients: which elementary differential the method is
+/// least accurate on, and how much of the local error each one carries.
+pub fn conditions_at(tableau: &RkTableau, weights: &[Coeff], order: usize) -> Vec<Condition> {
+    trees_of_order(order)
+        .into_iter()
+        .map(|tree| {
+            let weight = elementary_weight(tableau, weights, &tree);
+            let target = Coeff::one() / tree.density();
+            let residual = weight - target;
+            let is_exact = weight.is_exact() && target.is_exact();
+            Condition {
+                satisfied: satisfied(residual, target.value().abs()),
+                tree: tree.to_string_compact(),
+                order,
+                weight: weight.value(),
+                target: target.value(),
+                residual: residual.value(),
+                exact: is_exact,
+            }
+        })
+        .collect()
+}
+
+/// Euclidean norm of the residuals at one order, the usual scalar measure of
+/// how large a method's leading error term is.
+pub fn error_constant(tableau: &RkTableau, weights: &[Coeff], order: usize) -> f64 {
+    conditions_at(tableau, weights, order)
+        .iter()
+        .map(|condition| condition.residual * condition.residual)
+        .sum::<f64>()
+        .sqrt()
+}
+
 /// Verify a tableau. `max_order` bounds the search; ten is enough for every
 /// published method and keeps the tree count manageable.
 pub fn verify(tableau: &RkTableau, max_order: usize) -> OrderReport {

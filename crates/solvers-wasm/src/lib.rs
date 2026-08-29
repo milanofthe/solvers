@@ -478,3 +478,87 @@ pub fn method_summary(id: &str) -> Result<String, JsValue> {
     });
     Ok(serde_json::to_string(&value).unwrap_or_default())
 }
+
+/// `log10 |R(z) exp(-z)|`, the order star of a Runge-Kutta method.
+///
+/// Where the stability region answers "does this mode decay", the order star
+/// answers "does this method track the exact solution": the sectors meeting at
+/// the origin count `p + 1` for a method of order `p`, and a method is
+/// A-acceptable exactly when no sector of the star reaches into the left half
+/// plane. It is the picture that makes the order barriers visible.
+///
+/// Reference: G. Wanner, E. Hairer, S. P. Noersett, "Order stars and stability
+/// theorems", BIT 18, 1978, doi:10.1007/BF01931698
+#[wasm_bindgen]
+pub fn order_star_grid(
+    id: &str,
+    re_min: f64,
+    re_max: f64,
+    im_min: f64,
+    im_max: f64,
+    width: usize,
+    height: usize,
+) -> Result<Vec<f64>, JsValue> {
+    let method = find(id)?;
+    let tableau = method
+        .tableau()
+        .ok_or_else(|| JsValue::from_str("an order star needs a Runge-Kutta tableau"))?;
+    let function = stability::StabilityFunction::from_tableau(tableau);
+
+    // |R exp(-z)| in logarithms is log|R| minus the real part over ln 10, which
+    // avoids overflowing the exponential far out in the plane.
+    let grid = stability::sample_region(
+        |z| {
+            let magnitude = function.eval(z).abs();
+            let value = if magnitude > 0.0 {
+                magnitude.log10() - z.re / std::f64::consts::LN_10
+            } else {
+                -30.0
+            };
+            value.clamp(-30.0, 30.0)
+        },
+        (re_min, re_max),
+        (im_min, im_max),
+        width,
+        height,
+    );
+    Ok(grid.magnitude)
+}
+
+/// The leading error coefficients, one per rooted tree at the first order the
+/// method does not satisfy.
+///
+/// Two methods of the same order are not equally accurate; what separates them
+/// is the size of these residuals and which elementary differentials they sit
+/// on. The Euclidean norm of the set is the usual scalar error constant.
+#[wasm_bindgen]
+pub fn error_coefficients(id: &str) -> Result<String, JsValue> {
+    let method = find(id)?;
+    let tableau = method
+        .tableau()
+        .ok_or_else(|| JsValue::from_str("error coefficients need a Runge-Kutta tableau"))?;
+    let report = analysis::order::verify(tableau, 10);
+    let order = report.order + 1;
+
+    let conditions = analysis::order::conditions_at(tableau, &tableau.b, order);
+    let embedded = tableau.b_embedded.as_ref().map(|weights| {
+        let embedded_order = report.embedded_order.unwrap_or(0) + 1;
+        (
+            embedded_order,
+            analysis::order::conditions_at(tableau, weights, embedded_order),
+        )
+    });
+
+    let value = json!({
+        "id": method.id,
+        "order": report.order,
+        "atOrder": order,
+        "constant": analysis::order::error_constant(tableau, &tableau.b, order),
+        "conditions": conditions,
+        "embedded": embedded.map(|(embedded_order, list)| json!({
+            "atOrder": embedded_order,
+            "conditions": list,
+        })),
+    });
+    Ok(serde_json::to_string(&value).unwrap_or_default())
+}

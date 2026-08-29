@@ -1,14 +1,18 @@
 <script>
 	/*
-	 * One method in full: the coefficients it is made of, what those imply, its
-	 * stability region at a size worth looking at, and where it was published.
+	 * One method in full.
+	 *
+	 * Laid out as the answers to four questions in order: what is it, how does it
+	 * behave in the complex plane, how large is the error it leaves behind, and
+	 * what is it made of. The coefficients come last on purpose; they are the
+	 * reference, not the summary.
 	 */
 	import { getContext } from 'svelte';
 	import { page } from '$app/state';
-	import Plot from '$lib/components/Plot.svelte';
+	import Panel from '$lib/components/Panel.svelte';
 	import { catalog, engine, ui } from '$lib/store.svelte.js';
-	import { isCancelled, PRIORITY } from '$lib/engine.js';
-	import { METHOD_MODES } from '$lib/figures.js';
+	import { PRIORITY } from '$lib/engine.js';
+	import { METHOD_MODES, errorCoefficients } from '$lib/figures.js';
 	import { limit, num } from '$lib/format.js';
 
 	const rail = getContext('rail');
@@ -17,20 +21,31 @@
 	const method = $derived(catalog.methods.find((m) => m.id === id));
 
 	let detail = $state.raw(null);
-	let figure = $state.raw(null);
 	let stabilityFunction = $state.raw(null);
-	let panelMode = $state('stability');
+
+	const MODES = Object.fromEntries(METHOD_MODES.map((mode) => [mode.key, mode]));
+
+	/** A loader for one figure, bound to the method currently on screen. */
+	function panel(mode, current, problem) {
+		return () =>
+			mode
+				.request(engine(), current, PRIORITY.immediate, { problem })
+				.then((result) => mode.figure(result, current, { compact: false }));
+	}
 
 	$effect(() => {
 		const current = method;
 		if (!current) return;
 		let stale = false;
 		detail = null;
-		figure = null;
 		stabilityFunction = null;
 
 		engine()
-			.request('methodDetail', { id: current.id }, { key: `detail:${current.id}`, priority: PRIORITY.immediate })
+			.request(
+				'methodDetail',
+				{ id: current.id },
+				{ key: `detail:${current.id}`, priority: PRIORITY.immediate }
+			)
 			.then((result) => {
 				if (!stale) detail = result;
 			})
@@ -49,26 +64,6 @@
 				.catch(() => {});
 		}
 
-		return () => {
-			stale = true;
-		};
-	});
-
-	// The large panel, in whichever mode is chosen in the rail.
-	$effect(() => {
-		const current = method;
-		const mode = METHOD_MODES.find((m) => m.key === panelMode) ?? METHOD_MODES[0];
-		const problem = ui.problem;
-		if (!current) return;
-		let stale = false;
-		mode
-			.request(engine(), current, PRIORITY.immediate, { problem })
-			.then((result) => {
-				if (!stale) figure = mode.figure(result, current, { compact: false });
-			})
-			.catch((error) => {
-				if (!stale && !isCancelled(error)) figure = null;
-			});
 		return () => {
 			stale = true;
 		};
@@ -104,6 +99,24 @@
 		];
 	});
 
+	const structureLine = $derived.by(() => {
+		if (!detail) return '';
+		const c = detail.coefficients;
+		if (c.kind === 'runge_kutta') {
+			return [
+				c.structure?.replace('_', ' '),
+				c.singlyDiagonal ? 'singly diagonal' : null,
+				c.explicitFirstStage ? 'explicit first stage' : null,
+				c.fsal ? 'FSAL' : null
+			]
+				.filter(Boolean)
+				.join(' · ');
+		}
+		return [`${c.steps} steps`, c.startup ? `starts with ${c.startup}` : 'self starting'].join(
+			' · '
+		);
+	});
+
 	function polynomial(coefficients) {
 		const terms = coefficients
 			.map((value, power) => ({ value, power }))
@@ -120,18 +133,20 @@
 
 {#snippet controls()}
 	<div class="rail-group">
-		<p class="label mb-1">panel</p>
-		{#each METHOD_MODES as entry}
+		<p class="label mb-1">run on</p>
+		{#each catalog.problems as problem}
 			<button
 				type="button"
-				class="facet {panelMode === entry.key ? 'facet-on' : ''}"
-				onclick={() => (panelMode = entry.key)}
+				class="facet {ui.problem === problem.id ? 'facet-on' : ''}"
+				onclick={() => (ui.problem = problem.id)}
 			>
-				<span>{entry.label}</span>
+				<span class="truncate">{problem.id}</span>
 			</button>
 		{/each}
 	</div>
-	<a href="/" class="action">[ back to the library ]</a>
+	<div class="rail-group">
+		<a href="/" class="action">[ back to the library ]</a>
+	</div>
 {/snippet}
 
 {#if !method}
@@ -143,50 +158,87 @@
 			<span class="font-mono text-xs text-accent">{method.id}</span>
 		</div>
 		{#if method.description}
-			<p class="mt-2 max-w-[72ch] text-xs text-cream/60">{method.description}</p>
+			<p class="mt-2 max-w-[80ch] text-xs text-cream/60">{method.description}</p>
 		{/if}
-		{#if detail}
-			<p class="label mt-3">
-				{#if detail.coefficients.kind === 'runge_kutta'}
-					{detail.coefficients.structure?.replace('_', ' ')}
-					{#if detail.coefficients.singlyDiagonal}&middot; singly diagonal{/if}
-					{#if detail.coefficients.explicitFirstStage}&middot; explicit first stage{/if}
-					{#if detail.coefficients.fsal}&middot; FSAL{/if}
-				{:else}
-					{detail.coefficients.steps} steps &middot;
-					{detail.coefficients.startup
-						? `starts with ${detail.coefficients.startup}`
-						: 'self starting'}
-				{/if}
-			</p>
-			{#each detail.report.discrepancies as issue}
-				<p class="mt-1 font-mono text-xs text-[#d9513c]">{issue}</p>
-			{/each}
+		{#if structureLine}
+			<p class="label mt-3">{structureLine}</p>
 		{/if}
+		{#each detail?.report.discrepancies ?? [] as issue}
+			<p class="mt-1 font-mono text-xs text-[#d9513c]">{issue}</p>
+		{/each}
 	</header>
 
-	<div class="grid gap-6 lg:grid-cols-[1fr_minmax(20rem,26rem)]">
-		<div class="border border-cream/10 bg-charcoal-light">
-			<Plot {figure} class="h-[30rem] w-full" />
+	{#if detail}
+		<section class="mb-8">
+			<p class="label mb-2">properties</p>
+			<dl
+				class="grid grid-cols-2 gap-x-6 font-mono text-xs sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+			>
+				{#each properties as [name, value]}
+					<div class="flex items-baseline justify-between gap-2 border-b border-cream/10 py-[3px]">
+						<dt class="truncate text-cream/50">{name}</dt>
+						<dd class="text-cream">{value}</dd>
+					</div>
+				{/each}
+			</dl>
+		</section>
+	{/if}
+
+	{#key method.id}
+		<div class="mb-8 grid gap-6 xl:grid-cols-2">
+			<Panel
+				label="stability region"
+				height="h-[26rem]"
+				load={panel(MODES.stability, method, ui.problem)}
+				note="Banded log |R(z)| with the unit contour on top. The region it encloses is where the method does not amplify."
+			/>
+			<Panel
+				label="order star"
+				height="h-[26rem]"
+				load={panel(MODES.orderStar, method, ui.problem)}
+				note="log |R(z) exp(-z)|, with the amber line where the two agree in modulus. The sectors meeting at the origin count one more than the order."
+			/>
 		</div>
 
-		<div>
-			{#if detail}
-				<p class="label mb-2">properties</p>
-				<dl class="grid grid-cols-2 gap-x-4 font-mono text-xs">
-					{#each properties as [name, value]}
-						<div class="flex items-baseline justify-between border-b border-cream/10 py-[2px]">
-							<dt class="text-cream/50">{name}</dt>
-							<dd class="text-cream">{value}</dd>
-						</div>
-					{/each}
-				</dl>
-			{/if}
+		<div class="mb-8 grid gap-6 lg:grid-cols-3">
+			<Panel
+				label="damping"
+				height="h-64"
+				load={panel(MODES.damping, method, ui.problem)}
+				note="A decaying mode along the negative real axis."
+			/>
+			<Panel
+				label="error coefficients"
+				height="h-64"
+				load={panel(errorCoefficients, method, ui.problem)}
+				note="The residual of each order condition the method does not satisfy."
+			/>
+			<Panel
+				label="convergence on {ui.problem}"
+				height="h-64"
+				load={panel(MODES.order, method, ui.problem)}
+				note="Measured against the slope the coefficients promise."
+			/>
 		</div>
-	</div>
+
+		<div class="mb-8 grid gap-6 lg:grid-cols-2">
+			<Panel
+				label="coefficient structure"
+				height="h-64"
+				load={panel(MODES.structure, method, ui.problem)}
+				note="Teal positive, red negative, shaded by magnitude."
+			/>
+			<Panel
+				label="work precision on {ui.problem}"
+				height="h-64"
+				load={panel(MODES.cost, method, ui.problem)}
+				note="Accuracy improves to the right."
+			/>
+		</div>
+	{/key}
 
 	{#if detail}
-		<section class="mt-8">
+		<section class="mb-8">
 			<p class="label mb-2">
 				{detail.coefficients.kind === 'runge_kutta'
 					? 'butcher tableau'
@@ -249,44 +301,32 @@
 					</table>
 				{/if}
 			</div>
-			<p class="mt-2 max-w-[72ch] text-xs text-cream/50">
-				{detail.coefficients.kind === 'runge_kutta'
-					? 'An exact fraction is shown as the file writes it. A decimal means the coefficient is only known as a double, and the order conditions were then checked numerically rather than as identities.'
-					: 'A multistep file stores which coefficients are free, not their values. These are the values on a uniform grid; on a varying step size they are solved for again at every step.'}
-			</p>
 		</section>
 
 		{#if stabilityFunction}
-			<section class="mt-8">
+			<section class="mb-8">
 				<p class="label mb-2">stability function</p>
-				<p class="font-mono text-xs text-cream/80">N(z) = {polynomial(stabilityFunction.numerator)}</p>
+				<p class="font-mono text-xs text-cream/80">
+					N(z) = {polynomial(stabilityFunction.numerator)}
+				</p>
 				<p class="font-mono text-xs text-cream/80">
 					D(z) = {polynomial(stabilityFunction.denominator)}
-				</p>
-				<p class="mt-2 max-w-[72ch] text-xs text-cream/50">
-					R agrees with exp to order {stabilityFunction.orderOfConsistency}. R(inf) = {limit(
-						stabilityFunction.atInfinity
-					)}.
-					{#if stabilityFunction.poles.length}
-						Poles at {stabilityFunction.poles
-							.map((p) => `${num(p.re, 4)}${p.im >= 0 ? '+' : ''}${num(p.im, 4)}i`)
-							.join(', ')}.
-					{:else}
-						No poles, the method is explicit.
-					{/if}
 				</p>
 			</section>
 		{/if}
 
 		{#if detail.references.length}
-			<section class="mt-8">
+			<section class="mb-8">
 				<p class="label mb-2">references</p>
 				<ul class="flex flex-col gap-3">
 					{#each detail.references as reference}
 						<li class="border-l border-cream/20 pl-3">
 							{#if reference.link}
-								<a href={reference.link} target="_blank" rel="noreferrer" class="text-xs text-cream hover:text-amber"
-									>{reference.title ?? reference.link}</a
+								<a
+									href={reference.link}
+									target="_blank"
+									rel="noreferrer"
+									class="text-xs text-cream hover:text-amber">{reference.title ?? reference.link}</a
 								>
 							{:else}
 								<span class="text-xs text-cream">{reference.title ?? 'untitled'}</span>

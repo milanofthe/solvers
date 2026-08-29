@@ -84,6 +84,7 @@
 
 	let figure = $state.raw(null);
 	let status = $state('');
+	let heading = $state('');
 
 	const chosen = $derived(
 		ui.selection.map((id) => catalog.methods.find((m) => m.id === id)).filter(Boolean)
@@ -225,16 +226,16 @@
 		let base;
 		if (view === 'cost') {
 			const range = logRange(allX);
+			heading = `work precision on ${problem}`;
 			base = layout({
-				title: `work precision on ${problem}`,
 				x: { type: 'log', range: [range[1], range[0]], title: axisTitle('achieved relative error') },
 				y: { type: 'log', range: logRange(allY, 0.12), title: axisTitle('rhs evaluations') }
 			});
 			status =
 				'Accuracy improves to the right, so the lower curve is the cheaper method at the same accuracy.';
 		} else if (view === 'order') {
+			heading = `convergence on ${problem}`;
 			base = layout({
-				title: `convergence on ${problem}`,
 				x: { type: 'log', range: logRange(allX), title: axisTitle('step size h') },
 				y: { type: 'log', range: logRange(allY, 0.12), title: axisTitle('relative error') }
 			});
@@ -250,8 +251,8 @@
 				? `Order reduction here: ${reduced.join(', ')}.`
 				: 'Every selected method converges at the order its coefficients promise.';
 		} else {
+			heading = `step size on ${problem}, controller ${ui.compareController}`;
 			base = layout({
-				title: `step size on ${problem}, controller ${ui.compareController}`,
 				x: { range: linearRange(allX, 0.01), title: axisTitle('t') },
 				y: { type: 'log', range: logRange(allY, 0.1), title: axisTitle('step size h') }
 			});
@@ -356,13 +357,6 @@
 	</div>
 {/snippet}
 
-<header class="mb-6">
-	<h1 class="font-display text-lg text-cream">Comparison</h1>
-	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
-		{preset ? preset.note : 'Whatever is selected in the library, on the problem chosen in the rail.'}
-	</p>
-</header>
-
 {#if ui.compareView === 'table'}
 	<div class="overflow-x-auto border border-cream/10">
 		<table class="w-full border-collapse font-mono text-xs">
@@ -396,6 +390,7 @@
 		</table>
 	</div>
 {:else}
+	<p class="label mb-2">{heading}</p>
 	<div class="border border-cream/10 bg-charcoal-light">
 		<Plot {figure} class="h-[32rem] w-full" />
 	</div>

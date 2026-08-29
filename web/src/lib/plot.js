@@ -12,8 +12,9 @@ import Plotly from 'plotly.js/lib/core';
 import heatmap from 'plotly.js/lib/heatmap';
 import contour from 'plotly.js/lib/contour';
 import scattergl from 'plotly.js/lib/scattergl';
+import bar from 'plotly.js/lib/bar';
 
-Plotly.register([heatmap, contour, scattergl]);
+Plotly.register([heatmap, contour, scattergl, bar]);
 
 export default Plotly;
 
@@ -104,23 +105,17 @@ const AXIS = {
 /**
  * Layout shared by every figure. `compact` strips it down to the data alone,
  * which is what a card wants.
+ *
+ * A figure carries no title of its own: the heading above it is a heading like
+ * any other on the page, set in the same type as the rest of the interface
+ * rather than in whatever the plotting library draws.
  */
-export function layout({ compact = false, title = '', x = {}, y = {} } = {}) {
+export function layout({ compact = false, x = {}, y = {} } = {}) {
 	return {
 		paper_bgcolor: COLORS.surface,
 		plot_bgcolor: COLORS.charcoal,
 		font: { family: 'JetBrains Mono, monospace', size: 10, color: COLORS.accent },
-		margin: compact
-			? { l: 1, r: 1, t: 1, b: 1 }
-			: { l: 58, r: 18, t: title ? 28 : 10, b: 44 },
-		title: compact || !title
-			? undefined
-			: {
-					text: title,
-					font: { family: 'JetBrains Mono, monospace', size: 10, color: COLORS.cream },
-					x: 0,
-					xanchor: 'left'
-				},
+		margin: compact ? { l: 1, r: 1, t: 1, b: 1 } : { l: 62, r: 18, t: 10, b: 44 },
 		xaxis: {
 			...AXIS,
 			showticklabels: !compact,

@@ -12,8 +12,6 @@
 	import { PROBLEM_MODES } from '$lib/figures.js';
 
 	const rail = getContext('rail');
-	const mode = $derived(PROBLEM_MODES.find((m) => m.key === ui.problemMode) ?? PROBLEM_MODES[0]);
-
 	const stiff = $derived(catalog.problems.filter((p) => p.stiff));
 	const nonStiff = $derived(catalog.problems.filter((p) => !p.stiff));
 
@@ -48,13 +46,6 @@
 		<a href="/compare" class="action mt-2 inline-block">[ compare on it ]</a>
 	</div>
 {/snippet}
-
-<header class="mb-6">
-	<h1 class="font-display text-lg text-cream">Problems</h1>
-	<p class="mt-1 max-w-[68ch] text-xs text-cream/60">
-		The benchmark set the analyses run on. {mode.note}
-	</p>
-</header>
 
 <section class="mb-8">
 	<p class="label mb-2">non stiff</p>

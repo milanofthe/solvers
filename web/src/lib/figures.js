@@ -55,6 +55,13 @@ function stabilityWindow(method) {
 	return box(-reach * 1.6, reach * 0.45);
 }
 
+/** The order star lives around the origin and reaches about as far as the order. */
+function orderStarWindow(method) {
+	const reach = Math.max(3.5, (method.order ?? 4) * 1.1);
+	const half = reach / PANEL_ASPECT;
+	return { re: [-reach, reach], im: [-half, half] };
+}
+
 const GRID = { runge_kutta: 140, linear_multistep: 72 };
 
 export function empty(message) {
@@ -144,7 +151,6 @@ const stability = {
 			layout: {
 				...layout({
 					compact,
-					title: compact ? '' : `stability region ${method.id}`,
 					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re, zeroline: true },
 					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im, zeroline: true }
 				})
@@ -215,7 +221,6 @@ const structure = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `coefficients of ${method.id}`,
 				x: { showticklabels: false, showgrid: false, ticks: '' },
 				y: { showgrid: false, ticks: '' }
 			}),
@@ -253,11 +258,10 @@ const damping = {
 			layout: {
 				...layout({
 					compact,
-					title: compact ? '' : `damping of ${method.id}`,
 					x: { type: 'log', range: logRange(x, 0.02), title: compact ? undefined : { text: '-z' } },
 					y: {
 						type: 'log',
-						range: [-6, Math.max(1, Math.log10(Math.max(...y)) + 0.2)],
+						range: [-6, Math.min(2, Math.log10(Math.max(...y)) + 0.2)],
 						title: compact ? undefined : { text: '|R(z)|' }
 					}
 				}),
@@ -324,7 +328,6 @@ const order = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `convergence of ${method.id}`,
 				x: { type: 'log', range: logRange(x), title: compact ? undefined : { text: 'step size h' } },
 				y: {
 					type: 'log',
@@ -370,7 +373,6 @@ const cost = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `work precision of ${method.id}`,
 				x: {
 					type: 'log',
 					range: [range[1], range[0]],
@@ -387,7 +389,127 @@ const cost = {
 	}
 };
 
-export const METHOD_MODES = [stability, structure, damping, order, cost];
+const orderStar = {
+	key: 'orderStar',
+	label: 'order star',
+	note: 'log |R(z) exp(-z)|. Where the stability region says whether a mode decays, the star says whether the method tracks the exact solution: the sectors meeting at the origin count one more than the order, and a method is A-acceptable exactly when no sector reaches into the left half plane.',
+	request(engine, method, priority) {
+		if (method.class !== 'runge_kutta') return Promise.resolve(null);
+		const view = orderStarWindow(method);
+		const resolution = 160;
+		return engine.request(
+			'orderStar',
+			{ id: method.id, re: view.re, im: view.im, width: resolution, height: resolution },
+			{ key: `orderStar:${method.id}`, priority }
+		);
+	},
+	figure(result, method, { compact = true } = {}) {
+		if (!result) return empty('Runge-Kutta only');
+		const { data, width, height, re, im } = result;
+		const z = reshape(data, width, height);
+		const x = axisValues(re[0], re[1], width);
+		const y = axisValues(im[0], im[1], height);
+		// The star is a two colour object: inside or outside the unit modulus.
+		// A narrow symmetric range keeps the boundary crisp instead of washing
+		// it out against values that run to thirty decades.
+		const reach = 1.2;
+		return {
+			data: [
+				{
+					type: 'heatmap',
+					z,
+					x,
+					y,
+					zmin: -reach,
+					zmax: reach,
+					colorscale: bandedScale(2, ['#17313a', '#17313a', '#5a3417', '#5a3417']),
+					showscale: false,
+					zsmooth: 'best',
+					hoverinfo: 'skip'
+				},
+				{
+					type: 'contour',
+					z,
+					x,
+					y,
+					contours: { start: 0, end: 0, size: 1, coloring: 'none' },
+					line: { color: '#f5a623', width: compact ? 1 : 1.4 },
+					showscale: false,
+					hoverinfo: 'skip'
+				}
+			],
+			layout: layout({
+				compact,
+				x: { title: compact ? undefined : { text: 'Re(z)' }, range: re, zeroline: true },
+				y: { title: compact ? undefined : { text: 'Im(z)' }, range: im, zeroline: true }
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+/**
+ * The leading error coefficients, one bar per rooted tree.
+ *
+ * Two methods of the same order are not equally accurate. What separates them
+ * is how large the residuals of the first unsatisfied order conditions are and
+ * which elementary differentials they sit on, which is exactly what this shows.
+ */
+export const errorCoefficients = {
+	key: 'errorCoefficients',
+	label: 'error coefficients',
+	request(engine, method, priority) {
+		if (method.class !== 'runge_kutta') return Promise.resolve(null);
+		return engine.request(
+			'errorCoefficients',
+			{ id: method.id },
+			{ key: `errors:${method.id}`, priority }
+		);
+	},
+	figure(result, method, { compact = false } = {}) {
+		if (!result) return empty('Runge-Kutta only');
+		const all = result.conditions.map((condition) => ({
+			...condition,
+			magnitude: Math.abs(condition.residual)
+		}));
+		const largest = all.reduce((acc, c) => Math.max(acc, c.magnitude), 0);
+		// Anything eight decades below the largest is zero to rounding and only
+		// stretches the axis.
+		const floor = Math.max(largest * 1e-8, 1e-18);
+		const conditions = all
+			.filter((c) => c.magnitude >= floor)
+			.sort((a, b) => a.magnitude - b.magnitude)
+			.slice(-12);
+		if (conditions.length === 0) return empty('no conditions at this order');
+		return {
+			data: [
+				{
+					type: 'bar',
+					orientation: 'h',
+					x: conditions.map((c) => Math.max(c.magnitude, floor)),
+					y: conditions.map((c) => c.tree),
+					marker: { color: seriesColor(1) },
+					hovertemplate: '%{y}  %{x:.3e}<extra></extra>'
+				}
+			],
+			layout: layout({
+				compact,
+				x: {
+					type: 'log',
+					range: logRange(
+						conditions.map((c) => Math.max(c.magnitude, floor)),
+						0.08
+					),
+					title: compact ? undefined : { text: `residual at order ${result.atOrder}` }
+				},
+				y: { type: 'category', automargin: true, ticks: '' }
+			}),
+			config: config({ compact })
+		};
+	}
+};
+
+export const METHOD_MODES = [stability, orderStar, structure, damping, order, cost];
 export const MODES_NEEDING_A_PROBLEM = new Set(['order', 'cost']);
 
 // ---------------------------------------------------------------------------
@@ -425,7 +547,6 @@ const solution = {
 			data,
 			layout: layout({
 				compact,
-				title: compact ? '' : `solution of ${problem.id}`,
 				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
 				y: {
 					range: linearRange(data.flatMap((s) => s.y)),
@@ -459,7 +580,6 @@ const phase = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `phase portrait of ${problem.id}`,
 				x: { range: linearRange(x), title: compact ? undefined : { text: 'y1' } },
 				y: { range: linearRange(y), title: compact ? undefined : { text: 'y2' } }
 			}),
@@ -488,7 +608,6 @@ const stiffness = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `stiffness of ${problem.id}`,
 				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
 				y: {
 					type: 'log',
@@ -529,7 +648,6 @@ const steps = {
 			],
 			layout: layout({
 				compact,
-				title: compact ? '' : `step size on ${problem.id}`,
 				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
 				y: {
 					type: 'log',

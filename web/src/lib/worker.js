@@ -23,6 +23,11 @@ const HANDLERS = {
 	methodDetail: ({ id }) => JSON.parse(wasm.method_detail(id)),
 	methodSummary: ({ id }) => JSON.parse(wasm.method_summary(id)),
 	stabilityFunction: ({ id }) => JSON.parse(wasm.stability_function(id)),
+	errorCoefficients: ({ id }) => JSON.parse(wasm.error_coefficients(id)),
+	orderStar: ({ id, re, im, width, height }) => {
+		const data = wasm.order_star_grid(id, re[0], re[1], im[0], im[1], width, height);
+		return { data, width, height, re, im };
+	},
 	boundaryLocus: ({ id, samples }) => wasm.boundary_locus(id, samples),
 	problemProfile: ({ id, samples }) => JSON.parse(wasm.problem_profile(id, samples)),
 	convergence: ({ id, problem, coarse, ratio, count }) =>
