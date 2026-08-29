@@ -10,7 +10,15 @@
  * figure. Nothing here computes; the engine does, on its own schedule.
  */
 
-import { bandedScale, config, layout, logRange, linearRange, seriesColor } from './plot.js';
+import {
+	bandedScale,
+	config,
+	layout,
+	logRange,
+	linearRange,
+	originLines,
+	seriesColor
+} from './plot.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -140,9 +148,10 @@ const stability = {
 			layout: {
 				...layout({
 					compact,
-					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re, zeroline: true },
-					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im, zeroline: true }
-				})
+					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
+					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
+				}),
+				shapes: originLines({ compact })
 			},
 			config: config({ compact })
 		};
@@ -501,11 +510,14 @@ const orderStar = {
 					hoverinfo: 'skip'
 				}
 			],
-			layout: layout({
-				compact,
-				x: { title: compact ? undefined : { text: 'Re(z)' }, range: re, zeroline: true },
-				y: { title: compact ? undefined : { text: 'Im(z)' }, range: im, zeroline: true }
-			}),
+			layout: {
+				...layout({
+					compact,
+					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
+					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
+				}),
+				shapes: originLines({ compact })
+			},
 			config: config({ compact })
 		};
 	}
@@ -608,14 +620,17 @@ const solution = {
 		}
 		return {
 			data,
-			layout: layout({
-				compact,
-				x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
-				y: {
-					range: linearRange(data.flatMap((s) => s.y)),
-					title: compact ? undefined : { text: 'y' }
-				}
-			}),
+			layout: {
+				...layout({
+					compact,
+					x: { range: profile.tSpan, title: compact ? undefined : { text: 't' } },
+					y: {
+						range: linearRange(data.flatMap((s) => s.y)),
+						title: compact ? undefined : { text: 'y' }
+					}
+				}),
+				shapes: originLines({ x: false, compact })
+			},
 			config: config({ compact })
 		};
 	}
@@ -641,11 +656,14 @@ const phase = {
 					hoverinfo: compact ? 'skip' : 'x+y'
 				}
 			],
-			layout: layout({
-				compact,
-				x: { range: linearRange(x), title: compact ? undefined : { text: 'y1' } },
-				y: { range: linearRange(y), title: compact ? undefined : { text: 'y2' } }
-			}),
+			layout: {
+				...layout({
+					compact,
+					x: { range: linearRange(x), title: compact ? undefined : { text: 'y1' } },
+					y: { range: linearRange(y), title: compact ? undefined : { text: 'y2' } }
+				}),
+				shapes: originLines({ compact })
+			},
 			config: config({ compact })
 		};
 	}

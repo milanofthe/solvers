@@ -153,6 +153,48 @@ export function config({ compact = false } = {}) {
 	};
 }
 
+/**
+ * The two axes through the origin, drawn over the data.
+ *
+ * Plotly puts its own zero lines under the traces, where a filled contour or a
+ * heatmap hides them completely. These are shapes on the upper layer instead,
+ * which is the only way to keep the reference visible on the plots that need it
+ * most.
+ */
+export function originLines({ x = true, y = true, compact = false } = {}) {
+	const line = { color: COLORS.accent, width: 1, dash: 'dot' };
+	const shapes = [];
+	if (y) {
+		shapes.push({
+			type: 'line',
+			layer: 'above',
+			xref: 'paper',
+			x0: 0,
+			x1: 1,
+			yref: 'y',
+			y0: 0,
+			y1: 0,
+			opacity: compact ? 0.5 : 0.65,
+			line
+		});
+	}
+	if (x) {
+		shapes.push({
+			type: 'line',
+			layer: 'above',
+			yref: 'paper',
+			y0: 0,
+			y1: 1,
+			xref: 'x',
+			x0: 0,
+			x1: 0,
+			opacity: compact ? 0.5 : 0.65,
+			line
+		});
+	}
+	return shapes;
+}
+
 /** Axis range on a log scale, in the exponents Plotly wants. */
 export function logRange(values, pad = 0.06) {
 	const finite = values.filter((v) => Number.isFinite(v) && v > 0);
