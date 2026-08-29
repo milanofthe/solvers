@@ -1,10 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-<!-- The subject of the site as its mark: a stability region. The dotted cross is
-     the origin, the lobe is the set where the method does not amplify, and the
-     black edge is the unit contour, the same three elements every plot here is
-     built from. -->
+<!-- The subject of the site as its mark: a Butcher tableau. Lower triangular, so
+     it reads as a method that can be stepped one stage at a time, with the
+     diagonal picked out because that entry is what decides whether a stage needs
+     a solve at all. Four by four on the same grid the site's own favicon uses. -->
 <rect width="16" height="16" fill="#0F0F0F"/>
-<path d="M10.5 1.5V14.5" stroke="#7d7d78" stroke-width="0.9" stroke-dasharray="1.4 1.4"/>
-<path d="M1.5 8H14.5" stroke="#7d7d78" stroke-width="0.9" stroke-dasharray="1.4 1.4"/>
-<path d="M10.5 2.6C5.4 2.6 2.2 4.9 2.2 8C2.2 11.1 5.4 13.4 10.5 13.4Z" fill="#00D9C0" stroke="#0F0F0F" stroke-width="1.1" stroke-linejoin="round"/>
+<rect x="1.10" y="4.60" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="1.10" y="8.10" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="4.60" y="8.10" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="1.10" y="11.60" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="4.60" y="11.60" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="8.10" y="11.60" width="2.8" height="2.8" fill="#f0efe9"/>
+<rect x="1.10" y="1.10" width="2.8" height="2.8" fill="#00D9C0"/>
+<rect x="4.60" y="4.60" width="2.8" height="2.8" fill="#00D9C0"/>
+<rect x="8.10" y="8.10" width="2.8" height="2.8" fill="#00D9C0"/>
+<rect x="11.60" y="11.60" width="2.8" height="2.8" fill="#00D9C0"/>
 </svg>
