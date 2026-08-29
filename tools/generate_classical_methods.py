@@ -1,0 +1,430 @@
+"""Write the classical method families that are stated in closed form.
+
+Everything here is either a textbook tableau small enough to write out exactly,
+or a multistep family that is fully described by which of its coefficients are
+free. The order of every one of them is checked independently by the Rust side,
+so a slip shows up as a failing verification rather than as a silent bug.
+"""
+
+import io
+import json
+import os
+import re
+
+OUT = r"C:\Repositories\solvers\methods"
+
+INNER_ARRAY = re.compile(r"\[[^\[\]{}]*?\]", re.S)
+
+HNW1 = {
+    "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
+    "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+    "year": 1993,
+    "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+    "doi": "10.1007/978-3-540-78862-1",
+}
+HW2 = {
+    "authors": "Hairer, E., & Wanner, G.",
+    "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+    "year": 1996,
+    "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+    "doi": "10.1007/978-3-642-05221-7",
+}
+BUTCHER64 = {
+    "authors": "Butcher, J. C.",
+    "title": "Implicit Runge-Kutta processes",
+    "year": 1964,
+    "source": "Mathematics of Computation, 18(85), 50-64",
+    "doi": "10.1090/S0025-5718-1964-0159424-9",
+}
+BUTCHER16 = {
+    "authors": "Butcher, J. C.",
+    "title": "Numerical Methods for Ordinary Differential Equations",
+    "year": 2016,
+    "source": "Wiley, 3rd edition",
+    "doi": "10.1002/9781119121534",
+}
+CURTISS52 = {
+    "authors": "Curtiss, C. F., & Hirschfelder, J. O.",
+    "title": "Integration of stiff equations",
+    "year": 1952,
+    "source": "Proceedings of the National Academy of Sciences, 38(3), 235-243",
+    "doi": "10.1073/pnas.38.3.235",
+}
+DAHLQUIST63 = {
+    "authors": "Dahlquist, G.",
+    "title": "A special stability problem for linear multistep methods",
+    "year": 1963,
+    "source": "BIT Numerical Mathematics, 3(1), 27-43",
+    "doi": "10.1007/BF01963532",
+}
+DAHLQUIST56 = {
+    "authors": "Dahlquist, G.",
+    "title": "Convergence and stability in the numerical integration of ordinary differential equations",
+    "year": 1956,
+    "source": "Mathematica Scandinavica, 4, 33-53",
+    "doi": "10.7146/math.scand.a-10454",
+}
+NORSETT74 = {
+    "authors": "Noersett, S. P.",
+    "title": "Semi-explicit Runge-Kutta methods",
+    "year": 1974,
+    "source": "Report Mathematics and Computation No. 6/74, University of Trondheim",
+}
+CROUZEIX75 = {
+    "authors": "Crouzeix, M.",
+    "title": "Sur l'approximation des equations differentielles operationnelles lineaires par des methodes de Runge-Kutta",
+    "year": 1975,
+    "source": "These d'Etat, Universite Paris VI",
+}
+EHLE69 = {
+    "authors": "Ehle, B. L.",
+    "title": "On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems",
+    "year": 1969,
+    "source": "Research Report CSRR 2010, University of Waterloo",
+}
+
+
+def render(method):
+    text = json.dumps(method, indent=2, ensure_ascii=False)
+    text = INNER_ARRAY.sub(lambda m: "[" + " ".join(m.group(0)[1:-1].split()) + "]", text)
+    return text + "\n"
+
+
+def write(directory, method):
+    folder = os.path.join(OUT, directory)
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, method["id"] + ".json")
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write(render(method))
+    return method["id"]
+
+
+def rk(identifier, name, family, order, a, b, c, **extra):
+    method = {
+        "id": identifier,
+        "name": name,
+        "class": "runge_kutta",
+        "family": family,
+        "order": order,
+    }
+    for key in ("aliases", "description", "tags", "embedded_order", "properties", "defaults"):
+        if key in extra:
+            method[key] = extra.pop(key)
+    tableau = {"a": a, "b": b, "c": c}
+    if "b_embedded" in extra:
+        tableau["b_embedded"] = extra.pop("b_embedded")
+    method["tableau"] = tableau
+    if "references" in extra:
+        method["references"] = extra.pop("references")
+    assert not extra, extra
+    return method
+
+
+def lmm(identifier, name, family, order, steps, alpha, beta, **extra):
+    method = {
+        "id": identifier,
+        "name": name,
+        "class": "linear_multistep",
+        "family": family,
+        "order": order,
+    }
+    for key in ("aliases", "description", "tags", "properties", "defaults"):
+        if key in extra:
+            method[key] = extra.pop(key)
+    method["multistep"] = {
+        "steps": steps,
+        "alpha": alpha,
+        "beta": beta,
+        "normalization": "alpha0",
+    }
+    for key in ("startup", "min_steps"):
+        if key in extra:
+            method["multistep"][key] = extra.pop(key)
+    if "references" in extra:
+        method["references"] = extra.pop("references")
+    assert not extra, extra
+    return method
+
+
+FREE = "free"
+
+written = []
+
+# ---------------------------------------------------------------------------
+# Explicit Runge-Kutta
+# ---------------------------------------------------------------------------
+
+written.append(write("erk", rk(
+    "euler_explicit", "Forward Euler", "erk", 1,
+    a=[[0]], b=[1], c=[0],
+    aliases=["euler", "forward_euler", "explicit_euler"],
+    description="The first order explicit method. One evaluation per step, and the reference point every other explicit method is measured against.",
+    references=[HNW1],
+)))
+
+written.append(write("erk", rk(
+    "midpoint_explicit", "Explicit midpoint", "erk", 2,
+    a=[[0], ["1/2", 0]], b=[0, 1], c=[0, "1/2"],
+    aliases=["explicit_midpoint", "rk2_midpoint"],
+    description="Two stage second order method that takes a half step to sample the slope at the centre of the interval.",
+    references=[HNW1],
+)))
+
+written.append(write("erk", rk(
+    "ralston2", "Ralston 2", "erk", 2,
+    a=[[0], ["2/3", 0]], b=["1/4", "3/4"], c=[0, "2/3"],
+    description="Second order method with the minimal truncation error bound among two stage explicit schemes.",
+    references=[{
+        "authors": "Ralston, A.",
+        "title": "Runge-Kutta methods with minimum error bounds",
+        "year": 1962,
+        "source": "Mathematics of Computation, 16(80), 431-437",
+        "doi": "10.1090/S0025-5718-1962-0150954-0",
+    }],
+)))
+
+written.append(write("erk", rk(
+    "heun3", "Heun 3", "erk", 3,
+    a=[[0], ["1/3", 0], [0, "2/3", 0]], b=["1/4", 0, "3/4"], c=[0, "1/3", "2/3"],
+    description="Three stage third order method of Heun.",
+    references=[HNW1],
+)))
+
+written.append(write("erk", rk(
+    "rk38", "Runge-Kutta 3/8 rule", "erk", 4,
+    a=[[0], ["1/3", 0], ["-1/3", 1, 0], [1, -1, 1, 0]],
+    b=["1/8", "3/8", "3/8", "1/8"], c=[0, "1/3", "2/3", 1],
+    aliases=["rk4_38"],
+    description="Kutta's 3/8 rule. Fourth order like the classical method, with slightly smaller error constants at the same cost.",
+    references=[HNW1],
+)))
+
+# ---------------------------------------------------------------------------
+# Diagonally implicit
+# ---------------------------------------------------------------------------
+
+written.append(write("dirk", rk(
+    "euler_implicit", "Backward Euler", "dirk", 1,
+    a=[[1]], b=[1], c=[1],
+    aliases=["backward_euler", "implicit_euler"],
+    description="The first order implicit method. L-stable and unconditionally damping, which makes it the fallback whenever a step has to succeed rather than be accurate.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 1},
+    references=[HW2],
+)))
+
+written.append(write("dirk", rk(
+    "implicit_midpoint", "Implicit midpoint", "dirk", 2,
+    a=[["1/2"]], b=[1], c=["1/2"],
+    aliases=["midpoint_implicit", "gauss_legendre_2"],
+    description="One stage second order Gauss method. A-stable, symmetric and symplectic, so it preserves quadratic invariants exactly.",
+    properties={"a_stable": True, "l_stable": False, "stiffly_accurate": False,
+                "symplectic": True, "symmetric": True, "stage_order": 1},
+    references=[HW2],
+)))
+
+written.append(write("dirk", rk(
+    "trapezoidal", "Trapezoidal rule", "dirk", 2,
+    a=[[0, 0], ["1/2", "1/2"]], b=["1/2", "1/2"], c=[0, 1],
+    aliases=["crank_nicolson", "trapezoid"],
+    description="Second order A-stable rule. Symmetric but not L-stable, so stiff modes are reflected rather than damped and oscillate at the step frequency.",
+    properties={"a_stable": True, "l_stable": False, "stiffly_accurate": True, "symmetric": True},
+    references=[HW2],
+)))
+
+written.append(write("dirk", rk(
+    "sdirk2", "SDIRK 2", "dirk", 2,
+    a=[["1 - sqrt(2)/2", 0], ["sqrt(2)/2", "1 - sqrt(2)/2"]],
+    b=["sqrt(2)/2", "1 - sqrt(2)/2"],
+    c=["1 - sqrt(2)/2", 1],
+    description="Two stage second order singly diagonally implicit method. L-stable and stiffly accurate, with one factorization serving both stages.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+    references=[EHLE69, HW2],
+)))
+
+# Noersett's L-stable three stage SDIRK of order three. gamma is the middle root
+# of x^3 - 3x^2 + 3x/2 - 1/6, given here to full double precision.
+GAMMA3 = 0.43586652150845899941601945
+written.append(write("dirk", rk(
+    "sdirk3", "SDIRK 3", "dirk", 3,
+    a=[[GAMMA3, 0, 0],
+       [(1 - GAMMA3) / 2, GAMMA3, 0],
+       [-(6 * GAMMA3 ** 2 - 16 * GAMMA3 + 1) / 4, (6 * GAMMA3 ** 2 - 20 * GAMMA3 + 5) / 4, GAMMA3]],
+    b=[-(6 * GAMMA3 ** 2 - 16 * GAMMA3 + 1) / 4, (6 * GAMMA3 ** 2 - 20 * GAMMA3 + 5) / 4, GAMMA3],
+    c=[GAMMA3, (1 + GAMMA3) / 2, 1],
+    description="Three stage third order singly diagonally implicit method. L-stable and stiffly accurate; the diagonal entry is the middle root of x^3 - 3x^2 + 3x/2 - 1/6.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+    references=[NORSETT74, CROUZEIX75, HW2],
+)))
+
+# ---------------------------------------------------------------------------
+# Fully implicit: Radau, Gauss, Lobatto
+# ---------------------------------------------------------------------------
+
+written.append(write("irk", rk(
+    "radau_iia_3", "Radau IIA 3", "irk", 3,
+    a=[["5/12", "-1/12"], ["3/4", "1/4"]],
+    b=["3/4", "1/4"], c=["1/3", 1],
+    aliases=["radau3", "radau_iia_2s"],
+    description="Two stage Radau IIA. L-stable, stiffly accurate, stage order two, and the cheapest fully implicit method worth using on a stiff problem.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 2},
+    references=[BUTCHER64, HW2],
+)))
+
+written.append(write("irk", rk(
+    "radau_iia_5", "Radau IIA 5", "irk", 5,
+    a=[["(88 - 7*sqrt(6))/360", "(296 - 169*sqrt(6))/1800", "(-2 + 3*sqrt(6))/225"],
+       ["(296 + 169*sqrt(6))/1800", "(88 + 7*sqrt(6))/360", "(-2 - 3*sqrt(6))/225"],
+       ["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"]],
+    b=["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"],
+    c=["(4 - sqrt(6))/10", "(4 + sqrt(6))/10", 1],
+    aliases=["radau5", "radau_iia_3s"],
+    description="Three stage Radau IIA, the method behind RADAU5. Fifth order, L-stable, stiffly accurate and stage order three, which is why it barely suffers order reduction.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 3},
+    references=[BUTCHER64, HW2],
+)))
+
+written.append(write("irk", rk(
+    "gauss_legendre_4", "Gauss-Legendre 4", "irk", 4,
+    a=[["1/4", "1/4 - sqrt(3)/6"], ["1/4 + sqrt(3)/6", "1/4"]],
+    b=["1/2", "1/2"],
+    c=["1/2 - sqrt(3)/6", "1/2 + sqrt(3)/6"],
+    aliases=["gauss4"],
+    description="Two stage Gauss method. Fourth order from two stages, the maximum attainable, and symplectic, so it is the natural choice for Hamiltonian systems.",
+    properties={"a_stable": True, "l_stable": False, "symplectic": True, "symmetric": True, "stage_order": 2},
+    references=[BUTCHER64, HW2],
+)))
+
+written.append(write("irk", rk(
+    "gauss_legendre_6", "Gauss-Legendre 6", "irk", 6,
+    a=[["5/36", "2/9 - sqrt(15)/15", "5/36 - sqrt(15)/30"],
+       ["5/36 + sqrt(15)/24", "2/9", "5/36 - sqrt(15)/24"],
+       ["5/36 + sqrt(15)/30", "2/9 + sqrt(15)/15", "5/36"]],
+    b=["5/18", "4/9", "5/18"],
+    c=["1/2 - sqrt(15)/10", "1/2", "1/2 + sqrt(15)/10"],
+    aliases=["gauss6"],
+    description="Three stage Gauss method, sixth order and symplectic. Highest order per stage of any Runge-Kutta method.",
+    properties={"a_stable": True, "l_stable": False, "symplectic": True, "symmetric": True, "stage_order": 3},
+    references=[BUTCHER64, HW2],
+)))
+
+written.append(write("irk", rk(
+    "lobatto_iiia_4", "Lobatto IIIA 4", "irk", 4,
+    a=[[0, 0, 0], ["5/24", "1/3", "-1/24"], ["1/6", "2/3", "1/6"]],
+    b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
+    description="Three stage Lobatto IIIA, the collocation method on Simpson's nodes. A-stable and symmetric with an explicit first stage.",
+    properties={"a_stable": True, "l_stable": False, "stiffly_accurate": True, "symmetric": True, "stage_order": 3},
+    references=[BUTCHER16, HW2],
+)))
+
+written.append(write("irk", rk(
+    "lobatto_iiib_4", "Lobatto IIIB 4", "irk", 4,
+    a=[["1/6", "-1/6", 0], ["1/6", "1/3", 0], ["1/6", "5/6", 0]],
+    b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
+    description="Three stage Lobatto IIIB. The adjoint of IIIA, and paired with it forms a symplectic partitioned method for separable Hamiltonians.",
+    properties={"a_stable": True, "l_stable": False, "symmetric": True},
+    references=[BUTCHER16, HW2],
+)))
+
+written.append(write("irk", rk(
+    "lobatto_iiic_2", "Lobatto IIIC 2", "irk", 2,
+    a=[["1/2", "-1/2"], ["1/2", "1/2"]],
+    b=["1/2", "1/2"], c=[0, 1],
+    description="Two stage Lobatto IIIC. L-stable and stiffly accurate, with strong damping that also handles index one differential algebraic systems.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 1},
+    references=[BUTCHER16, HW2],
+)))
+
+written.append(write("irk", rk(
+    "lobatto_iiic_4", "Lobatto IIIC 4", "irk", 4,
+    a=[["1/6", "-1/3", "1/6"], ["1/6", "5/12", "-1/12"], ["1/6", "2/3", "1/6"]],
+    b=["1/6", "2/3", "1/6"], c=[0, "1/2", 1],
+    description="Three stage Lobatto IIIC. Fourth order, L-stable and stiffly accurate; the damping at infinity is what IIIA lacks.",
+    properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True, "stage_order": 2},
+    references=[BUTCHER16, HW2],
+)))
+
+# ---------------------------------------------------------------------------
+# Backward differentiation formulas
+# ---------------------------------------------------------------------------
+
+BDF_NOTES = {
+    1: "Identical to backward Euler, and the order the variable order driver falls back to.",
+    2: "A-stable and the highest order BDF that is. The workhorse for stiff problems where robustness matters more than order.",
+    3: "A(86.03) stable. The usual default of a variable order BDF code.",
+    4: "A(73.35) stable.",
+    5: "A(51.84) stable. Beyond this the stability wedge closes quickly.",
+    6: "A(17.84) stable, and the last BDF that is zero stable at all.",
+}
+
+# A k step formula needs k history points, and they have to come from a one
+# step method of at least the same order and on the same step size. Generating
+# them by ramping the step size instead leaves the history so unevenly spaced
+# that the variable step coefficients lose all conditioning at high order.
+# Stiff families get a stiff starter.
+BDF_STARTUP = {1: "esdirk32", 2: "esdirk32", 3: "esdirk43", 4: "esdirk43", 5: "esdirk54", 6: "esdirk85"}
+
+for k in range(1, 7):
+    written.append(write("bdf", lmm(
+        f"bdf{k}", f"BDF{k}", "bdf", k, k,
+        alpha=[FREE] * (k + 1),
+        beta=[1] + [0] * k,
+        startup=BDF_STARTUP[k],
+        aliases=[f"gear{k}"] if k > 1 else ["gear1"],
+        description=f"Backward differentiation formula of order {k}. {BDF_NOTES[k]}",
+        properties={"a_stable": k <= 2},
+        references=[CURTISS52, DAHLQUIST63, HW2],
+    )))
+
+# ---------------------------------------------------------------------------
+# Adams families
+# ---------------------------------------------------------------------------
+
+for k in range(1, 6):
+    written.append(write("adams", lmm(
+        f"adams_bashforth_{k}", f"Adams-Bashforth {k}", "adams_bashforth", k, k,
+        alpha=[1, -1] + [0] * (k - 1),
+        beta=[0] + [FREE] * k,
+        startup="rkdp54",
+        aliases=[f"ab{k}"],
+        description=f"Explicit {k} step Adams method of order {k}. One evaluation per step regardless of order, which is what makes the family cheap.",
+        references=[HNW1, DAHLQUIST56],
+    )))
+
+for k in range(1, 5):
+    written.append(write("adams", lmm(
+        f"adams_moulton_{k + 1}", f"Adams-Moulton {k + 1}", "adams_moulton", k + 1, k,
+        alpha=[1, -1] + [0] * (k - 1),
+        beta=[FREE] * (k + 1),
+        startup="esdirk54",
+        aliases=[f"am{k + 1}"],
+        description=f"Implicit {k} step Adams method of order {k + 1}. One order higher than the explicit family at the same step count, at the cost of a solve.",
+        references=[HNW1, DAHLQUIST56],
+    )))
+
+# ---------------------------------------------------------------------------
+# Nystrom and Milne-Simpson: the same machinery with a different free pattern
+# ---------------------------------------------------------------------------
+
+written.append(write("adams", lmm(
+    "nystrom2", "Nystrom 2", "nystrom", 2, 2,
+    alpha=[1, 0, -1], beta=[0, FREE, FREE],
+    startup="rkdp54",
+    min_steps=2,
+    aliases=["explicit_midpoint_lmm", "leapfrog"],
+    description="Explicit midpoint rule as a two step method. Weakly stable: the parasitic root sits on the unit circle, so errors neither grow nor decay.",
+    references=[HNW1],
+)))
+
+written.append(write("adams", lmm(
+    "milne_simpson", "Milne-Simpson", "milne_simpson", 4, 2,
+    alpha=[1, 0, -1], beta=[FREE, FREE, FREE],
+    startup="rkdp54",
+    min_steps=2,
+    aliases=["simpson_lmm"],
+    description="Two step implicit method of order four, the highest a two step method can reach. Only weakly stable, which is why it is used inside predictor corrector pairs rather than alone.",
+    references=[HNW1, DAHLQUIST56],
+)))
+
+print(f"{len(written)} classical method files written")
+for identifier in written:
+    print(" ", identifier)

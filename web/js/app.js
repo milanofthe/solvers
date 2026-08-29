@@ -13,12 +13,14 @@ import { libraryView } from "./views/library.js";
 import { stabilityView } from "./views/stability.js";
 import { methodView } from "./views/method.js";
 import { convergenceView, costView } from "./views/analysis.js";
+import { controllerView } from "./views/controller.js";
 
 const ROUTES = [
   { path: "#/library", label: "Library", view: (context) => libraryView(context) },
   { path: "#/stability", label: "Stability", view: (context) => stabilityView(context) },
   { path: "#/convergence", label: "Convergence", view: (context) => convergenceView(context) },
   { path: "#/cost", label: "Cost", view: (context) => costView(context) },
+  { path: "#/control", label: "Step control", view: (context) => controllerView(context) },
 ];
 
 const state = {
