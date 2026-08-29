@@ -285,19 +285,84 @@ pub fn stability_region(
 ///
 /// A fixed window per method class is always wrong for somebody: backward Euler
 /// needs a couple of units, Radau needs a dozen, and an eight stage explicit
-/// pair needs more still. So the window is measured rather than guessed. A
-/// coarse probe is sampled, and whichever of the stable and the unstable set
-/// turns out to be bounded is the one that sets the extent; the other is the
-/// half plane the method lives in and has no extent to speak of.
+/// pair needs more still. So the window is measured rather than guessed.
+///
+/// For a multistep method the boundary is known in closed form and there is
+/// nothing to probe for: the curve is the frame. For a Runge-Kutta method a
+/// coarse probe is sampled instead, and whichever of the stable and the
+/// unstable set turns out to be bounded is the one that sets the extent; the
+/// other is the half plane the method lives in and has no extent to speak of.
 pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)) {
     let scale = probe_scale(method);
+    let fallback = shape_to_aspect((-scale * 0.6, scale * 0.4), (-scale * 0.5, scale * 0.5), aspect);
+
+    let chosen = match boundary_bounds(method).or_else(|| probe_bounds(method, scale)) {
+        Some(bounds) => bounds,
+        None => return fallback,
+    };
+
+    // The origin is the reference point of every one of these pictures, so it
+    // stays in view even when the interesting set sits away from it.
+    let mut x0 = chosen.x0.min(0.0);
+    let mut x1 = chosen.x1.max(0.0);
+    let mut y0 = chosen.y0.min(0.0);
+    let mut y1 = chosen.y1.max(0.0);
+
+    // One margin for both axes, taken from the larger side. A fixed minimum
+    // would swallow the picture whole for a family like Adams-Bashforth 8,
+    // whose region is a fraction of a unit across.
+    let pad = (x1 - x0).max(y1 - y0).max(1e-9) * 0.18;
+    x0 -= pad;
+    x1 += pad;
+    y0 -= pad;
+    y1 += pad;
+
+    shape_to_aspect((x0, x1), (y0, y1), aspect)
+}
+
+/// The extent of a multistep stability region, taken from its own boundary.
+///
+/// Exact where a sampled grid is only as good as its resolution, and the only
+/// thing that works at all for a region with no interior: Nystrom 2 and
+/// Milne-Simpson are stable on a segment of the imaginary axis and nowhere
+/// else, and no grid resolves a set of zero area.
+///
+/// Two cases have no box to give and hand the question back. The boundary of an
+/// A-stable family runs to infinity, which shows up as a tail orders of
+/// magnitude past the middle of the curve. And Nystrom above two steps is
+/// stable at the origin and nowhere else, which leaves no extent at all.
+fn boundary_bounds(method: &Method) -> Option<Bounds> {
+    let family = method.multistep()?;
+    let coefficients = family.uniform_coefficients().ok()?;
+    let polynomials = GeneratingPolynomials::from_coefficients(&coefficients);
+
+    let points: Vec<Complex> = polynomials
+        .region_boundary(720)
+        .into_iter()
+        .filter(|z| z.abs().is_finite())
+        .collect();
+    if points.is_empty() {
+        return None;
+    }
+    let mut moduli: Vec<f64> = points.iter().map(|z| z.abs()).collect();
+    moduli.sort_by(f64::total_cmp);
+    if *moduli.last().unwrap() > 1e3 * moduli[moduli.len() / 2].max(1e-12) {
+        return None;
+    }
+
+    let mut bounds = Bounds::empty();
+    for z in &points {
+        bounds.include(z.re, z.im, false);
+    }
+    let extent = (bounds.x1 - bounds.x0).max(bounds.y1 - bounds.y0);
+    (extent > 1e-9).then_some(bounds)
+}
+
+/// The extent of whichever of the two sets a coarse probe finds bounded.
+fn probe_bounds(method: &Method, scale: f64) -> Option<Bounds> {
     let probe = (-scale, scale);
     let samples = 72;
-
-    let fallback = shape_to_aspect((-scale * 0.6, scale * 0.4), (-scale * 0.5, scale * 0.5), aspect);
-    let Some(grid) = stability_region(method, probe, probe, samples, samples) else {
-        return fallback;
-    };
+    let grid = stability_region(method, probe, probe, samples, samples)?;
 
     let mut stable = Bounds::empty();
     let mut unstable = Bounds::empty();
@@ -315,58 +380,16 @@ pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)
         }
     }
 
-    // A region with no interior is not absent, it is thin. The weakly stable
-    // families are stable on a segment of the imaginary axis and nowhere else,
-    // which no sampled grid can resolve however fine it is, so the window comes
-    // from the boundary locus instead: that segment is the whole region.
-    let chosen = if !stable.any {
-        match locus_bounds(method, scale) {
-            Some(bounds) => bounds,
-            None => return fallback,
-        }
-    // The bounded set is the one that does not run off the probe.
-    } else if stable.bounded() {
-        stable
+    // The bounded set is the one that does not run off the probe. Where neither
+    // is, the boundary is a line through the plane, as it is for a method whose
+    // region is exactly a half plane, and no box means anything.
+    if stable.bounded() {
+        Some(stable)
     } else if unstable.bounded() {
-        unstable
+        Some(unstable)
     } else {
-        // Neither set is bounded: the boundary is a line through the plane, as
-        // it is for a method whose region is exactly a half plane. Then the only
-        // scale that means anything is the one around the origin.
-        return fallback;
-    };
-
-    // The origin is the reference point of every one of these pictures, so it
-    // stays in view even when the interesting set sits away from it.
-    let mut x0 = chosen.x0.min(0.0);
-    let mut x1 = chosen.x1.max(0.0);
-    let mut y0 = chosen.y0.min(0.0);
-    let mut y1 = chosen.y1.max(0.0);
-
-    let pad_x = ((x1 - x0) * 0.22).max(0.4);
-    let pad_y = ((y1 - y0) * 0.22).max(0.4);
-    x0 -= pad_x;
-    x1 += pad_x;
-    y0 -= pad_y;
-    y1 += pad_y;
-
-    shape_to_aspect((x0, x1), (y0, y1), aspect)
-}
-
-/// The extent of the boundary locus, ignoring the excursions to infinity that
-/// appear whenever `sigma` has a root on the unit circle.
-fn locus_bounds(method: &Method, scale: f64) -> Option<Bounds> {
-    let family = method.multistep()?;
-    let coefficients = family.uniform_coefficients().ok()?;
-    let polynomials = GeneratingPolynomials::from_coefficients(&coefficients);
-    let mut bounds = Bounds::empty();
-    for z in polynomials.boundary_locus(720) {
-        let modulus = z.abs();
-        if modulus.is_finite() && modulus <= scale {
-            bounds.include(z.re, z.im, false);
-        }
+        None
     }
-    bounds.any.then_some(bounds)
 }
 
 #[derive(Clone, Copy)]

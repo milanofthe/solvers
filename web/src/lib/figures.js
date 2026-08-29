@@ -58,10 +58,10 @@ function orderStarWindow(method) {
 const GRID = { runge_kutta: 140, linear_multistep: 72 };
 
 /** How finely the closed form multistep boundary is traced. */
-const LOCUS_SAMPLES = 720;
+const BOUNDARY_SAMPLES = 720;
 
 /**
- * The boundary of a multistep stability region, as a closed curve.
+ * The boundary of a multistep stability region, in closed form.
  *
  * It is drawn instead of a contour through the sampled grid because the two
  * agree wherever the region has an interior, and only this one survives where
@@ -69,10 +69,12 @@ const LOCUS_SAMPLES = 720;
  * imaginary axis and nowhere else, so there is no cell for a contour to cross
  * and the grid alone would show an empty frame.
  *
- * The locus runs to infinity wherever sigma has a root on the unit circle, so
- * the curve is broken there rather than drawn straight back across the frame.
+ * The core has already cut the arcs that bound nothing. What is left still has
+ * to be broken rather than joined up: the curve leaves the frame wherever the
+ * region does, and a line drawn straight back across it would read as a
+ * boundary that is not there.
  */
-function locusTrace(locus, re, im, compact) {
+function boundaryTrace(locus, re, im, compact) {
 	const limit = 6 * Math.max(re[1] - re[0], im[1] - im[0]);
 	const x = [];
 	const y = [];
@@ -89,12 +91,17 @@ function locusTrace(locus, re, im, compact) {
 		x.push(a);
 		y.push(b);
 	}
+	// Nystrom above two steps is stable at the origin and nowhere else. A curve
+	// of no length draws as nothing at all, which reads as a missing plot rather
+	// than as the answer, so what is left of it is drawn as the points it is.
+	const points = x.filter((v) => v !== null).length;
 	return {
 		type: 'scatter',
-		mode: 'lines',
+		mode: points > 4 ? 'lines' : 'markers',
 		x,
 		y,
 		line: { color: '#000000', width: compact ? 1 : 1.4 },
+		marker: { color: '#000000', size: compact ? 4 : 6 },
 		showlegend: false,
 		hoverinfo: 'skip'
 	};
@@ -138,7 +145,7 @@ const stability = {
 				aspect: PANEL_ASPECT,
 				width: resolution,
 				height: resolution,
-				locus: method.class === 'linear_multistep' ? LOCUS_SAMPLES : 0
+				locus: method.class === 'linear_multistep' ? BOUNDARY_SAMPLES : 0
 			},
 			{ key: `stability:${method.id}`, priority }
 		);
@@ -185,7 +192,7 @@ const stability = {
 							}
 				},
 				locus
-					? locusTrace(locus, re, im, compact)
+					? boundaryTrace(locus, re, im, compact)
 					: {
 							type: 'contour',
 							z,

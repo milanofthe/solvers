@@ -187,9 +187,11 @@ pub fn stability_window(id: &str, aspect: f64) -> Result<String, JsValue> {
     Ok(serde_json::to_string(&json!({ "re": [re.0, re.1], "im": [im.0, im.1] })).unwrap_or_default())
 }
 
-/// The boundary locus of a multistep method, interleaved as `re, im, re, im`.
+/// The stability region boundary of a multistep method, interleaved as
+/// `re, im, re, im`. Points that are not on the boundary come back as `NaN`,
+/// which breaks the curve where it should be broken.
 #[wasm_bindgen]
-pub fn boundary_locus(id: &str, samples: usize) -> Result<Vec<f64>, JsValue> {
+pub fn region_boundary(id: &str, samples: usize) -> Result<Vec<f64>, JsValue> {
     let method = find(id)?;
     let family = method
         .multistep()
@@ -199,7 +201,7 @@ pub fn boundary_locus(id: &str, samples: usize) -> Result<Vec<f64>, JsValue> {
         .map_err(|e| JsValue::from_str(&e.to_string()))?;
     let polynomials = stability::GeneratingPolynomials::from_coefficients(&coefficients);
     let mut out = Vec::with_capacity(2 * samples);
-    for z in polynomials.boundary_locus(samples) {
+    for z in polynomials.region_boundary(samples) {
         out.push(z.re);
         out.push(z.im);
     }

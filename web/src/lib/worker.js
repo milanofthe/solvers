@@ -28,7 +28,6 @@ const HANDLERS = {
 		const data = wasm.order_star_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
-	boundaryLocus: ({ id, samples }) => wasm.boundary_locus(id, samples),
 	problemProfile: ({ id, samples }) => JSON.parse(wasm.problem_profile(id, samples)),
 	convergence: ({ id, problem, coarse, ratio, count }) =>
 		JSON.parse(wasm.convergence_study(id, problem, coarse, ratio, count)),
@@ -64,7 +63,7 @@ const HANDLERS = {
 			height,
 			re: view.re,
 			im: view.im,
-			locus: locus ? wasm.boundary_locus(id, locus) : null
+			locus: locus ? wasm.region_boundary(id, locus) : null
 		};
 	}
 };

@@ -547,4 +547,27 @@ impl GeneratingPolynomials {
             .into_iter()
             .fold(0.0f64, |acc, w| acc.max(w.abs()))
     }
+
+    /// The part of the boundary locus that actually bounds the stability
+    /// region, with everything else replaced by `NaN`.
+    ///
+    /// Every point of the locus has a root on the unit circle, which is why the
+    /// curve is where the region can end. It is not where it does end: on the
+    /// outer loops of a high order Adams or BDF family another root is already
+    /// outside the circle, so the curve runs through the unstable set without
+    /// bounding anything. Keeping only the points whose largest root is the one
+    /// on the circle leaves exactly the boundary, and does it in closed form
+    /// where a contour through a sampled grid would have to guess.
+    pub fn region_boundary(&self, samples: usize) -> Vec<Complex> {
+        self.boundary_locus(samples)
+            .into_iter()
+            .map(|z| {
+                if z.abs().is_finite() && self.root_radius(z) <= 1.0 + 1e-6 {
+                    z
+                } else {
+                    Complex::new(f64::NAN, f64::NAN)
+                }
+            })
+            .collect()
+    }
 }
