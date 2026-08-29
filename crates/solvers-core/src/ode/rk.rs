@@ -47,6 +47,14 @@ pub struct RkStepper {
     f_start: Option<Vec<f64>>,
     /// True when stage one is `f(t, y)`, which makes FSAL reuse legal.
     trivial_first_stage: bool,
+    /// Whether the embedded error estimate is filtered through the iteration
+    /// matrix. Only meaningful once there is one, so only for implicit methods.
+    filter_error: bool,
+    /// Whether the error estimate comes from step doubling rather than from an
+    /// embedded pair.
+    richardson: bool,
+    y_saved: Vec<f64>,
+    y_big: Vec<f64>,
 
     linear: NewtonMatrix,
     nonlinear: NonlinearSolver,
@@ -91,6 +99,10 @@ impl RkStepper {
 
         let trivial_first_stage = runtime.c[0].abs() < 1e-14
             && (0..s).all(|j| runtime.a[(0, j)].abs() < 1e-14);
+        let filter_error = runtime.structure == Structure::DiagonallyImplicit;
+        // Step doubling only makes sense when the driver is actually going to use
+        // the estimate; a fixed step run would just pay three times the cost.
+        let richardson = options.adaptive && options.richardson && runtime.e.is_none();
 
         let coupled = if runtime.structure == Structure::FullyImplicit {
             let decoupled = if options.decouple_stages {
@@ -131,6 +143,10 @@ impl RkStepper {
             stage_tmp: vec![vec![0.0; dim]; s],
             f_start: None,
             trivial_first_stage,
+            filter_error,
+            richardson,
+            y_saved: vec![0.0; dim],
+            y_big: vec![0.0; dim],
             linear: NewtonMatrix::new(dim),
             nonlinear: NonlinearSolver::new(options.nonlinear),
             coupled,
@@ -145,6 +161,16 @@ impl RkStepper {
     }
 
     /// Finish a step: form the solution and the error estimate.
+    ///
+    /// For an implicit method the raw embedded difference is passed through
+    /// `(I - h*gamma*J)^{-1}` first. Without that filter the estimate inherits
+    /// the stiff eigenvalues of the problem and reports an error of order
+    /// `h*lambda` for modes the method is in fact damping perfectly, which
+    /// throttles the step size to the explicit stability limit and throws away
+    /// the entire point of using an L-stable method.
+    ///
+    /// Reference: Hairer and Wanner, "Solving ODEs II", IV.8, the error
+    /// estimate of RADAU5.
     fn finalize(&mut self, h: f64) -> StepOutcome {
         let s = self.tableau.stages;
         simd::combine(&self.y, h, &self.tableau.b[..s], &self.k, &mut self.y_new);
@@ -156,11 +182,83 @@ impl RkStepper {
         let error = match &self.tableau.e {
             Some(e) => {
                 simd::combine_into(h, &e[..s], &self.k, &mut self.err);
+                if self.filter_error {
+                    self.linear.solve(&mut self.err);
+                }
                 simd::error_scale(self.atol, self.rtol, &self.y, &self.y_new, &mut self.scale);
                 simd::weighted_rms(&self.err, &self.scale)
             }
             None => 0.0,
         };
+        self.last_h = h;
+        StepOutcome { ok: true, error }
+    }
+
+    /// One step with the method as written.
+    fn attempt_once<P: Problem + ?Sized>(
+        &mut self,
+        problem: &P,
+        stats: &mut Stats,
+        t: f64,
+        h: f64,
+    ) -> StepOutcome {
+        match self.tableau.structure {
+            Structure::Explicit => self.attempt_explicit(problem, stats, t, h),
+            Structure::DiagonallyImplicit => self.attempt_dirk(problem, stats, t, h),
+            Structure::FullyImplicit => self.attempt_coupled(problem, stats, t, h),
+        }
+    }
+
+    /// One step of `h` against two of `h/2`, which gives an error estimate for
+    /// a method that has no embedded pair of its own.
+    ///
+    /// The difference between the two results is `(2^p - 1)` times the leading
+    /// error term of the single step, so dividing by that yields an estimate of
+    /// the same quality an embedded pair would give. It costs three steps
+    /// instead of one, which is the price of making Gauss, Radau and Lobatto
+    /// adaptive at all; a method that ships an embedded pair never takes this
+    /// path.
+    fn attempt_with_step_doubling<P: Problem + ?Sized>(
+        &mut self,
+        problem: &P,
+        stats: &mut Stats,
+        t: f64,
+        h: f64,
+    ) -> StepOutcome {
+        let half = 0.5 * h;
+        self.y_saved.copy_from_slice(&self.y);
+
+        let outcome = self.attempt_once(problem, stats, t, h);
+        if !outcome.ok {
+            return outcome;
+        }
+        self.y_big.copy_from_slice(&self.y_new);
+
+        // Two half steps from the same starting point. The cached start
+        // derivative belongs to a different step size, so it is dropped.
+        self.f_start = None;
+        let first = self.attempt_once(problem, stats, t, half);
+        if !first.ok {
+            self.y.copy_from_slice(&self.y_saved);
+            self.f_start = None;
+            return StepOutcome::failed();
+        }
+        self.y.copy_from_slice(&self.y_new);
+        self.f_start = None;
+        let second = self.attempt_once(problem, stats, t + half, half);
+        self.y.copy_from_slice(&self.y_saved);
+        self.f_start = None;
+        if !second.ok {
+            return StepOutcome::failed();
+        }
+
+        let order = self.control_order.max(1) as i32;
+        let denominator = 2f64.powi(order) - 1.0;
+        for i in 0..self.dim {
+            self.err[i] = (self.y_new[i] - self.y_big[i]) / denominator;
+        }
+        simd::error_scale(self.atol, self.rtol, &self.y, &self.y_new, &mut self.scale);
+        let error = simd::weighted_rms(&self.err, &self.scale);
         self.last_h = h;
         StepOutcome { ok: true, error }
     }
@@ -357,7 +455,7 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
     }
 
     fn is_adaptive(&self) -> bool {
-        self.tableau.e.is_some()
+        self.tableau.e.is_some() || self.richardson
     }
 
     fn start(&mut self, _problem: &P, _stats: &mut Stats, _t: f64, y: &[f64]) {
@@ -377,16 +475,19 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
     }
 
     fn attempt(&mut self, problem: &P, stats: &mut Stats, t: f64, h: f64) -> StepOutcome {
-        match self.tableau.structure {
-            Structure::Explicit => self.attempt_explicit(problem, stats, t, h),
-            Structure::DiagonallyImplicit => self.attempt_dirk(problem, stats, t, h),
-            Structure::FullyImplicit => self.attempt_coupled(problem, stats, t, h),
+        if self.richardson {
+            return self.attempt_with_step_doubling(problem, stats, t, h);
         }
+        self.attempt_once(problem, stats, t, h)
     }
 
     fn commit(&mut self, _t: f64, _h: f64) {
         self.y.copy_from_slice(&self.y_new);
         self.have_step = true;
+        if self.richardson {
+            // The cached derivative belongs to the last half step.
+            self.f_start = None;
+        }
         self.linear.advance_age();
         if let Some(c) = &mut self.coupled {
             c.age += 1;
@@ -409,6 +510,11 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
     }
 
     fn interpolate(&self, theta: f64, out: &mut [f64]) -> bool {
+        if self.richardson {
+            // The stage values belong to the last half step, not to the whole
+            // step, so they cannot be used to interpolate across it.
+            return false;
+        }
         let Some(dense) = &self.tableau.dense else {
             // Without a published interpolant, a cubic Hermite through the two
             // endpoint derivatives is available for free whenever the first

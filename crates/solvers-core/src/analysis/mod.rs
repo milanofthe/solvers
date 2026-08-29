@@ -69,8 +69,9 @@ pub struct MethodReport {
     pub a_stable: bool,
     pub l_stable: bool,
     pub stiffly_accurate: Option<bool>,
-    /// `R(infinity)` for Runge-Kutta methods.
-    pub damping_at_infinity: Option<f64>,
+    /// `R(infinity)` for Runge-Kutta methods. Unbounded for an explicit method,
+    /// whose stability function is a polynomial.
+    pub damping_at_infinity: Option<Limit>,
     /// Half angle of the A(alpha) wedge in degrees, ninety meaning A-stable.
     pub alpha_angle: Option<f64>,
     pub real_stability_limit: Option<Limit>,
@@ -171,7 +172,7 @@ pub fn analyze(method: &Method) -> MethodReport {
                 a_stable,
                 l_stable,
                 stiffly_accurate: Some(tableau.stiffly_accurate),
-                damping_at_infinity: Some(function.at_infinity()),
+                damping_at_infinity: Some(function.at_infinity().into()),
                 alpha_angle: if a_stable { Some(90.0) } else { None },
                 real_stability_limit: Some(function.real_stability_limit().into()),
                 imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),

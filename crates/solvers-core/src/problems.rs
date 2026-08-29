@@ -475,12 +475,15 @@ pub struct VanDerPolStiff {
 }
 
 impl Problem for VanDerPolStiff {
+    // y'' = mu (1 - y^2) y' - y, the form the benchmark literature uses. The
+    // relaxation period is about 1.61 mu, so the interval below covers roughly
+    // two cycles.
     fn dim(&self) -> usize {
         2
     }
     fn rhs(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
         dy[0] = y[1];
-        dy[1] = self.mu * ((1.0 - y[0] * y[0]) * y[1] - y[0]);
+        dy[1] = self.mu * (1.0 - y[0] * y[0]) * y[1] - y[0];
     }
     fn has_analytic_jacobian(&self) -> bool {
         true
@@ -488,7 +491,7 @@ impl Problem for VanDerPolStiff {
     fn jacobian(&self, _t: f64, y: &[f64], j: &mut Matrix<f64>) {
         j[(0, 0)] = 0.0;
         j[(0, 1)] = 1.0;
-        j[(1, 0)] = self.mu * (-2.0 * y[0] * y[1] - 1.0);
+        j[(1, 0)] = -2.0 * self.mu * y[0] * y[1] - 1.0;
         j[(1, 1)] = self.mu * (1.0 - y[0] * y[0]);
     }
 }

@@ -329,6 +329,13 @@ impl<P: Problem + ?Sized> Stepper<P> for LmmStepper {
                         low[i] += h * low_coefficients.beta[0] * self.f_new[i];
                         low[i] = self.y_new[i] - low[i];
                     }
+                    // Filter through the iteration matrix, for the same reason
+                    // an implicit Runge-Kutta method has to: the raw difference
+                    // carries the stiff eigenvalues and would report an error
+                    // for modes the formula is damping correctly.
+                    if beta0.abs() >= 1e-15 {
+                        self.linear.solve(&mut low);
+                    }
                     simd::error_scale(self.atol, self.rtol, &self.y, &self.y_new, &mut self.scale);
                     error = simd::weighted_rms(&low, &self.scale);
                     self.low = low;

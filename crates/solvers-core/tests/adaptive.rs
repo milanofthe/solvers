@@ -237,3 +237,53 @@ fn decoupled_and_coupled_stage_solves_agree() {
         );
     }
 }
+
+#[test]
+fn methods_without_an_embedded_pair_still_run_adaptively() {
+    // Step doubling gives an error estimate to the fully implicit families and
+    // to the classical fixed order methods, so every method in the library can
+    // be driven by the error controller.
+    let library = MethodLibrary::embedded().unwrap();
+    let problem = problems::NonlinearDecay::default();
+
+    for id in ["radau_iia_5", "gauss_legendre_6", "lobatto_iiic_4", "rk4", "implicit_midpoint"] {
+        let method = library.get(id).unwrap();
+        let mut options = Options::with_tolerances(1e-8, 1e-10);
+        options.max_steps = 500_000;
+        let (error, stats, ok) = run(method, &problem, &options);
+        println!(
+            "{id:<20} error {:>10.3e}  steps {:>6}  rejected {:>4}",
+            error, stats.accepted, stats.rejected
+        );
+        assert!(ok, "{id}: integration failed");
+        assert!(error < 1e-5, "{id}: error {error:.3e} at rtol 1e-8");
+    }
+}
+
+#[test]
+fn stiff_van_der_pol_is_solved_at_a_sane_cost() {
+    // The benchmark every stiff solver is measured on. The point of the test is
+    // the step count: an implicit method whose error estimate is not filtered
+    // through the iteration matrix needs orders of magnitude more steps here.
+    let library = MethodLibrary::embedded().unwrap();
+    let problem = problems::VanDerPolStiff { mu: 1000.0 };
+    let span = problem.t_span();
+    let y0 = problem.y0();
+
+    for (id, budget) in [("esdirk43", 5_000u64), ("esdirk54", 5_000), ("bdf4", 20_000), ("radau_iia_5", 30_000)] {
+        let method = library.get(id).unwrap();
+        let mut options = Options::with_tolerances(1e-6, 1e-8);
+        options.max_steps = 2_000_000;
+        let solution = ode::integrate(method, &problem, span, &y0, &options);
+        println!(
+            "{id:<16} status {:?}  steps {:>7}  rhs {:>9}  lu {:>7}",
+            solution.status, solution.stats.accepted, solution.stats.rhs_evals, solution.stats.lu_decompositions
+        );
+        assert!(solution.succeeded(), "{id}: integration failed");
+        assert!(
+            solution.stats.accepted < budget,
+            "{id}: {} steps exceeds the budget of {budget}",
+            solution.stats.accepted
+        );
+    }
+}

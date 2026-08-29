@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>solvers</title>
+    <meta
+      name="description"
+      content="A unified library of ODE integration methods with stability, order and cost analysis derived from the coefficients."
+    />
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/app.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1 class="header__title"><strong>solvers</strong> &nbsp;Numerical Integration</h1>
+        <p class="header__subtitle">
+          Every method is a set of coefficients. Order, stability and cost are derived from them
+          here, in the page, by the same code that does the integrating.
+        </p>
+        <nav class="nav" id="nav"></nav>
+      </header>
+      <main id="view">
+        <p class="status">Loading the method library&hellip;</p>
+      </main>
+    </div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

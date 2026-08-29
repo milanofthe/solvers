@@ -1,0 +1,454 @@
+/*
+ * Components.
+ *
+ * Every value here comes from tokens.css. The set is deliberately small: a
+ * header, a nav, cards, a table, form fields, badges and a figure frame are
+ * enough for the whole interface.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.layout {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5) var(--space-8);
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.header {
+  border-bottom: var(--border);
+  margin-bottom: var(--space-5);
+  padding: var(--space-6) 0 0;
+}
+
+.header__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: var(--leading-tight);
+}
+
+.header__title strong {
+  font-weight: 600;
+}
+
+.header__subtitle {
+  margin: var(--space-1) 0 var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.nav__item {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  background: none;
+  font-family: inherit;
+}
+
+.nav__item:hover {
+  color: var(--color-text);
+}
+
+.nav__item[aria-current="page"] {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  margin-bottom: -1px;
+}
+
+/* Layout blocks ----------------------------------------------------------- */
+
+.section {
+  margin-bottom: var(--space-6);
+}
+
+.section__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.section__note {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  max-width: 60ch;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 8rem;
+}
+
+.field__label {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field select,
+.field input {
+  background: var(--color-raised);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.field select:focus,
+.field input:focus {
+  outline: 1px solid var(--color-accent-muted);
+  outline-offset: 1px;
+}
+
+.field--grow {
+  flex: 1 1 14rem;
+}
+
+.button {
+  background: var(--color-raised);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+}
+
+.button:hover {
+  border-color: var(--color-border-strong);
+}
+
+.button--primary {
+  border-color: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+/* Cards and grids --------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+}
+
+.grid--wide {
+  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+}
+
+.card {
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card__body {
+  padding: var(--space-4);
+}
+
+.card__title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.card__meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+.card--link {
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.card--link:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Figures ----------------------------------------------------------------- */
+
+.figure {
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+
+.figure__canvas {
+  display: block;
+  width: 100%;
+  height: 15rem;
+}
+
+.figure__canvas--tall {
+  height: 22rem;
+}
+
+.figure__caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin: var(--space-2) var(--space-2) var(--space-1);
+}
+
+/* Tables ------------------------------------------------------------------ */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-strong);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th[aria-sort]:not([aria-sort="none"]) {
+  color: var(--color-text);
+}
+
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border);
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: var(--color-surface);
+}
+
+.table__numeric {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.table__name {
+  color: var(--color-text);
+}
+
+/* Badges and small type --------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.badge--ok {
+  border-color: color-mix(in srgb, var(--color-ok) 40%, transparent);
+  color: var(--color-ok);
+}
+
+.badge--warn {
+  border-color: color-mix(in srgb, var(--color-warn) 40%, transparent);
+  color: var(--color-warn);
+}
+
+.badge--error {
+  border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+  color: var(--color-error);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* Definition lists for properties ---------------------------------------- */
+
+.properties {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.properties div {
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-3);
+}
+
+.properties dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.properties dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Butcher tableau --------------------------------------------------------- */
+
+.tableau {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.tableau td {
+  padding: var(--space-1) var(--space-3);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tableau .tableau__c {
+  border-right: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+
+.tableau tr.tableau__rule td {
+  border-top: 1px solid var(--color-border-strong);
+}
+
+.tableau__label {
+  color: var(--color-text-dim);
+}
+
+.tableau__zero {
+  color: var(--color-text-dim);
+}
+
+.scroll-x {
+  overflow-x: auto;
+}
+
+/* References -------------------------------------------------------------- */
+
+.references {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.references li {
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.references .muted {
+  font-size: var(--text-xs);
+}
+
+/* Status ------------------------------------------------------------------ */
+
+.status {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+
+.checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.checklist label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.checklist input {
+  accent-color: var(--color-accent);
+}

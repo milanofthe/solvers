@@ -107,6 +107,9 @@ pub struct Options {
     /// factoring the whole `s * n` system. Off only for testing the two paths
     /// against each other.
     pub decouple_stages: bool,
+    /// Give a method with no embedded pair an error estimate by step doubling,
+    /// so it can run adaptively at roughly three times the cost per step.
+    pub richardson: bool,
     /// Times the solution is reported at. `None` reports every accepted step.
     pub t_eval: Option<Vec<f64>>,
 }
@@ -125,6 +128,7 @@ impl Default for Options {
             nonlinear: NonlinearConfig::default(),
             max_jacobian_age: 5,
             decouple_stages: true,
+            richardson: true,
             t_eval: None,
         }
     }
