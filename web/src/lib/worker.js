@@ -65,7 +65,7 @@ const HANDLERS = {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
-	stabilityGridAuto: ({ id, width, height, aspect = 1.6, locus = 0 }) => {
+	stabilityGridAuto: ({ id, width, height, aspect = 1.6 }) => {
 		const view = JSON.parse(wasm.stability_window(id));
 		// Sample wider than the frame. Both axes of the picture carry the same
 		// scale, so a panel of any other shape than the measured box widens one
@@ -81,11 +81,10 @@ const HANDLERS = {
 			width,
 			height
 		);
-		// The boundary of a multistep region is available in closed form, so it
-		// is fetched with the grid rather than traced out of it. A region with
-		// no interior has nothing for a contour to find, and that is not a rare
-		// case: it is what the whole weakly stable half of the library looks
-		// like.
+		// The boundary comes with the grid but is not read off it. The colours
+		// are a smooth field that a coarse grid renders perfectly well; the
+		// boundary is a curve, and a curve wants its samples on itself. Two
+		// resolutions for two different objects, one round trip.
 		return {
 			data,
 			width,
@@ -93,7 +92,13 @@ const HANDLERS = {
 			re: sample.re,
 			im: sample.im,
 			view,
-			locus: locus ? wasm.region_boundary(id, locus) : null
+			boundary: wasm.region_boundary(
+				id,
+				sample.re[0],
+				sample.re[1],
+				sample.im[0],
+				sample.im[1]
+			)
 		};
 	}
 };

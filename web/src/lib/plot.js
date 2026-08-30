@@ -162,6 +162,25 @@ export function config({ compact = false } = {}) {
 }
 
 /**
+ * The unit circle, as a reference rather than as data: drawn exactly like the
+ * axes, because it is the same kind of mark. Both axes of these figures carry
+ * one scale, so it is a circle on screen and not an ellipse.
+ */
+export function unitCircle({ color = '#000000' } = {}) {
+	return {
+		type: 'circle',
+		xref: 'x',
+		yref: 'y',
+		layer: 'above',
+		x0: -1,
+		y0: -1,
+		x1: 1,
+		y1: 1,
+		line: { color, width: 1, dash: 'dot' }
+	};
+}
+
+/**
  * The two axes through the origin, drawn over the data.
  *
  * Plotly puts its own zero lines under the traces, where a filled contour or a

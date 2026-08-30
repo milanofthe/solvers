@@ -319,6 +319,53 @@ pub fn analyze(method: &Method) -> MethodReport {
     }
 }
 
+/// The boundary of the stability region, as a list of segments separated by
+/// `NaN` points.
+///
+/// Which way it is found depends on what the method offers. A multistep family
+/// has its boundary in closed form, and the only work is deciding which arcs of
+/// the locus really bound the region. Everything else has a rational stability
+/// function and no formula for `|R| = 1`, so the curve is traced adaptively:
+/// the samples end up on the boundary instead of spread over a window that is
+/// mostly interior on one side and mostly exterior on the other.
+///
+/// Either way the result is a curve rather than a contour read off the same
+/// grid the colours come from, so the two can be sampled at the resolution each
+/// of them actually needs.
+pub fn region_boundary(
+    method: &Method,
+    re: (f64, f64),
+    im: (f64, f64),
+) -> Option<Vec<Complex>> {
+    match &method.kind {
+        MethodKind::LinearMultistep(family) => {
+            let coefficients = family.uniform_coefficients().ok()?;
+            Some(GeneratingPolynomials::from_coefficients(&coefficients).region_boundary(720))
+        }
+        _ => {
+            let function = match &method.kind {
+                MethodKind::RungeKutta(tableau) => StabilityFunction::from_tableau(tableau),
+                MethodKind::Rosenbrock(tableau) => StabilityFunction::from_rosenbrock(tableau),
+                MethodKind::LinearMultistep(_) => unreachable!(),
+            };
+            Some(stability::trace_zero_level(
+                |z| {
+                    let magnitude = function.eval(z).abs();
+                    if magnitude > 0.0 {
+                        magnitude.log10().clamp(-30.0, 30.0)
+                    } else {
+                        -30.0
+                    }
+                },
+                re,
+                im,
+                56,
+                4,
+            ))
+        }
+    }
+}
+
 /// Sample the stability region of any method on a rectangle.
 pub fn stability_region(
     method: &Method,

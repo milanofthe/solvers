@@ -18,7 +18,8 @@ import {
 	logRange,
 	linearRange,
 	originLines,
-	seriesColor
+	seriesColor,
+	unitCircle
 } from './plot.js';
 
 // ---------------------------------------------------------------------------
@@ -86,9 +87,9 @@ function orderStarWindow(method) {
  * one sample per two of them.
  */
 function resolutionFor(method, box) {
-	const wanted = Math.round((box?.width ?? 320) / 2.6);
-	const cap = method.class === 'linear_multistep' ? 88 : 160;
-	return Math.min(Math.max(wanted, 48), cap);
+	const wanted = Math.round((box?.width ?? 320) / 4);
+	const cap = method.class === 'linear_multistep' ? 72 : 110;
+	return Math.min(Math.max(wanted, 40), cap);
 }
 
 /** The panel shape the sampling is cut to, rounded so a nudge is not a refetch. */
@@ -97,30 +98,31 @@ function aspectOf(box) {
 	return Math.round(Math.min(Math.max(raw, 0.4), 3.0) * 50) / 50;
 }
 
-/** How finely the closed form multistep boundary is traced. */
-const BOUNDARY_SAMPLES = 720;
-
 /**
- * The boundary of a multistep stability region, in closed form.
+ * The boundary of the stability region, as the core traced it.
  *
- * It is drawn instead of a contour through the sampled grid because the two
- * agree wherever the region has an interior, and only this one survives where
- * it does not. Nystrom and Milne-Simpson are stable on a segment of the
- * imaginary axis and nowhere else, so there is no cell for a contour to cross
- * and the grid alone would show an empty frame.
+ * It is drawn rather than contoured out of the colour grid because the two are
+ * different objects with different needs. The colours are a smooth field that a
+ * coarse grid renders perfectly; the boundary is a curve, and a curve is worth
+ * resolving where it is. Reading it off the grid also fails outright for the
+ * weakly stable families, whose region is a segment of zero area with no cell
+ * for a contour to cross.
  *
- * The core has already cut the arcs that bound nothing. What is left still has
- * to be broken rather than joined up: the curve leaves the frame wherever the
- * region does, and a line drawn straight back across it would read as a
- * boundary that is not there.
+ * The curve arrives already broken where it should be broken, both where it
+ * leaves the frame and where an arc of a multistep locus bounds nothing.
  */
-function boundaryTrace(locus, re, im, compact) {
+function boundaryTrace(boundary, re, im, compact) {
 	const limit = 6 * Math.max(re[1] - re[0], im[1] - im[0]);
 	const x = [];
 	const y = [];
-	for (let i = 0; i <= locus.length; i += 2) {
-		const a = locus[i % locus.length];
-		const b = locus[(i + 1) % locus.length];
+	// One point past the end, so a curve that arrives closed is drawn closed.
+	// A traced one arrives as separated segments and ends on a break, and the
+	// wrap then adds nothing.
+	const closed = Number.isFinite(boundary[boundary.length - 1]);
+	const last = closed ? boundary.length : boundary.length - 2;
+	for (let i = 0; i <= last; i += 2) {
+		const a = boundary[i % boundary.length];
+		const b = boundary[(i + 1) % boundary.length];
 		if (!Number.isFinite(a) || !Number.isFinite(b) || Math.hypot(a, b) > limit) {
 			if (x.length && x[x.length - 1] !== null) {
 				x.push(null);
@@ -181,18 +183,12 @@ const stability = {
 		const aspect = aspectOf(box);
 		return engine.request(
 			'stabilityGridAuto',
-			{
-				id: method.id,
-				aspect,
-				width: resolution,
-				height: resolution,
-				locus: method.class === 'linear_multistep' ? BOUNDARY_SAMPLES : 0
-			},
+			{ id: method.id, aspect, width: resolution, height: resolution },
 			{ key: `stability:${method.id}:${resolution}:${aspect}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
-		const { data, width, height, re, im, view, locus } = result;
+		const { data, width, height, re, im, view, boundary } = result;
 		// The colour range follows the data rather than a fixed span. A method
 		// whose region is a half plane varies by a fraction of a decade across
 		// the whole window, and a fixed range would render it as one flat wash.
@@ -239,18 +235,7 @@ const stability = {
 								tickfont: { size: 9 }
 							}
 				},
-				locus
-					? boundaryTrace(locus, re, im, compact)
-					: {
-							type: 'contour',
-							z,
-							x,
-							y,
-							contours: { start: 0, end: 0, size: 1, coloring: 'none' },
-							line: { color: '#000000', width: compact ? 1 : 1.4 },
-							showscale: false,
-							hoverinfo: 'skip'
-						}
+				boundaryTrace(boundary, re, im, compact)
 			],
 			layout: {
 				...layout({
@@ -259,7 +244,7 @@ const stability = {
 					x: { title: compact ? undefined : { text: 'Re(z)' }, range: view.re },
 					y: { title: compact ? undefined : { text: 'Im(z)' }, range: view.im }
 				}),
-				shapes: originLines({ compact })
+				shapes: [...originLines({ compact }), unitCircle()]
 			},
 			config: config({ compact })
 		};
