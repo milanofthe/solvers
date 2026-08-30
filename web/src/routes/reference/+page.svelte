@@ -3,15 +3,21 @@
 	 * What the words mean.
 	 *
 	 * The library can be filtered by a dozen properties and says nowhere what any
-	 * of them is. This page is the other half: the defining form of each family
-	 * and the definition of each property, with nothing added. Every count and
-	 * every figure on it comes from the same library and the same pipeline as the
-	 * rest of the site, so it cannot drift away from what is actually there.
+	 * of them is. This page is the other half: what is being solved, the defining
+	 * form of each family, and the definition of each property. Every count and
+	 * every figure comes from the same library and the same pipeline as the rest
+	 * of the site, so it cannot drift away from what is actually there.
+	 *
+	 * A term is one row of three columns: the name, the definition, and what the
+	 * definition says. Three columns rather than one because a formula centred in
+	 * a wide page with a paragraph capped beside it wastes the width twice over.
+	 * Every rule runs the width of the content, so the page reads as a stack of
+	 * rows rather than as a column floating in a frame.
 	 */
 	import { getContext } from 'svelte';
 	import Math from '$lib/components/Math.svelte';
 	import Panel from '$lib/components/Panel.svelte';
-	import { catalog, engine, ui } from '$lib/store.svelte.js';
+	import { catalog, engine } from '$lib/store.svelte.js';
 	import { PRIORITY } from '$lib/engine.js';
 	import { METHOD_MODES } from '$lib/figures.js';
 
@@ -55,11 +61,8 @@
 	const tagged = (name) => counts.byTag.get(name) ?? 0;
 
 	/**
-	 * The families, each with the sparsity of its coefficient matrix.
-	 *
-	 * The glyph is not decoration. Explicit, diagonally implicit and fully
-	 * implicit are not three degrees of anything: they are three answers to which
-	 * entries of `A` may be nonzero, and that is the whole distinction.
+	 * The families, each with the sparsity of its coefficient matrix. The glyph
+	 * is the definition: which entries of `A` a family allows to be nonzero.
 	 */
 	const GROUPS = [
 		{
@@ -72,12 +75,7 @@
 					count: () => family('ssprk'),
 					href: '/?tag=strong+stability+preserving'
 				},
-				{
-					name: 'Chebyshev',
-					fill: 'strict',
-					count: () => family('rkc'),
-					href: '/?family=rkc'
-				}
+				{ name: 'Chebyshev', fill: 'strict', count: () => family('rkc'), href: '/?family=rkc' }
 			]
 		},
 		{
@@ -129,7 +127,12 @@
 					count: () => family('adams_moulton'),
 					href: '/?family=adams_moulton'
 				},
-				{ name: 'backward differentiation', fill: 'past', count: () => family('bdf'), href: '/?family=bdf' },
+				{
+					name: 'backward differentiation',
+					fill: 'past',
+					count: () => family('bdf'),
+					href: '/?family=bdf'
+				},
 				{
 					name: 'Nystrom and Milne-Simpson',
 					fill: 'past-explicit',
@@ -164,6 +167,64 @@
 		}
 		return out;
 	}
+
+	const SOURCES = [
+		{
+			authors: 'Hairer, E., Noersett, S. P., & Wanner, G.',
+			title: 'Solving Ordinary Differential Equations I: Nonstiff Problems',
+			where: 'Springer, 2nd edition, 1993',
+			doi: '10.1007/978-3-540-78862-1'
+		},
+		{
+			authors: 'Hairer, E., & Wanner, G.',
+			title: 'Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems',
+			where: 'Springer, 2nd edition, 1996',
+			doi: '10.1007/978-3-642-05221-7'
+		},
+		{
+			authors: 'Butcher, J. C.',
+			title: 'Numerical Methods for Ordinary Differential Equations',
+			where: 'Wiley, 3rd edition, 2016',
+			doi: '10.1002/9781119121534'
+		},
+		{
+			authors: 'Dahlquist, G.',
+			title: 'A special stability problem for linear multistep methods',
+			where: 'BIT Numerical Mathematics 3, 1963',
+			doi: '10.1007/BF01963532'
+		},
+		{
+			authors: 'Burrage, K., & Butcher, J. C.',
+			title: 'Stability criteria for implicit Runge-Kutta methods',
+			where: 'SIAM Journal on Numerical Analysis 16(1), 1979',
+			doi: '10.1137/0716037'
+		},
+		{
+			authors: 'Gottlieb, S., Ketcheson, D. I., & Shu, C.-W.',
+			title: 'Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations',
+			where: 'World Scientific, 2011',
+			doi: '10.1142/7498'
+		},
+		{
+			authors: 'van der Houwen, P. J., & Sommeijer, B. P.',
+			title:
+				'Explicit Runge-Kutta (-Nystroem) methods with reduced phase errors for computing oscillating solutions',
+			where: 'SIAM Journal on Numerical Analysis 24(3), 1987',
+			doi: '10.1137/0724041'
+		},
+		{
+			authors: 'Soederlind, G.',
+			title: 'Digital filters in adaptive time-stepping',
+			where: 'ACM Transactions on Mathematical Software 29(1), 2003',
+			doi: '10.1145/641876.641877'
+		},
+		{
+			authors: 'Ehle, B. L.',
+			title:
+				'On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems',
+			where: 'Research Report CSRR 2010, University of Waterloo, 1969'
+		}
+	];
 </script>
 
 {#snippet controls()}
@@ -172,30 +233,35 @@
 	</div>
 {/snippet}
 
+<!-- A section rule runs the width of the content, out to both panels. -->
 {#snippet section(title, body)}
-	<section class="-mx-6 mt-9 border-t border-cream/10 px-6 pt-4">
-		<p class="label mb-4">{title}</p>
+	<section class="-mx-6 mt-10 border-t border-cream/10 px-6 pt-5">
+		<p class="label mb-5 text-cream">{title}</p>
 		{@render body()}
 	</section>
 {/snippet}
 
 {#snippet term(name, formula, sentence, tag)}
-	<div class="border-t border-cream/10 py-4 first:border-t-0 first:pt-0">
-		<div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+	<div
+		class="-mx-6 grid gap-x-8 gap-y-2 border-t border-cream/10 px-6 py-4 first:border-t-0 first:pt-0 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,32rem)] lg:items-baseline"
+	>
+		<div>
 			<h3 class="font-mono text-xs uppercase tracking-[0.2em] text-cream">{name}</h3>
 			{#if tag}
 				<a
 					href="/?tag={encodeURIComponent(tag)}"
-					class="font-mono text-xs text-accent hover:text-cream"
-					>{tagged(tag)}
-					{tag}</a
+					class="mt-1 block font-mono text-xs text-accent hover:text-cream">{tagged(tag)} {tag}</a
 				>
 			{/if}
 		</div>
 		{#if formula}
-			<div class="mt-2 text-sm"><Math {formula} display /></div>
+			<div class="min-w-0 overflow-x-auto"><Math {formula} display /></div>
+			<p class="text-xs text-cream/60">{sentence}</p>
+		{:else}
+			<!-- Nothing to set, so the sentence takes the width the formula would
+			     have had rather than leaving a column empty. -->
+			<p class="text-xs text-cream/60 lg:col-span-2">{sentence}</p>
 		{/if}
-		<p class="mt-2 max-w-[78ch] text-xs text-cream/60">{sentence}</p>
 	</div>
 {/snippet}
 
@@ -204,8 +270,44 @@
 		<h1 class="font-display text-lg text-cream">reference</h1>
 		<span class="shrink-0 font-mono text-xs text-accent">{catalog.methods.length} methods</span>
 	</div>
-	<p class="label mt-2">the forms and the properties, as they are defined</p>
+	<p class="label mt-2">what is being solved, and what the properties of a solver are</p>
 </header>
+
+{#snippet problem()}
+	<div>
+		{@render term(
+			'initial value problem',
+			'\\dot{y} = f(t, y), \\qquad y(t_0) = y_0, \\qquad y(t) \\in \\mathbb{R}^n',
+			'A state and a rule for how fast it changes. Everything in this library is a rule for advancing that state by one step; solving the problem is applying it repeatedly.',
+			null
+		)}
+		{@render term(
+			'step and error',
+			'y_{n+1} \\approx y(t_n + h_n), \\qquad \\|y_{n+1} - y(t_n + h_n)\\| = O(h^{p+1})',
+			'The step size is chosen anew each step. An error of order p + 1 in one step accumulates to order p over a fixed interval, and p is what a method is called.',
+			null
+		)}
+		{@render term(
+			'stiffness',
+			'\\dot{y} = J y, \\qquad \\frac{\\max_i |\\operatorname{Re}\\lambda_i(J)|}{\\min_i |\\operatorname{Re}\\lambda_i(J)|} \\gg 1',
+			'Rates in the problem separated by orders of magnitude. The fast ones die out but still bound the step an explicit method may take, so the step is set by stability rather than by accuracy. That is what the implicit families exist for.',
+			'stiff problems'
+		)}
+		{@render term(
+			'differential algebraic',
+			'M \\dot{y} = f(t, y), \\qquad M \\text{ singular}',
+			'Part of the system is a constraint rather than a derivative. The index is the number of differentiations of f needed to recover the derivative; from index two the order a method attains falls below its classical one. Not integrated by this library, which solves the explicit form.',
+			null
+		)}
+		{@render term(
+			'what a solver is judged on',
+			null,
+			'Three things, and they trade against each other: the order it converges at, the region of the complex plane in which it is stable, and what one step costs. The rest of this page is the vocabulary for those three.',
+			null
+		)}
+	</div>
+{/snippet}
+{@render section('the problem', problem)}
 
 {#snippet families()}
 	<div class="grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
@@ -239,30 +341,26 @@
 			</div>
 		{/each}
 	</div>
-	<p class="mt-6 max-w-[78ch] text-xs text-cream/60">
-		The square is the coefficient matrix and the filled cells are the entries a family allows to be
-		nonzero. Explicit, diagonally implicit and fully implicit are not three degrees of the same
-		thing; they are three answers to that one question, and everything else about a family follows
-		from it. A multistep family has no such matrix, so the row shown is what it reaches back into.
+	<p class="mt-6 text-xs text-cream/60">
+		The square is the coefficient matrix; the filled cells are the entries the family allows to be
+		nonzero. A multistep family has no such matrix, so the row shown is the past it reads.
 	</p>
 {/snippet}
 {@render section('families', families)}
 
 {#snippet forms()}
-	<div class="grid gap-x-12 gap-y-8 lg:grid-cols-3">
+	<div class="grid gap-x-12 gap-y-10 lg:grid-cols-3">
 		<div>
 			<p class="label mb-3">Runge-Kutta</p>
-			<Math
-				formula={'y_{n+1} = y_n + h\\sum_{i=1}^{s} b_i k_i'}
-				display
-			/>
+			<Math formula={'y_{n+1} = y_n + h\\sum_{i=1}^{s} b_i k_i'} display />
 			<Math
 				formula={'k_i = f\\!\\left(t_n + c_i h,\\; y_n + h\\sum_{j=1}^{s} a_{ij} k_j\\right)'}
 				display
 			/>
-			<p class="mt-2 text-xs text-cream/60">
-				The whole method is the array of numbers, written as
-				<Math formula={'\\begin{array}{c|c} c & A \\\\ \\hline & b^{\\top}\\end{array}'} />.
+			<p class="mt-3 text-xs text-cream/60">
+				Written as the array
+				<Math formula={'\\begin{array}{c|c} c & A \\\\ \\hline & b^{\\top}\\end{array}'} />, which is
+				the whole method.
 			</p>
 		</div>
 		<div>
@@ -271,10 +369,10 @@
 				formula={'\\sum_{j=0}^{k} \\alpha_j\\, y_{n-j} \\;=\\; h \\sum_{j=0}^{k} \\beta_j\\, f_{n-j}'}
 				display
 			/>
-			<p class="mt-2 text-xs text-cream/60">
-				No stages: the past is the memory. A file here states which coefficients are free rather
-				than their values, and they are solved for at every step from the step sizes actually
-				taken, so a family is defined on a nonuniform grid rather than only on an even one.
+			<p class="mt-3 text-xs text-cream/60">
+				No stages. A file here states which coefficients are free rather than their values; they are
+				solved for at every step from the step sizes actually taken, so a family is defined on a
+				nonuniform grid.
 			</p>
 		</div>
 		<div>
@@ -283,10 +381,9 @@
 				formula={'\\begin{aligned}(I - h\\gamma_{ii} J)\\,K_i &= h f\\!\\left(t_n + c_i h,\\, y_n + \\sum_j \\alpha_{ij} K_j\\right) \\\\ &\\quad + hJ\\sum_j \\gamma_{ij} K_j\\end{aligned}'}
 				display
 			/>
-			<p class="mt-2 text-xs text-cream/60">
-				<Math formula={'J = f\'(y_n)'} /> is part of the formula, not a device for solving one. There
-				is nothing to iterate: a step is
-				<Math formula={'s'} /> linear solves decided in advance.
+			<p class="mt-3 text-xs text-cream/60">
+				<Math formula={'J = f\'(y_n)'} /> is part of the formula. A step is
+				<Math formula={'s'} /> linear solves fixed in advance, with nothing to iterate.
 			</p>
 		</div>
 	</div>
@@ -298,19 +395,19 @@
 		{@render term(
 			'order',
 			'\\Phi(t) = \\sum_j b_j \\psi_j(t) = \\frac{1}{\\gamma(t)} \\quad \\text{for every rooted tree } |t| \\le p',
-			'One condition per rooted tree. Where a file states its coefficients as fractions these are checked as identities rather than against a tolerance, and the report says which of the two happened.',
+			'One condition per rooted tree. Coefficients stated as fractions are checked as identities, decimals against a tolerance, and the report says which.',
 			null
 		)}
 		{@render term(
 			'simplifying assumptions',
-			'B(p):\\; \\sum_i b_i c_i^{k-1} = \\tfrac{1}{k} \\qquad C(q):\\; \\sum_j a_{ij} c_j^{k-1} = \\tfrac{c_i^k}{k} \\qquad D(r):\\; \\sum_i b_i c_i^{k-1} a_{ij} = \\tfrac{b_j (1 - c_j^k)}{k}',
-			'Butcher: a method satisfying all three has order at least min(p, q + r + 1, 2q + 2), with no reference to trees. This is the only affordable route above order ten, where the trees number in the hundreds of thousands.',
+			'\\begin{aligned} B(p) &: \\sum_i b_i c_i^{k-1} = \\tfrac{1}{k} \\\\ C(q) &: \\sum_j a_{ij} c_j^{k-1} = \\tfrac{c_i^k}{k} \\\\ D(r) &: \\sum_i b_i c_i^{k-1} a_{ij} = \\tfrac{b_j (1 - c_j^k)}{k} \\end{aligned}',
+			'All three together give order at least min(p, q + r + 1, 2q + 2), by Butcher. Above order ten the rooted trees number in the hundreds of thousands and this is the route that remains.',
 			null
 		)}
 		{@render term(
 			'stage order',
 			'q = \\max\\{k : C(k) \\text{ holds}\\}',
-			'How well the internal stages themselves approximate the solution. On a stiff problem a method converges at its stage order rather than at its order until the step is small enough, which is the order reduction that makes a high order method behave like a low order one.',
+			'The order the internal stages themselves attain. On a stiff problem a method converges at its stage order until the step is small enough, not at its order.',
 			null
 		)}
 	</div>
@@ -318,45 +415,47 @@
 {@render section('how order is established', order)}
 
 {#snippet linear()}
-	<div class="grid gap-10 lg:grid-cols-[1fr_20rem]">
-		<div>
-			{@render term(
-				'stability function',
-				'R(z) = 1 + z\\, b^{\\top} (I - zA)^{-1} \\mathbb{1} = \\frac{\\det(I - zA + z\\,\\mathbb{1}b^{\\top})}{\\det(I - zA)}',
-				'What one step does to the scalar problem whose solution decays or turns at a rate lambda, with z the step size times that rate. The stability region is where the modulus is at most one, and the black curve on every figure here is its boundary.',
-				null
-			)}
-			{@render term(
-				'A-stable',
-				'|R(z)| \\le 1 \\quad \\text{for all } \\operatorname{Re} z \\le 0',
-				'No step size is too large for a decaying mode. Necessary for a stiff problem and not sufficient: it says nothing about how fast the stiff modes are damped.',
-				'A-stable'
-			)}
-			{@render term(
-				'L-stable',
-				'\\text{A-stable and } \\lim_{z \\to -\\infty} R(z) = 0',
-				'The infinitely stiff modes are killed outright rather than merely not amplified. Without it a mode at the far end of the spectrum survives every step at almost full size.',
-				'L-stable'
-			)}
-			{@render term(
-				'A(alpha)-stable',
-				'\\{ z : |\\arg(-z)| \\le \\alpha \\} \\subseteq \\{ z : |R(z)| \\le 1 \\}',
-				'A wedge about the negative real axis instead of the whole half plane. The backward differentiation formulae lose this angle as their order rises, from 86 degrees at order three to 18 at order six, which is why the family stops there.',
-				'A(alpha)-stable'
-			)}
-			{@render term(
-				'stiffly accurate',
-				'a_{sj} = b_j \\quad \\text{for all } j',
-				'The step ends on the solution point, so the last stage is the answer. It is what gives an implicit method R(inf) = 0 and what makes it usable on a differential algebraic problem.',
-				'stiffly accurate'
-			)}
-		</div>
-		<div class="flex flex-col gap-6">
-			<Panel label="A-stable and L-stable: Radau IIA 5" height="h-40" load={region('radau_iia_5')} />
-			<Panel label="A-stable, not L-stable: Gauss-Legendre 6" height="h-40" load={region('gauss_legendre_6')} />
-			<Panel label="conditionally stable: classical Runge-Kutta" height="h-40" load={region('rk4')} />
-			<Panel label="A(alpha)-stable: BDF 5" height="h-40" load={region('bdf5')} />
-		</div>
+	<div class="mb-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
+		<Panel label="Radau IIA 5 · A-stable, L-stable" height="h-44" load={region('radau_iia_5')} />
+		<Panel
+			label="Gauss-Legendre 6 · A-stable only"
+			height="h-44"
+			load={region('gauss_legendre_6')}
+		/>
+		<Panel label="BDF 5 · A(alpha)-stable" height="h-44" load={region('bdf5')} />
+		<Panel label="RK4 · conditionally stable" height="h-44" load={region('rk4')} />
+	</div>
+	<div>
+		{@render term(
+			'stability function',
+			'R(z) = 1 + z\\, b^{\\top} (I - zA)^{-1} \\mathbb{1} = \\frac{\\det(I - zA + z\\,\\mathbb{1}b^{\\top})}{\\det(I - zA)}',
+			'One step applied to a scalar mode, with z the step size times the rate. The stability region is where its modulus is at most one; the black curve on every figure here is that boundary.',
+			null
+		)}
+		{@render term(
+			'A-stable',
+			'|R(z)| \\le 1 \\quad \\text{for all } \\operatorname{Re} z \\le 0',
+			'No step size is too large for a decaying mode. Says nothing about how fast a stiff mode is damped.',
+			'A-stable'
+		)}
+		{@render term(
+			'L-stable',
+			'\\text{A-stable and } \\lim_{z \\to -\\infty} R(z) = 0',
+			'The infinitely stiff modes are damped to nothing in one step rather than merely not amplified.',
+			'L-stable'
+		)}
+		{@render term(
+			'A(alpha)-stable',
+			'\\{ z : |\\arg(-z)| \\le \\alpha \\} \\subseteq \\{ z : |R(z)| \\le 1 \\}',
+			'A wedge about the negative real axis instead of the half plane. For the backward differentiation formulae the angle falls from 86 degrees at order three to 18 at order six.',
+			'A(alpha)-stable'
+		)}
+		{@render term(
+			'stiffly accurate',
+			'a_{sj} = b_j \\quad \\text{for all } j',
+			'The step ends on the solution point, so the last stage is the answer. Gives R at infinity equal to zero, and satisfies the constraint of a differential algebraic problem exactly at the end of each step.',
+			'stiffly accurate'
+		)}
 	</div>
 {/snippet}
 {@render section('linear stability', linear)}
@@ -366,13 +465,13 @@
 		{@render term(
 			'algebraically stable',
 			'b \\ge 0 \\quad \\text{and} \\quad M = \\operatorname{diag}(b) A + A^{\\top} \\operatorname{diag}(b) - b b^{\\top} \\succeq 0',
-			'Two solutions of a contractive problem never move apart under the method, however large the step. Linear stability says nothing about this: it is a statement about the problem being nonlinear.',
+			'Two solutions of a contractive problem do not move apart under the method, at any step size. Implies B-stability. Linear stability does not decide it.',
 			'algebraically stable'
 		)}
 		{@render term(
 			'strong stability preserving',
-			'\\mathcal{C} = \\max\\{ r : (I + rA)^{-1} \\text{ exists},\\; rA(I + rA)^{-1} \\ge 0,\\; r b^{\\top}(I + rA)^{-1} \\ge 0,\\; (I + rA)^{-1}\\mathbb{1} \\ge 0 \\}',
-			'The radius of absolute monotonicity: how many forward Euler steps of size h/C the step is a convex combination of. A method with C > 0 keeps whatever bound forward Euler keeps, at a step C times as large.',
+			'\\begin{aligned} \\mathcal{C} = \\max\\{\\, r :\\;& (I + rA)^{-1} \\text{ exists}, \\\\ & rA(I + rA)^{-1} \\ge 0, \\\\ & r\\, b^{\\top}(I + rA)^{-1} \\ge 0, \\\\ & (I + rA)^{-1}\\mathbb{1} \\ge 0 \\,\\} \\end{aligned}',
+			'The radius of absolute monotonicity: the step is a convex combination of forward Euler steps of size h over C. Any bound forward Euler keeps is kept at a step C times as large.',
 			'strong stability preserving'
 		)}
 	</div>
@@ -384,13 +483,13 @@
 		{@render term(
 			'dispersion and dissipation order',
 			'W(y) = R(iy)\\,e^{-iy} = 1 + \\sum_{m \\ge 1} w_m y^m',
-			'On the imaginary axis the exact solution turns without growing. The first term of W whose imaginary part does not vanish gives the order to which the method gets the phase right; the first term of |W| that departs from one gives the order for the amplitude.',
+			'The first term whose imaginary part does not vanish gives the order of the phase error; the first at which the modulus departs from one gives the order of the amplitude error.',
 			null
 		)}
 		{@render term(
 			'non dissipative',
 			'|R(iy)| = 1 \\quad \\text{for all real } y',
-			'No amplitude error at any order. The Gauss methods have this exactly, which is what makes them worth their cost on a problem that has to run for many periods.',
+			'No amplitude error at any order. Exact for the Gauss methods.',
 			'non dissipative'
 		)}
 	</div>
@@ -402,41 +501,37 @@
 		{@render term(
 			'embedded pair',
 			'\\hat{y}_{n+1} = y_n + h \\sum_i \\hat{b}_i k_i, \\qquad \\text{err} = \\left\\| \\sum_i (b_i - \\hat{b}_i) k_i \\right\\|',
-			'A second set of weights on the same stages, one order lower, whose difference from the first estimates the error at no extra evaluations. A method without one is stepped twice at half the size instead, which costs about three times as much.',
+			'A second set of weights on the same stages, one order lower. Their difference estimates the error at no further evaluations. Without one a method is stepped twice at half the size instead, at about three times the cost.',
 			'embedded pair'
 		)}
 		{@render term(
 			'FSAL',
 			'a_{sj} = b_j \\quad \\text{and} \\quad c_s = 1',
-			'First same as last: an explicit method whose final stage is the first stage of the next step, so a stage costs nothing on every step that is accepted.',
+			'First same as last. The final stage of an explicit method is the first of the next step, so an accepted step costs one evaluation fewer.',
 			'FSAL'
 		)}
 	</div>
 {/snippet}
 {@render section('error control', control)}
 
-{#snippet algebraic()}
-	<div>
-		<p class="max-w-[78ch] text-xs text-cream/60">
-			A differential algebraic problem <Math formula={'M \\dot{y} = f(t, y)'} /> with
-			<Math formula={'M'} /> singular is not covered by this library, which integrates
-			<Math formula={'\\dot{y} = f(t, y)'} /> only. Two of the properties above are nonetheless the
-			ones that decide a method's behaviour there, and are worth reading with that in mind.
-		</p>
-		<div class="mt-4">
-			{@render term(
-				'index',
-				'\\text{the number of differentiations of } f \\text{ needed to recover } \\dot{y}',
-				'Index one is a constrained system whose constraint can be eliminated; index two and above cannot, and the order a method attains falls with the index rather than staying at its classical value.',
-				null
-			)}
-			{@render term(
-				'what carries over',
-				null,
-				'A method that is stiffly accurate satisfies the constraint exactly at the end of each step, which is why the Radau IIA, Lobatto IIIC and RODAS families are the ones used there. Stage order bounds the order actually attained on the algebraic part, which is why a method of high order and low stage order gains nothing.',
-				'stiffly accurate'
-			)}
-		</div>
-	</div>
+{#snippet sources()}
+	<ul class="grid gap-x-12 gap-y-5 lg:grid-cols-2">
+		{#each SOURCES as source}
+			<li>
+				{#if source.doi}
+					<a
+						href="https://doi.org/{source.doi}"
+						target="_blank"
+						rel="noreferrer"
+						class="text-xs text-cream underline decoration-cream/20 underline-offset-4 hover:decoration-cream"
+						>{source.title}</a
+					>
+				{:else}
+					<span class="text-xs text-cream">{source.title}</span>
+				{/if}
+				<p class="mt-1 font-mono text-xs text-accent">{source.authors} · {source.where}</p>
+			</li>
+		{/each}
+	</ul>
 {/snippet}
-{@render section('differential algebraic problems', algebraic)}
+{@render section('sources', sources)}

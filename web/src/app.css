@@ -146,6 +146,21 @@
 	}
 }
 
+/* KaTeX centres display mathematics and pads it. In a three column row the
+   formula is a column of its own, so it is set flush left and the spacing comes
+   from the row. Marked important because the library ships its own stylesheet
+   and is imported by the component that uses it, so which of the two lands last
+   is not ours to decide. */
+.katex-display {
+	margin: 0 !important;
+	text-align: left !important;
+}
+
+/* The library centres twice: once on the block and once on the box inside it. */
+.katex-display > .katex {
+	text-align: left !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.tile,
 	.page {
