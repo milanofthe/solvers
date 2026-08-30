@@ -67,7 +67,7 @@
 
 <article
 	use:viewport={(value) => (visible = value)}
-	class="flex flex-col border bg-charcoal-light transition-colors {selected
+	class="flex aspect-square flex-col overflow-hidden border bg-charcoal-light transition-colors {selected
 		? 'border-amber'
 		: 'border-cream/10 hover:border-cream/25'}"
 >
@@ -76,7 +76,7 @@
 	     href stays put, which keeps opening it in a new tab working either way. -->
 	<a
 		href="/methods/{method.id}"
-		class="block"
+		class="flex min-h-0 flex-1 flex-col"
 		data-selected={selected}
 		onclick={(event) => {
 			if (!ui.selecting) return;
@@ -91,7 +91,7 @@
 			>
 		</header>
 
-		<Plot {figure} class="mt-2 h-40 w-full" />
+		<Plot {figure} class="mt-2 min-h-0 w-full flex-1" />
 
 		<dl class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
 			<div><dt class="inline">order</dt> <dd class="inline text-cream">{method.order}</dd></div>

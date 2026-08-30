@@ -42,7 +42,7 @@
 
 <article
 	use:viewport={(value) => (visible = value)}
-	class="flex flex-col border bg-charcoal-light transition-colors {selected
+	class="flex aspect-square flex-col overflow-hidden border bg-charcoal-light transition-colors {selected
 		? 'border-amber'
 		: 'border-cream/10 hover:border-cream/25'}"
 >
@@ -55,12 +55,12 @@
 
 	<button
 		type="button"
-		class="mt-2 cursor-pointer text-left"
+		class="mt-2 flex min-h-0 flex-1 cursor-pointer flex-col text-left"
 		onclick={() => (ui.problem = problem.id)}
 		aria-pressed={selected}
 		aria-label="use {problem.name}"
 	>
-		<Plot {figure} class="h-40 w-full" />
+		<Plot {figure} class="min-h-0 w-full flex-1" />
 	</button>
 
 	<p class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
@@ -70,5 +70,7 @@
 		{#if problem.hasExact}<span>closed form</span>{/if}
 	</p>
 
-	<p class="px-3 pb-3 pt-2 text-xs text-cream/50">{problem.description}</p>
+	<div class="px-3 pb-3 pt-2">
+		<p class="line-clamp-2 text-xs text-cream/50">{problem.description}</p>
+	</div>
 </article>

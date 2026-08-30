@@ -207,6 +207,7 @@ const stability = {
 			layout: {
 				...layout({
 					compact,
+					equalScale: true,
 					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
 					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
 				}),
@@ -572,6 +573,7 @@ const orderStar = {
 			layout: {
 				...layout({
 					compact,
+					equalScale: true,
 					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
 					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
 				}),

@@ -110,7 +110,14 @@ const AXIS = {
  * any other on the page, set in the same type as the rest of the interface
  * rather than in whatever the plotting library draws.
  */
-export function layout({ compact = false, x = {}, y = {} } = {}) {
+/**
+ * `equalScale` ties one unit on the vertical axis to one unit on the horizontal
+ * one. Without it a window computed for one aspect ratio and drawn in a
+ * container of another stretches the picture, and a stability region is a shape
+ * whose proportions carry the meaning. With it the frame shows whatever extra
+ * plane it has room for instead.
+ */
+export function layout({ compact = false, equalScale = false, x = {}, y = {} } = {}) {
 	return {
 		paper_bgcolor: COLORS.surface,
 		plot_bgcolor: COLORS.charcoal,
@@ -128,6 +135,7 @@ export function layout({ compact = false, x = {}, y = {} } = {}) {
 			showticklabels: !compact,
 			showgrid: !compact,
 			ticks: compact ? '' : 'outside',
+			...(equalScale ? { scaleanchor: 'x', scaleratio: 1 } : {}),
 			...y
 		},
 		showlegend: false,
