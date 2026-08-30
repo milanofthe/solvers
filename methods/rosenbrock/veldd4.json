@@ -30,5 +30,11 @@
       "source": "Computing, 32(3), 229-237",
       "doi": "10.1007/BF02243575"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Veldd4"
+    }
   ]
 }

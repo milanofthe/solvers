@@ -39,5 +39,11 @@
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "source": "Springer Series in Computational Mathematics, Vol. 8"
     }
+  ],
+  "implementations": [
+    {
+      "library": "Boost.Odeint",
+      "name": "runge_kutta_fehlberg78"
+    }
   ]
 }

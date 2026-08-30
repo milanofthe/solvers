@@ -71,6 +71,18 @@ A multistep file declares which coefficients are free instead of their values:
 
 They are solved for at every step from the actual step size history.
 
+## The library as data
+
+The whole library, coefficients as the files state them together with everything
+derived from them:
+
+    https://solvers.milanrother.com/api/methods.json
+    https://solvers.milanrother.com/api/methods/<id>.json
+    https://solvers.milanrother.com/api/problems.json
+    https://solvers.milanrother.com/api/index.json
+
+or `solvers export <directory>` from a checkout.
+
 ## Verification
 
 `cargo test` and `solvers verify`.
@@ -96,6 +108,11 @@ is still checked from its coefficients.
   [10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
 
 Every method file carries the DOI of its own source.
+
+## Citing
+
+`CITATION.cff` at the root, and GitHub renders it as a citation on the
+repository page.
 
 ## License
 

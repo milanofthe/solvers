@@ -41,5 +41,11 @@
       "year": 1993,
       "source": "MSc mathematics thesis, Faculty of Science, University of Geneva"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas5"
+    }
   ]
 }

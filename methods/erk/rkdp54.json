@@ -34,5 +34,23 @@
       "title": "The MATLAB ODE Suite",
       "source": "SIAM Journal on Scientific Computing, 18(1), 1-22"
     }
+  ],
+  "implementations": [
+    {
+      "library": "SciPy",
+      "name": "RK45"
+    },
+    {
+      "library": "MATLAB",
+      "name": "ode45"
+    },
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "DP5"
+    },
+    {
+      "library": "Boost.Odeint",
+      "name": "runge_kutta_dopri5"
+    }
   ]
 }

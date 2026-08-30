@@ -42,5 +42,11 @@
       "source": "BIT Numerical Mathematics, 63(2), 27",
       "doi": "10.1007/s10543-023-00967-x"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas5P"
+    }
   ]
 }

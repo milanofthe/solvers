@@ -28,6 +28,7 @@ fn main() {
         "convergence" => convergence_command(&library, &args),
         "cost" => cost_command(&library, &args),
         "solve" => solve_command(&library, &args),
+        "export" => export_command(&library, args.get(1)),
         _ => usage(),
     }
 }
@@ -42,6 +43,111 @@ fn usage() {
     println!("  convergence <method> <problem>    fixed step convergence study, as JSON");
     println!("  cost <method> <problem>           adaptive work precision diagram, as JSON");
     println!("  solve <method> <problem> [rtol]   integrate and report the statistics");
+    println!("  export <directory>                write the whole library out as JSON");
+}
+
+/// Write the library out as JSON, one bundle and one file per method.
+///
+/// What is written is the method file as it stands plus everything derived from
+/// it. Not a summary of either: a reader who wants a tableau gets the
+/// coefficients exactly as the file states them, fractions still fractions, and
+/// a reader who wants to know what they imply gets that beside it without
+/// having to run anything.
+fn export_command(library: &MethodLibrary, directory: Option<&String>) {
+    let Some(directory) = directory else {
+        eprintln!("a directory is required");
+        std::process::exit(2);
+    };
+    let root = std::path::Path::new(directory);
+    let per_method = root.join("methods");
+    if let Err(error) = std::fs::create_dir_all(&per_method) {
+        eprintln!("cannot create {}: {error}", per_method.display());
+        std::process::exit(1);
+    }
+
+    // The file as written, keyed by id, so the export can carry the source
+    // rather than a re-serialisation of it.
+    let mut sources: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    for (path, contents) in solvers_core::embedded::EMBEDDED_METHODS {
+        match serde_json::from_str::<serde_json::Value>(contents) {
+            Ok(value) => {
+                if let Some(id) = value.get("id").and_then(|v| v.as_str()) {
+                    sources.insert(id.to_string(), value);
+                }
+            }
+            Err(error) => eprintln!("{path}: {error}"),
+        }
+    }
+
+    let mut entries = Vec::new();
+    for method in library.iter() {
+        let report = analysis::analyze(method);
+        let entry = serde_json::json!({
+            "id": method.id,
+            "file": sources.get(&method.id),
+            "derived": report,
+            "tags": analysis::tags(method, &report),
+        });
+        let path = per_method.join(format!("{}.json", method.id));
+        write_json(&path, &entry);
+        entries.push(entry);
+    }
+    write_json(&root.join("methods.json"), &serde_json::Value::Array(entries));
+
+    let problems: Vec<serde_json::Value> = problems::catalog()
+        .iter()
+        .map(|problem| {
+            let (start, end) = problem.t_span();
+            serde_json::json!({
+                "id": problem.id(),
+                "name": problem.name(),
+                "description": problem.description(),
+                "dimension": problem.dim(),
+                "tStart": start,
+                "tEnd": end,
+                "y0": problem.y0(),
+                "stiff": problem.is_stiff(),
+                "hasClosedForm": problem.exact(start).is_some(),
+            })
+        })
+        .collect();
+    write_json(&root.join("problems.json"), &serde_json::Value::Array(problems));
+
+    write_json(
+        &root.join("index.json"),
+        &serde_json::json!({
+            "name": "solvers",
+            "description": "ODE integration methods as data, with every property derived from the coefficients",
+            "homepage": "https://solvers.milanrother.com",
+            "source": "https://github.com/milanofthe/solvers",
+            "license": "MIT",
+            "methods": library.len(),
+            "problems": problems::catalog().len(),
+            "files": {
+                "methods": "methods.json",
+                "problems": "problems.json",
+                "perMethod": "methods/<id>.json",
+            },
+        }),
+    );
+
+    println!("{} methods written to {}", library.len(), root.display());
+}
+
+fn write_json(path: &std::path::Path, value: &serde_json::Value) {
+    match serde_json::to_string_pretty(value) {
+        Ok(text) => {
+            if let Err(error) = std::fs::write(path, text + "\n") {
+                eprintln!("cannot write {}: {error}", path.display());
+                std::process::exit(1);
+            }
+        }
+        Err(error) => {
+            eprintln!("cannot serialise {}: {error}", path.display());
+            std::process::exit(1);
+        }
+    }
 }
 
 fn find<'a>(library: &'a MethodLibrary, id: Option<&String>) -> &'a Method {

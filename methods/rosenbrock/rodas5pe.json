@@ -41,5 +41,11 @@
       "year": 2024,
       "source": "Proceedings of the JuliaCon Conferences"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas5Pe"
+    }
   ]
 }

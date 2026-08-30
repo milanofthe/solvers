@@ -31,5 +31,11 @@
       "source": "BIT Numerical Mathematics, 41(4), 731-738",
       "doi": "10.1023/A:1021900219772"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ROS3P"
+    }
   ]
 }

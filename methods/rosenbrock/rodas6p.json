@@ -63,5 +63,11 @@
       "source": "arXiv:2511.21252",
       "url": "https://arxiv.org/abs/2511.21252"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas6P"
+    }
   ]
 }

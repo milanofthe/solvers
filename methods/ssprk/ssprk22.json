@@ -27,5 +27,11 @@
       "title": "Strong stability-preserving high-order time discretization methods",
       "source": "SIAM Review, 43(1), 89-112"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "SSPRK22"
+    }
   ]
 }

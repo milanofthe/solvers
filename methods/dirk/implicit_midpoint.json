@@ -35,5 +35,15 @@
       "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
       "doi": "10.1007/978-3-642-05221-7"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ImplicitMidpoint"
+    },
+    {
+      "library": "GSL",
+      "name": "rk2imp"
+    }
   ]
 }

@@ -6,6 +6,8 @@
 set -e
 root=$(cd "$(dirname "$0")" && pwd)
 
+cargo run --release -p solvers-cli -- export "$root/web/static/api"
+
 wasm-pack build "$root/crates/solvers-wasm"     --target web     --out-dir "$root/web/src/lib/wasm"     --release     --no-typescript
 
 cd "$root/web"

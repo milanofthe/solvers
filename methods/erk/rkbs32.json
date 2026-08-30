@@ -31,5 +31,19 @@
       "title": "The MATLAB ODE Suite",
       "source": "SIAM Journal on Scientific Computing, 18(1), 1-22"
     }
+  ],
+  "implementations": [
+    {
+      "library": "SciPy",
+      "name": "RK23"
+    },
+    {
+      "library": "MATLAB",
+      "name": "ode23"
+    },
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "BS3"
+    }
   ]
 }

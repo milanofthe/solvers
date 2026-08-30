@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: solvers
+message: >-
+  If you use this library of integration methods, or a tableau taken from it,
+  please cite it.
+type: software
+authors:
+  - family-names: Rother
+    given-names: Milan
+repository-code: https://github.com/milanofthe/solvers
+url: https://solvers.milanrother.com
+abstract: >-
+  A library of ordinary differential equation integration methods held as data
+  rather than as code. Each method is a JSON file carrying its coefficients and
+  the publication it appeared in; its order, stage order, stability, damping,
+  nonlinear stability and cost are derived from those coefficients rather than
+  declared, and are checked against what the file claims. The whole library is
+  available as JSON at https://solvers.milanrother.com/api/methods.json
+keywords:
+  - ordinary differential equations
+  - numerical integration
+  - Runge-Kutta
+  - Rosenbrock
+  - linear multistep
+  - Butcher tableau
+  - stability region
+license: MIT

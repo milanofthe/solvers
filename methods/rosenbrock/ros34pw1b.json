@@ -32,5 +32,11 @@
       "source": "BIT Numerical Mathematics, 45(4), 761-787",
       "doi": "10.1007/s10543-005-0035-y"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ROS34PW1b"
+    }
   ]
 }

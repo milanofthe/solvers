@@ -44,6 +44,9 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      - name: Write the library out as JSON
+        run: cargo run --release -p solvers-cli -- export web/static/api
+
       - name: Build the module
         run: wasm-pack build crates/solvers-wasm --target web --out-dir ../../web/src/lib/wasm --release --no-typescript
 

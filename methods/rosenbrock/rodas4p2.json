@@ -38,5 +38,11 @@
       "source": "Progress in Differential-Algebraic Equations II, Springer, 165-184",
       "doi": "10.1007/978-3-030-53905-4_6"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas4P2"
+    }
   ]
 }

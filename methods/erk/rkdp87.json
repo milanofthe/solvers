@@ -40,5 +40,19 @@
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "source": "Springer Series in Computational Mathematics, Vol. 8"
     }
+  ],
+  "implementations": [
+    {
+      "library": "SciPy",
+      "name": "DOP853"
+    },
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "DP8"
+    },
+    {
+      "library": "GSL",
+      "name": "rk8pd"
+    }
   ]
 }

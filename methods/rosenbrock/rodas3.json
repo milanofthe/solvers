@@ -34,5 +34,11 @@
       "source": "Atmospheric Environment, 31(20), 3459-3472",
       "doi": "10.1016/S1352-2310(97)83212-8"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas3"
+    }
   ]
 }

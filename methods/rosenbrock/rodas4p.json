@@ -37,5 +37,11 @@
       "year": 1995,
       "source": "Technical Report 1741, Technische Hochschule Darmstadt"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Rodas4P"
+    }
   ]
 }

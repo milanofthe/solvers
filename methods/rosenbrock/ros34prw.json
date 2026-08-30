@@ -32,5 +32,11 @@
       "source": "Journal of Computational and Applied Mathematics, 286, 128-144",
       "doi": "10.1016/j.cam.2015.03.010"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ROS34PRw"
+    }
   ]
 }

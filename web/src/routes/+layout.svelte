@@ -79,6 +79,7 @@
 				target="_blank"
 				rel="noreferrer">source</a
 			>
+			<a href="/api/methods.json" class="rail-link" download>download as json</a>
 		</div>
 	</aside>
 

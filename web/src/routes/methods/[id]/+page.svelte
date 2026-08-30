@@ -464,6 +464,20 @@
 					coefficients
 				)}
 
+				{#if detail.implementations?.length}
+					{#snippet implementations()}
+						<dl class="grid gap-x-10 gap-y-2 font-mono text-xs sm:grid-cols-2 lg:grid-cols-3">
+							{#each detail.implementations as entry}
+								<div class="flex items-baseline justify-between gap-3 border-b border-cream/10 py-1">
+									<dt class="truncate text-cream/50">{entry.library}</dt>
+									<dd class="shrink-0 text-cream">{entry.name}</dd>
+								</div>
+							{/each}
+						</dl>
+					{/snippet}
+					{@render section('also known as', implementations)}
+				{/if}
+
 				{#if detail.references.length}
 					{#snippet references()}
 						<ul class="flex flex-col gap-4">

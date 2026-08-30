@@ -32,5 +32,11 @@
       "title": "Klassische Runge-Kutta-Formeln vierter und niedrigerer Ordnung mit Schrittweiten-Kontrolle und ihre Anwendung auf Wärmeleitungsprobleme",
       "source": "Computing, 6(1-2), 61-71"
     }
+  ],
+  "implementations": [
+    {
+      "library": "GSL",
+      "name": "rkf45"
+    }
   ]
 }

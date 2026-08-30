@@ -28,5 +28,19 @@
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "source": "Springer Series in Computational Mathematics, Vol. 8"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "RK4"
+    },
+    {
+      "library": "GSL",
+      "name": "rk4"
+    },
+    {
+      "library": "Boost.Odeint",
+      "name": "runge_kutta4"
+    }
   ]
 }

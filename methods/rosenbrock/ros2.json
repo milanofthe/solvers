@@ -29,5 +29,11 @@
       "source": "SIAM Journal on Scientific Computing, 20(4), 1456-1480",
       "doi": "10.1137/S1064827597326651"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ROS2"
+    }
   ]
 }

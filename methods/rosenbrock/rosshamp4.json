@@ -32,5 +32,11 @@
       "source": "ACM Transactions on Mathematical Software, 8(2), 93-113",
       "doi": "10.1145/355993.355994"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "RosShamp4"
+    }
   ]
 }

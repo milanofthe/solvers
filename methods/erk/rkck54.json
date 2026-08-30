@@ -33,5 +33,15 @@
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "source": "Springer Series in Computational Mathematics, Vol. 8"
     }
+  ],
+  "implementations": [
+    {
+      "library": "GSL",
+      "name": "rkck"
+    },
+    {
+      "library": "Boost.Odeint",
+      "name": "runge_kutta_cash_karp54"
+    }
   ]
 }

@@ -28,5 +28,11 @@
       "source": "Computers & Mathematics with Applications, 32(6), 15-28",
       "doi": "10.1016/0898-1221(96)00141-1"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "BS5"
+    }
   ]
 }

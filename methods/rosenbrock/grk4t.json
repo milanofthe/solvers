@@ -32,5 +32,11 @@
       "source": "Numerische Mathematik, 33(1), 55-68",
       "doi": "10.1007/BF01396495"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "GRK4T"
+    }
   ]
 }

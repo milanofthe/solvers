@@ -226,6 +226,7 @@ pub fn method_detail(id: &str) -> Result<String, JsValue> {
         "report": report,
         "coefficients": coefficients,
         "references": references,
+        "implementations": method.implementations,
     });
     Ok(serde_json::to_string(&detail).unwrap_or_default())
 }

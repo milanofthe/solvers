@@ -53,6 +53,19 @@ impl Reference {
     }
 }
 
+/// Where a method can be found under some other name.
+///
+/// A reader who arrives knowing `ode45` and a reader who arrives knowing
+/// Dormand-Prince have the same method in mind, and there is no single place
+/// that says so. This is that place.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Implementation {
+    /// The library or package, as it calls itself.
+    pub library: String,
+    /// The name the method goes by there.
+    pub name: String,
+}
+
 /// Properties a method file claims. The analysis verifies them and reports
 /// disagreements rather than trusting either side.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -111,6 +124,8 @@ pub struct MethodFile {
     pub defaults: MethodDefaults,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub references: Vec<Reference>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub implementations: Vec<Implementation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tableau: Option<RkTableauFile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -141,6 +156,7 @@ pub struct Method {
     pub properties: ClaimedProperties,
     pub defaults: MethodDefaults,
     pub references: Vec<Reference>,
+    pub implementations: Vec<Implementation>,
     pub kind: MethodKind,
 }
 
@@ -198,6 +214,7 @@ impl Method {
             properties: file.properties,
             defaults: file.defaults,
             references: file.references,
+            implementations: file.implementations,
             kind,
         })
     }

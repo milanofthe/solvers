@@ -29,5 +29,11 @@
       "title": "Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations",
       "source": "World Scientific"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "SSPRK43"
+    }
   ]
 }
