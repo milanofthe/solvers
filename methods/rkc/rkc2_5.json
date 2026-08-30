@@ -1,0 +1,37 @@
+{
+  "id": "rkc2_5",
+  "name": "Runge-Kutta-Chebyshev 2, 5 stages",
+  "class": "runge_kutta",
+  "family": "rkc",
+  "order": 2,
+  "properties": {
+    "a_stable": false,
+    "l_stable": false
+  },
+  "tableau": {
+    "a": [
+      [],
+      [0.0315862022077577],
+      [-0.1286868976896455, 0.2558092130365597],
+      [-0.5627343688992266, 0.6014627450451152, 0.2988920369107989],
+      [-1.1993255830050151, 0.9424077572135384, 0.621901167048249, 0.2645019154381667]
+    ],
+    "b": [-2.0002622058002264, 1.2725082470423024, 0.9409252346399183, 0.5314219302359614, 0.2554067938820443]
+  },
+  "references": [
+    {
+      "authors": "van der Houwen, P. J., & Sommeijer, B. P.",
+      "title": "On the internal stability of explicit m-stage Runge-Kutta methods for large m-values",
+      "year": 1980,
+      "source": "ZAMM - Journal of Applied Mathematics and Mechanics, 60(10), 479-485",
+      "doi": "10.1002/zamm.19800601005"
+    },
+    {
+      "authors": "Sommeijer, B. P., Shampine, L. F., & Verwer, J. G.",
+      "title": "RKC: an explicit solver for parabolic PDEs",
+      "year": 1998,
+      "source": "Journal of Computational and Applied Mathematics, 88(2), 315-326",
+      "doi": "10.1016/S0377-0427(97)00219-7"
+    }
+  ]
+}

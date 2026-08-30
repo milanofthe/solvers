@@ -18,7 +18,7 @@
 	import Panel from '$lib/components/Panel.svelte';
 	import { catalog, engine, ui } from '$lib/store.svelte.js';
 	import { PRIORITY } from '$lib/engine.js';
-	import { METHOD_MODES, errorCoefficients } from '$lib/figures.js';
+	import { METHOD_MODES } from '$lib/figures.js';
 	import { limit, num } from '$lib/format.js';
 
 	const rail = getContext('rail');
@@ -78,8 +78,10 @@
 
 	$effect(() => {
 		rail.panel = controls;
+		rail.right = numbers;
 		return () => {
 			rail.panel = null;
+			rail.right = null;
 		};
 	});
 
@@ -132,7 +134,7 @@
 					['error constant', report.error_constant == null ? '–' : num(report.error_constant, 4)]
 				]
 			],
-			['checked', [['order conditions', report.exact_arithmetic ? 'exactly' : 'numerically']]]
+			['checked', [['conditions', report.exact_arithmetic ? 'exactly' : 'numerically']]]
 		];
 	});
 
@@ -223,7 +225,7 @@
 
 {#snippet numbers()}
 	{#each facts as [group, rows]}
-		<div class="border-t border-cream/10 pt-3">
+		<div class="-mx-5 border-t border-cream/10 px-5 pt-3 [&:not(:first-child)]:mt-5">
 			<p class="label mb-2">{group}</p>
 			{#each rows as [name, value]}
 				<div class="flex items-baseline justify-between gap-3 py-[2px] font-mono text-xs">
@@ -236,7 +238,7 @@
 {/snippet}
 
 {#snippet section(title, body)}
-	<section class="mt-9 border-t border-cream/10 pt-4">
+	<section class="-mx-6 mt-9 border-t border-cream/10 px-6 pt-4">
 		<p class="label mb-4">{title}</p>
 		{@render body()}
 	</section>
@@ -245,8 +247,8 @@
 {#if !method}
 	<p class="label">unknown method: {id}</p>
 {:else}
-	<div class="flex gap-12">
-		<div class="min-w-0 flex-1">
+	<div>
+		<div class="min-w-0">
 			<header>
 				<div class="flex items-baseline justify-between gap-6">
 					<h1 class="font-display text-lg text-cream">{method.name}</h1>
@@ -281,18 +283,14 @@
 								load={panel(MODES.orderStar, method, ui.problem)}
 							/>
 						{/if}
-						<Panel
-							label="damping"
-							height="h-[20rem]"
-							load={panel(MODES.damping, method, ui.problem)}
-						/>
-						{#if hasRationalFunction}
+						<div class={hasRationalFunction ? 'lg:col-span-2' : ''}>
 							<Panel
-								label="error coefficients"
-								height="h-[20rem]"
-								load={panel(errorCoefficients, method, ui.problem)}
+								label="damping"
+								height={hasRationalFunction ? 'h-[15rem]' : 'h-[20rem]'}
+								load={panel(MODES.damping, method, ui.problem)}
 							/>
-						{/if}
+						</div>
+
 					</div>
 				{/snippet}
 				{@render section('stability', stability)}
@@ -496,8 +494,5 @@
 			{/if}
 		</div>
 
-		<aside class="sticky top-6 hidden h-fit w-52 shrink-0 space-y-5 xl:block">
-			{@render numbers()}
-		</aside>
 	</div>
 {/if}

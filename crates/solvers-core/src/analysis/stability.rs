@@ -75,6 +75,18 @@ pub fn characteristic_polynomial(a: &Matrix<f64>) -> Vec<f64> {
 pub struct StabilityFunction {
     pub numerator: Vec<f64>,
     pub denominator: Vec<f64>,
+    /// The tableau it came from, kept when that tableau is explicit.
+    ///
+    /// The coefficients above are the honest answer and the wrong way to
+    /// evaluate one. A Chebyshev method of twenty stages is stable out to
+    /// `z = -260`, where the terms of its numerator reach `1e47` and cancel to
+    /// something of size one; nothing survives that. Running the tableau
+    /// instead is a forward substitution, it is what the method itself does,
+    /// and it is exact to the last bit at any stage count. The polynomial stays
+    /// for the questions that are about the polynomial: its poles, its value at
+    /// infinity, its Taylor coefficients.
+    #[serde(skip)]
+    explicit: Option<(Matrix<f64>, Vec<f64>)>,
 }
 
 impl StabilityFunction {
@@ -82,7 +94,11 @@ impl StabilityFunction {
     pub fn from_tableau(tableau: &RkTableau) -> StabilityFunction {
         let a = tableau.a.map(|v| v.value());
         let b: Vec<f64> = tableau.b.iter().map(|v| v.value()).collect();
-        StabilityFunction::from_parts(&a, &b)
+        let mut function = StabilityFunction::from_parts(&a, &b);
+        if tableau.is_explicit() {
+            function.explicit = Some((a, b));
+        }
+        function
     }
 
     /// Build `R(z)` for a Rosenbrock method.
@@ -119,10 +135,14 @@ impl StabilityFunction {
         StabilityFunction {
             numerator,
             denominator,
+            explicit: None,
         }
     }
 
     pub fn eval(&self, z: Complex) -> Complex {
+        if let Some((a, b)) = &self.explicit {
+            return run_tableau(a, b, z);
+        }
         let n = eval_poly(&self.numerator, z);
         let d = eval_poly(&self.denominator, z);
         n / d
@@ -318,6 +338,31 @@ impl StabilityFunction {
     pub fn imaginary_stability_limit(&self) -> f64 {
         scan_limit(|y| self.eval(Complex::new(0.0, y)).abs() <= 1.0 + 1e-12, 1.0)
     }
+}
+
+/// `R(z) = 1 + z b^T g` with `g` the stage values of `y' = y` at `hz = z`.
+///
+/// One forward substitution down a strictly lower triangular tableau, which is
+/// the method's own recursion and carries no cancellation of its own.
+fn run_tableau(a: &Matrix<f64>, b: &[f64], z: Complex) -> Complex {
+    let s = b.len();
+    let mut g = vec![Complex::new(0.0, 0.0); s];
+    for i in 0..s {
+        let mut acc = Complex::new(1.0, 0.0);
+        for j in 0..i {
+            if a[(i, j)] != 0.0 {
+                acc = acc + z * Complex::real(a[(i, j)]) * g[j];
+            }
+        }
+        g[i] = acc;
+    }
+    let mut sum = Complex::new(0.0, 0.0);
+    for i in 0..s {
+        if b[i] != 0.0 {
+            sum = sum + Complex::real(b[i]) * g[i];
+        }
+    }
+    Complex::new(1.0, 0.0) + z * sum
 }
 
 fn degree(p: &[f64]) -> usize {
@@ -778,6 +823,7 @@ mod tests {
         let function = StabilityFunction {
             numerator: vec![1.0, 1.0],
             denominator: vec![1.0],
+            explicit: None,
         };
         let curve = trace_zero_level(
             |z| {
@@ -804,12 +850,11 @@ mod tests {
     }
 
 
-    use super::*;
-
     fn function(numerator: Vec<f64>, denominator: Vec<f64>) -> StabilityFunction {
         StabilityFunction {
             numerator,
             denominator,
+            explicit: None,
         }
     }
 

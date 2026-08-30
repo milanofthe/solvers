@@ -14,8 +14,11 @@
 
 	let settled = $state(false);
 
-	// Pages hand their own controls to the rail as a snippet.
-	const rail = $state({ panel: null });
+	// Pages hand their own controls to the rail as a snippet, and a page with
+	// numbers worth keeping in view hands those to a second rail on the other
+	// side. Both are siblings of the content rather than part of it, so their
+	// rules run the height of the window like the navigation does.
+	const rail = $state({ panel: null, right: null });
 	setContext('rail', rail);
 
 	loadCatalogues();
@@ -88,4 +91,12 @@
 			{@render children()}
 		{/if}
 	</main>
+
+	{#if rail.right}
+		<aside
+			class="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-l border-cream/10 px-5 py-6 xl:block"
+		>
+			{@render rail.right()}
+		</aside>
+	{/if}
 </div>
