@@ -7,6 +7,7 @@
 
 pub mod convergence;
 pub mod cost;
+pub mod nonlinear;
 pub mod order;
 pub mod stability;
 pub mod tags;
@@ -80,10 +81,44 @@ pub struct MethodReport {
     pub imaginary_stability_limit: Option<Limit>,
     pub zero_stable: Option<bool>,
 
+    /// Whether two solutions of a contractive problem stay together, which
+    /// `M = diag(b) A + A^T diag(b) - b b^T` positive semidefinite decides.
+    /// Only a Runge-Kutta notion.
+    pub algebraically_stable: Option<bool>,
+    /// Radius of absolute monotonicity: how many forward Euler steps the method
+    /// is a convex combination of. Zero for a method that is not one, and
+    /// unbounded for one that is at every radius.
+    pub ssp_coefficient: Option<Limit>,
+    /// Order to which the method gets the phase of an oscillation right.
+    pub dispersion_order: Option<usize>,
+    /// Order to which it gets the amplitude right. `None` where there is a
+    /// stability function and it loses nothing at any order, which is what
+    /// `|R(iy)| = 1` means.
+    pub dissipation_order: Option<usize>,
+    /// Euclidean norm of the residuals at the first order the method misses,
+    /// which is what separates two methods of the same order.
+    ///
+    /// Absent above the order where the rooted trees can still be enumerated.
+    /// There are six hundred thousand of them at order seventeen, and a number
+    /// nobody can wait for is worse than no number.
+    pub error_constant: Option<f64>,
+
     /// Effective cost of one step in right hand side evaluations.
     pub stage_cost: usize,
     /// Points where the method file and the analysis disagree.
     pub discrepancies: Vec<String>,
+}
+
+/// The number of rooted trees grows past anything usable around order twelve,
+/// so the error constant is only offered where it can be had.
+const TREE_LIMIT: usize = 10;
+
+fn error_constant_of(
+    rule: &dyn order::StageWeights,
+    weights: &[crate::num::Coeff],
+    order: usize,
+) -> Option<f64> {
+    (order < TREE_LIMIT).then(|| order::error_constant(rule, weights, order + 1))
 }
 
 /// Derive everything about a method from its coefficients.
@@ -156,6 +191,9 @@ pub fn analyze(method: &Method) -> MethodReport {
             }
             .max(explicit_stages);
 
+            let contractivity = nonlinear::algebraic_stability(tableau);
+            let (dispersion, dissipation) = function.phase_and_amplitude_order(report.order + 6);
+
             MethodReport {
                 id: method.id.clone(),
                 name: method.name.clone(),
@@ -179,6 +217,11 @@ pub fn analyze(method: &Method) -> MethodReport {
                 real_stability_limit: Some(function.real_stability_limit().into()),
                 imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),
                 zero_stable: None,
+                algebraically_stable: Some(contractivity.stable),
+                ssp_coefficient: Some(nonlinear::ssp_coefficient(tableau).into()),
+                dispersion_order: dispersion,
+                dissipation_order: dissipation,
+                error_constant: error_constant_of(tableau, &tableau.b, report.order),
                 stage_cost,
                 discrepancies,
             }
@@ -225,6 +268,8 @@ pub fn analyze(method: &Method) -> MethodReport {
                 }
             }
 
+            let (dispersion, dissipation) = function.phase_and_amplitude_order(report.order + 6);
+
             MethodReport {
                 id: method.id.clone(),
                 name: method.name.clone(),
@@ -248,6 +293,13 @@ pub fn analyze(method: &Method) -> MethodReport {
                 real_stability_limit: Some(function.real_stability_limit().into()),
                 imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),
                 zero_stable: None,
+                // Algebraic stability and absolute monotonicity are statements
+                // about a Butcher tableau, and a Rosenbrock method is not one.
+                algebraically_stable: None,
+                ssp_coefficient: None,
+                dispersion_order: dispersion,
+                dissipation_order: dissipation,
+                error_constant: error_constant_of(tableau, &tableau.b, report.order),
                 // One evaluation per stage. The factorization and the back
                 // substitutions are counted separately by the cost model; what
                 // this number carries is the same thing it carries everywhere
@@ -311,6 +363,11 @@ pub fn analyze(method: &Method) -> MethodReport {
                 real_stability_limit: real_limit,
                 imaginary_stability_limit: None,
                 zero_stable,
+                algebraically_stable: None,
+                ssp_coefficient: None,
+                dispersion_order: None,
+                dissipation_order: None,
+                error_constant: None,
                 // One implicit solve, or one evaluation for an explicit family.
                 stage_cost: 1,
                 discrepancies,

@@ -237,6 +237,66 @@ pub fn solve(a: Matrix<f64>, b: &[f64]) -> Option<Vec<f64>> {
 /// `coeffs[i]` multiplies `x^i`. Used for the root condition of linear
 /// multistep methods, where the degree is small and the accuracy needed is
 /// only enough to compare moduli against one.
+/// Eigenvalues of a symmetric matrix, by cyclic Jacobi rotations.
+///
+/// The characteristic polynomial would do and would be wrong: for the matrices
+/// this is used on the eigenvalues cluster at zero, and reading them off a
+/// polynomial loses exactly the digits that decide whether the smallest one is
+/// negative. Jacobi is slower and answers the question that is actually being
+/// asked.
+pub fn symmetric_eigenvalues(matrix: &Matrix<f64>) -> Vec<f64> {
+    let n = matrix.rows();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut a = matrix.clone();
+    let scale = (0..n)
+        .flat_map(|i| (0..n).map(move |j| (i, j)))
+        .fold(0.0f64, |acc, (i, j)| acc.max(a[(i, j)].abs()))
+        .max(1e-300);
+
+    for _ in 0..100 {
+        // The size of what is left off the diagonal decides when to stop.
+        let mut off = 0.0;
+        for i in 0..n {
+            for j in (i + 1)..n {
+                off += a[(i, j)] * a[(i, j)];
+            }
+        }
+        if off.sqrt() <= 1e-16 * scale * n as f64 {
+            break;
+        }
+        for p in 0..n {
+            for q in (p + 1)..n {
+                if a[(p, q)].abs() <= 1e-300 {
+                    continue;
+                }
+                // The rotation that annihilates this entry.
+                let theta = (a[(q, q)] - a[(p, p)]) / (2.0 * a[(p, q)]);
+                let t = theta.signum() / (theta.abs() + (theta * theta + 1.0).sqrt());
+                let c = 1.0 / (t * t + 1.0).sqrt();
+                let s = t * c;
+                for k in 0..n {
+                    let akp = a[(k, p)];
+                    let akq = a[(k, q)];
+                    a[(k, p)] = c * akp - s * akq;
+                    a[(k, q)] = s * akp + c * akq;
+                }
+                for k in 0..n {
+                    let apk = a[(p, k)];
+                    let aqk = a[(q, k)];
+                    a[(p, k)] = c * apk - s * aqk;
+                    a[(q, k)] = s * apk + c * aqk;
+                }
+            }
+        }
+    }
+
+    let mut eigenvalues: Vec<f64> = (0..n).map(|i| a[(i, i)]).collect();
+    eigenvalues.sort_by(f64::total_cmp);
+    eigenvalues
+}
+
 pub fn poly_roots(coeffs: &[crate::num::Complex]) -> Vec<crate::num::Complex> {
     use crate::num::Complex;
 

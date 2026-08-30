@@ -117,9 +117,29 @@
 					['imaginary limit', boundless(report.imaginary_stability_limit)]
 				]
 			],
+			[
+				'nonlinear',
+				[
+					['algebraically stable', yesNo(report.algebraically_stable)],
+					['SSP coefficient', report.ssp_coefficient == null ? '–' : boundless(report.ssp_coefficient)],
+					['dispersion order', report.dispersion_order ?? '–'],
+					[
+						'dissipation order',
+						report.class === 'linear_multistep'
+							? '–'
+							: (report.dissipation_order ?? 'none')
+					],
+					['error constant', report.error_constant == null ? '–' : num(report.error_constant, 4)]
+				]
+			],
 			['checked', [['order conditions', report.exact_arithmetic ? 'exactly' : 'numerically']]]
 		];
 	});
+
+	function yesNo(value) {
+		if (value == null) return '–';
+		return value ? 'yes' : 'no';
+	}
 
 	/** A limit with no finite value is worth a word rather than a glyph. */
 	function boundless(value) {

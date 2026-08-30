@@ -186,6 +186,76 @@ impl StabilityFunction {
         order
     }
 
+    /// Dispersion and dissipation order.
+    ///
+    /// On the imaginary axis the exact solution turns without growing, and a
+    /// method does neither exactly. Writing `W(y) = R(iy) exp(-iy)`, the real
+    /// part of its first nonzero term is the amplitude it gains or loses per
+    /// step and the imaginary part is the phase it runs early or late, so the
+    /// two orders are read straight off one series.
+    ///
+    /// `None` for the dissipation order means there is none at any order, which
+    /// is what `|R(iy)| = 1` looks like and is exactly the property that makes
+    /// the Gauss methods worth their cost on an oscillator.
+    ///
+    /// Reference: P. J. van der Houwen, B. P. Sommeijer, "Explicit Runge-Kutta
+    /// (-Nystroem) methods with reduced phase errors for computing oscillating
+    /// solutions", SIAM J. Numer. Anal. 24(3), 1987, doi:10.1137/0724041
+    pub fn phase_and_amplitude_order(&self, max_order: usize) -> (Option<usize>, Option<usize>) {
+        let terms = max_order + 2;
+        let taylor = self.taylor(terms);
+
+        let mut factorial = vec![1.0f64; terms + 1];
+        for k in 1..=terms {
+            factorial[k] = factorial[k - 1] * k as f64;
+        }
+        let power_of_i = |k: usize| match k % 4 {
+            0 => Complex::new(1.0, 0.0),
+            1 => Complex::new(0.0, 1.0),
+            2 => Complex::new(-1.0, 0.0),
+            _ => Complex::new(0.0, -1.0),
+        };
+
+        // `W = R(iy) exp(-iy)`, term by term.
+        let mut w = vec![Complex::new(0.0, 0.0); terms + 1];
+        for (m, slot) in w.iter_mut().enumerate() {
+            for k in 0..=m {
+                let left = power_of_i(k) * Complex::real(taylor[k]);
+                let right = power_of_i(m - k).conj() / Complex::real(factorial[m - k]);
+                *slot = *slot + left * right;
+            }
+        }
+
+        // A term of `W` is a sum of about `m` products of size `2^m / m!`, so
+        // that is the size of the round off in it. Anything a few orders above
+        // is a real coefficient, anything below is the arithmetic.
+        let significant = |m: usize| 1e-7 * 2f64.powi(m as i32) / factorial[m];
+
+        // The phase is the argument, whose first term is the imaginary part.
+        let dispersion = (1..=terms)
+            .find(|m| w[*m].im.abs() > significant(*m))
+            .map(|m| m - 1);
+
+        // The amplitude is the modulus, and the modulus is not the real part.
+        // A method that only runs early or late has `W` on the unit circle with
+        // a real part that departs from one at twice the order of its phase
+        // error, and reading that as an amplitude error would credit a Gauss
+        // method, whose amplitude is exactly one, with a dissipation of order
+        // thirteen. So `|W|^2` is formed and its first term taken.
+        let mut squared = vec![0.0f64; terms + 1];
+        for (n, slot) in squared.iter_mut().enumerate() {
+            for k in 0..=n {
+                let product = w[k] * w[n - k].conj();
+                *slot += product.re;
+            }
+        }
+        let dissipation = (1..=terms)
+            .find(|n| squared[*n].abs() > significant(*n))
+            .map(|n| n - 1);
+
+        (dispersion, dissipation)
+    }
+
     /// `|D(iy)|^2 - |N(iy)|^2` as a polynomial in `u = y^2`.
     ///
     /// A-stability on the imaginary axis is exactly the statement that this

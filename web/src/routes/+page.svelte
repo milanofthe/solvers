@@ -24,6 +24,13 @@
 		{ key: 'year', label: 'year', of: (m) => m.year ?? 9999 },
 		{ key: 'size', label: 'size', of: (m) => m.size },
 		{ key: 'cost', label: 'cost', of: (m) => m.stageCost },
+		// Undated and unmeasured entries sort to the end rather than to zero.
+		{ key: 'error', label: 'error constant', of: (m) => m.errorConstant ?? Infinity },
+		{
+			key: 'ssp',
+			label: 'SSP coefficient',
+			of: (m) => -(m.sspCoefficient === 'unbounded' ? 1e9 : (m.sspCoefficient ?? 0))
+		},
 		{
 			key: 'stability',
 			label: 'stability',

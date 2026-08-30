@@ -62,6 +62,11 @@ pub fn method_catalog() -> String {
                 "alphaAngle": report.alpha_angle,
                 "dampingAtInfinity": report.damping_at_infinity,
                 "stageCost": report.stage_cost,
+                "algebraicallyStable": report.algebraically_stable,
+                "sspCoefficient": report.ssp_coefficient,
+                "dispersionOrder": report.dispersion_order,
+                "dissipationOrder": report.dissipation_order,
+                "errorConstant": report.error_constant,
                 "exactArithmetic": report.exact_arithmetic,
                 "discrepancies": report.discrepancies,
                 "doi": method.references.first().and_then(|r| r.doi.clone()),
@@ -625,6 +630,14 @@ pub fn error_coefficients(id: &str) -> Result<String, JsValue> {
     let conditions = tree_conditions(method)
         .ok_or_else(|| JsValue::from_str("error coefficients need order conditions on trees"))?;
     let order = conditions.order + 1;
+    // Six hundred thousand trees at order seventeen. A method whose order came
+    // from Butcher's theorem rather than from the trees has no affordable list
+    // of leading error terms, and saying so beats hanging the worker.
+    if order > 11 {
+        return Err(JsValue::from_str(
+            "too many rooted trees at this order to enumerate",
+        ));
+    }
 
     let at_order = analysis::order::conditions_at(conditions.rule, conditions.b, order);
     let embedded = conditions.b_embedded.map(|weights| {

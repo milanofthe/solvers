@@ -109,6 +109,21 @@ pub fn tags(method: &Method, report: &MethodReport) -> Vec<Tag> {
         tags.push(tag("use", "non stiff problems"));
     }
 
+    // Nonlinear stability, which linear stability says nothing about.
+    if report.algebraically_stable == Some(true) {
+        tags.push(tag("stability", "algebraically stable"));
+    }
+    let preserves_strong_stability = matches!(
+        report.ssp_coefficient,
+        Some(super::Limit::Unbounded(_)) | Some(super::Limit::Finite(1e-6..))
+    );
+    if preserves_strong_stability {
+        tags.push(tag("stability", "strong stability preserving"));
+    }
+    if report.dissipation_order.is_none() && report.dispersion_order.is_some() {
+        tags.push(tag("geometry", "non dissipative"));
+    }
+
     // Geometric properties, which the analysis does not derive and the file
     // therefore has to claim.
     if method.properties.symplectic == Some(true) {
@@ -116,9 +131,6 @@ pub fn tags(method: &Method, report: &MethodReport) -> Vec<Tag> {
     }
     if method.properties.symmetric == Some(true) {
         tags.push(tag("geometry", "symmetric"));
-    }
-    if method.family == "ssprk" {
-        tags.push(tag("geometry", "strong stability preserving"));
     }
 
     // Order, in the bands one actually chooses between.
