@@ -47,14 +47,27 @@ function axisValues(low, high, count) {
  * these figures carry the same scale.
  */
 
-/** A window grown about its own centre, for sampling past what is framed. */
-function grown({ re, im }, factor) {
-	const stretch = ([low, high]) => {
-		const middle = (low + high) / 2;
-		const half = ((high - low) / 2) * factor;
-		return [middle - half, middle + half];
+/**
+ * A window grown so that a panel of any shape is fully covered by it.
+ *
+ * The frame is the measured box, but both axes carry one scale, so a panel
+ * whose shape differs from the box widens one of the two until they agree.
+ * How far it widens is not known here, only that it is bounded by the shapes a
+ * panel can have, so the sampled box is grown to cover the extreme of each
+ * case. Growing by a fixed factor instead leaves a strip with no data in it
+ * exactly for the methods whose region is far from square.
+ */
+function covering({ re, im }, widest = 2.2, tallest = 0.7) {
+	const width = re[1] - re[0];
+	const height = im[1] - im[0];
+	const middleX = (re[0] + re[1]) / 2;
+	const middleY = (im[0] + im[1]) / 2;
+	const reach = Math.max(width, height * widest) / 2;
+	const rise = Math.max(height, width / tallest) / 2;
+	return {
+		re: [middleX - reach, middleX + reach],
+		im: [middleY - rise, middleY + rise]
 	};
-	return { re: stretch(re), im: stretch(im) };
 }
 
 /** The order star lives around the origin and reaches about as far as the order. */
@@ -162,12 +175,19 @@ const stability = {
 		// The colour range follows the data rather than a fixed span. A method
 		// whose region is a half plane varies by a fraction of a decade across
 		// the whole window, and a fixed range would render it as one flat wash.
-		const sample = [];
-		for (let i = 0; i < data.length; i += Math.max(1, Math.floor(data.length / 2000))) {
-			if (Number.isFinite(data[i])) sample.push(Math.abs(data[i]));
+		const inside = [];
+		for (let row = 0; row < height; row += 1) {
+			const y = im[0] + ((im[1] - im[0]) * row) / (height - 1);
+			if (y < view.im[0] || y > view.im[1]) continue;
+			for (let column = 0; column < width; column += 1) {
+				const x = re[0] + ((re[1] - re[0]) * column) / (width - 1);
+				if (x < view.re[0] || x > view.re[1]) continue;
+				const value = data[row * width + column];
+				if (Number.isFinite(value)) inside.push(Math.abs(value));
+			}
 		}
-		sample.sort((a, b) => a - b);
-		const quantile = sample[Math.floor(sample.length * 0.97)] ?? 1;
+		inside.sort((a, b) => a - b);
+		const quantile = inside[Math.floor(inside.length * 0.97)] ?? 1;
 		const reach = Math.min(Math.max(quantile, 0.3), 4);
 		const z = reshape(data, width, height);
 		const x = axisValues(re[0], re[1], width);
@@ -550,7 +570,7 @@ const orderStar = {
 	request(engine, method, priority) {
 		if (method.class === 'linear_multistep') return Promise.resolve(null);
 		const view = orderStarWindow(method);
-		const sample = grown(view, 1.7);
+		const sample = covering(view);
 		const resolution = 160;
 		return engine.request(
 			'orderStar',

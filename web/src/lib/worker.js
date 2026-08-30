@@ -16,14 +16,27 @@ import wasmUrl from './wasm/solvers_wasm_bg.wasm?url';
 
 const ready = init({ module_or_path: wasmUrl });
 
-/** A window grown about its own centre, for sampling past what is framed. */
-function grown({ re, im }, factor) {
-	const stretch = ([low, high]) => {
-		const middle = (low + high) / 2;
-		const half = ((high - low) / 2) * factor;
-		return [middle - half, middle + half];
+/**
+ * A window grown so that a panel of any shape is fully covered by it.
+ *
+ * The frame is the measured box, but both axes carry one scale, so a panel
+ * whose shape differs from the box widens one of the two until they agree.
+ * How far it widens is not known here, only that it is bounded by the shapes a
+ * panel can have, so the sampled box is grown to cover the extreme of each
+ * case. Growing by a fixed factor instead leaves a strip with no data in it
+ * exactly for the methods whose region is far from square.
+ */
+function covering({ re, im }, widest = 2.2, tallest = 0.7) {
+	const width = re[1] - re[0];
+	const height = im[1] - im[0];
+	const middleX = (re[0] + re[1]) / 2;
+	const middleY = (im[0] + im[1]) / 2;
+	const reach = Math.max(width, height * widest) / 2;
+	const rise = Math.max(height, width / tallest) / 2;
+	return {
+		re: [middleX - reach, middleX + reach],
+		im: [middleY - rise, middleY + rise]
 	};
-	return { re: stretch(re), im: stretch(im) };
 }
 
 const HANDLERS = {
@@ -57,7 +70,7 @@ const HANDLERS = {
 		// scale, so a panel of any other shape than the measured box widens one
 		// of the two; sampling only the box would leave that strip empty and
 		// read as a hole in the figure rather than as more of the plane.
-		const sample = grown(view, 1.7);
+		const sample = covering(view);
 		const data = wasm.stability_grid(
 			id,
 			sample.re[0],
