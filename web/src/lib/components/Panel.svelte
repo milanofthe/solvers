@@ -3,13 +3,14 @@
 	 * A titled figure. The heading is a heading like every other one on the
 	 * page, set in the interface's own type rather than drawn by the plotting
 	 * library, and the panel takes care of asking the pipeline and of the state
-	 * while it waits.
+	 * while it waits. There is no frame around it: the figure has its own
+	 * ground, and a box around a box is one too many.
 	 */
 	import Plot from './Plot.svelte';
 	import { isCancelled } from '$lib/engine.js';
 	import { empty } from '$lib/figures.js';
 
-	let { label, load, height = 'h-72', note = '' } = $props();
+	let { label, load, height = 'h-72' } = $props();
 
 	let figure = $state.raw(null);
 	// Outside the reactive graph on purpose: reading `figure` in the effect that
@@ -55,10 +56,5 @@
 
 <section>
 	<p class="label mb-2">{label}</p>
-	<div class="border border-cream/10 bg-charcoal-light">
-		<Plot {figure} class="{height} w-full" onsize={measure} />
-	</div>
-	{#if note}
-		<p class="mt-2 max-w-[70ch] text-xs text-cream/40">{note}</p>
-	{/if}
+	<Plot {figure} class="{height} w-full" onsize={measure} />
 </section>
