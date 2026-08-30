@@ -17,14 +17,15 @@ import wasmUrl from './wasm/solvers_wasm_bg.wasm?url';
 const ready = init({ module_or_path: wasmUrl });
 
 /**
- * A window grown so that a panel of any shape is fully covered by it.
+ * A window grown so that a panel of the given shape is covered by it.
  *
  * The frame is the measured box, but both axes carry one scale, so a panel
  * whose shape differs from the box widens one of the two until they agree.
- * How far it widens is not known here, only that it is bounded by the shapes a
- * panel can have, so the sampled box is grown to cover the extreme of each
- * case. Growing by a fixed factor instead leaves a strip with no data in it
- * exactly for the methods whose region is far from square.
+ * Growing to cover every shape a panel could have wastes most of the grid on a
+ * region far from square: the stability region of Adams-Bashforth 5 is twice as
+ * tall as it is wide, and in a landscape panel four fifths of the samples would
+ * land outside the frame. So the caller says what shape it actually is, with a
+ * tenth of slack either way so that nudging a window is not a resample.
  */
 function covering({ re, im }, widest = 2.2, tallest = 0.7) {
 	const width = re[1] - re[0];
@@ -64,13 +65,13 @@ const HANDLERS = {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
-	stabilityGridAuto: ({ id, width, height, locus = 0 }) => {
+	stabilityGridAuto: ({ id, width, height, aspect = 1.6, locus = 0 }) => {
 		const view = JSON.parse(wasm.stability_window(id));
 		// Sample wider than the frame. Both axes of the picture carry the same
 		// scale, so a panel of any other shape than the measured box widens one
 		// of the two; sampling only the box would leave that strip empty and
 		// read as a hole in the figure rather than as more of the plane.
-		const sample = covering(view);
+		const sample = covering(view, aspect * 1.1, aspect / 1.1);
 		const data = wasm.stability_grid(
 			id,
 			sample.re[0],

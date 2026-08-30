@@ -76,7 +76,26 @@ function orderStarWindow(method) {
 	return { re: [-reach, reach], im: [-reach, reach] };
 }
 
-const GRID = { runge_kutta: 140, rosenbrock: 140, linear_multistep: 72 };
+/**
+ * How finely to sample, matched to the pixels the figure will occupy.
+ *
+ * A multistep grid costs thirty times what a Runge-Kutta one does, because
+ * every point is a root finding problem rather than a polynomial evaluation, so
+ * that family is capped lower. Below the cap the resolution follows the panel:
+ * a thumbnail three hundred pixels wide gains nothing from a grid finer than
+ * one sample per two of them.
+ */
+function resolutionFor(method, box) {
+	const wanted = Math.round((box?.width ?? 320) / 2.6);
+	const cap = method.class === 'linear_multistep' ? 88 : 160;
+	return Math.min(Math.max(wanted, 48), cap);
+}
+
+/** The panel shape the sampling is cut to, rounded so a nudge is not a refetch. */
+function aspectOf(box) {
+	const raw = box && box.height > 0 ? box.width / box.height : 1.6;
+	return Math.round(Math.min(Math.max(raw, 0.4), 3.0) * 50) / 50;
+}
 
 /** How finely the closed form multistep boundary is traced. */
 const BOUNDARY_SAMPLES = 720;
@@ -157,17 +176,19 @@ const stability = {
 	key: 'stability',
 	label: 'stability',
 	note: 'Banded log |R(z)| on the complex plane with the unit contour on top. The region it encloses is where the method does not amplify.',
-	request(engine, method, priority) {
-		const resolution = GRID[method.class] ?? 96;
+	request(engine, method, priority, { box } = {}) {
+		const resolution = resolutionFor(method, box);
+		const aspect = aspectOf(box);
 		return engine.request(
 			'stabilityGridAuto',
 			{
 				id: method.id,
+				aspect,
 				width: resolution,
 				height: resolution,
 				locus: method.class === 'linear_multistep' ? BOUNDARY_SAMPLES : 0
 			},
-			{ key: `stability:${method.id}`, priority }
+			{ key: `stability:${method.id}:${resolution}:${aspect}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
@@ -567,11 +588,12 @@ const orderStar = {
 	key: 'orderStar',
 	label: 'order star',
 	note: 'log |R(z) exp(-z)|. Where the stability region says whether a mode decays, the star says whether the method tracks the exact solution: the sectors meeting at the origin count one more than the order, and a method is A-acceptable exactly when no sector reaches into the left half plane.',
-	request(engine, method, priority) {
+	request(engine, method, priority, { box } = {}) {
 		if (method.class === 'linear_multistep') return Promise.resolve(null);
 		const view = orderStarWindow(method);
-		const sample = covering(view);
-		const resolution = 160;
+		const aspect = aspectOf(box);
+		const sample = covering(view, aspect * 1.1, aspect / 1.1);
+		const resolution = resolutionFor(method, box);
 		return engine.request(
 			'orderStar',
 			{
@@ -582,7 +604,7 @@ const orderStar = {
 				width: resolution,
 				height: resolution
 			},
-			{ key: `orderStar:${method.id}`, priority }
+			{ key: `orderStar:${method.id}:${resolution}:${aspect}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {

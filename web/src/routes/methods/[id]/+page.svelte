@@ -27,9 +27,9 @@
 
 	/** A loader for one figure, bound to the method currently on screen. */
 	function panel(mode, current, problem) {
-		return () =>
+		return (box) =>
 			mode
-				.request(engine(), current, PRIORITY.immediate, { problem })
+				.request(engine(), current, PRIORITY.immediate, { problem, box })
 				.then((result) => mode.figure(result, current, { compact: false }));
 	}
 

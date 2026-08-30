@@ -19,8 +19,26 @@
 	let visible = $state(false);
 	let figure = $state.raw(null);
 	// Set once and never cleared: a tile arrives at most one time, and switching
-	// modes should redraw it in place rather than fade it in again.
+	// modes should redraw it in place rather than fade it in again. `arrived`
+	// drives the reveal and is only ever written here; `drawn` is the same fact
+	// held outside the reactive graph, because reading `arrived` inside the
+	// effect below would make the effect depend on something it writes.
 	let arrived = $state(false);
+	let drawn = false;
+
+	// The figure is sampled to fit its container, so the container is measured
+	// before it is asked for and again when it changes. Snapping to a step keeps
+	// a dragged window from asking for a new grid on every frame.
+	let box = $state.raw(null);
+
+	function measure(next) {
+		const snapped = {
+			width: Math.round(next.width / 24) * 24,
+			height: Math.round(next.height / 24) * 24
+		};
+		if (box && box.width === snapped.width && box.height === snapped.height) return;
+		box = snapped;
+	}
 
 	const selected = $derived(ui.selection.includes(method.id));
 	const mode = $derived(METHOD_MODES.find((m) => m.key === ui.mode) ?? METHOD_MODES[0]);
@@ -29,14 +47,16 @@
 	$effect(() => {
 		const active = mode;
 		const problem = context.problem;
-		if (!visible) return;
+		const measured = box;
+		if (!visible || !measured) return;
 		let stale = false;
-		figure = empty('…');
+		if (!drawn) figure = empty('…');
 		active
-			.request(engine(), method, PRIORITY.visible, { problem })
+			.request(engine(), method, PRIORITY.visible, { problem, box: measured })
 			.then((result) => {
 				if (stale) return;
 				figure = active.figure(result, method, { compact: true });
+				drawn = true;
 				arrived = true;
 			})
 			.catch((error) => {
@@ -98,7 +118,7 @@
 			>
 		</header>
 
-		<Plot {figure} class="mt-2 min-h-0 w-full flex-1" />
+		<Plot {figure} class="mt-2 min-h-0 w-full flex-1" onsize={measure} />
 
 		<dl class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
 			<div><dt class="inline">order</dt> <dd class="inline text-cream">{method.order}</dd></div>
