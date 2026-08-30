@@ -12,6 +12,8 @@
 
 	let { children } = $props();
 
+	let settled = $state(false);
+
 	// Pages hand their own controls to the rail as a snippet.
 	const rail = $state({ panel: null });
 	setContext('rail', rail);
@@ -23,6 +25,13 @@
 		{ href: '/problems', label: 'problems' },
 		{ href: '/compare', label: 'compare' }
 	];
+
+	// After the first paint, so the frame fades in rather than appearing. The
+	// loading line is inside it and fades in too, which is the point: there is
+	// always something on screen, it just is not abrupt.
+	$effect(() => {
+		settled = true;
+	});
 
 	function active(href) {
 		if (href === '/') return page.url.pathname === '/' || page.url.pathname.startsWith('/methods');
@@ -70,7 +79,7 @@
 		</div>
 	</aside>
 
-	<main class="min-w-0 flex-1 px-6 py-6">
+	<main class="page min-w-0 flex-1 px-6 py-6 {settled ? 'page-in' : ''}">
 		{#if catalog.error}
 			<p class="font-mono text-xs text-[#d9513c]">{catalog.error}</p>
 		{:else if !catalog.ready}

@@ -117,4 +117,40 @@
 	.rail-group {
 		@apply -mx-5 mt-4 border-t border-cream/10 px-5 pt-4;
 	}
+
+	/* A tile arrives when it has something to show, not when it is inserted.
+	   Nothing here staggers the tiles on purpose: they are drawn by a worker
+	   pool a few at a time, so the cascade is the pipeline's own order of
+	   completion made visible rather than a timing effect laid on top. */
+	.tile {
+		@apply translate-y-3 opacity-0;
+		transition:
+			opacity 320ms ease-out,
+			transform 320ms ease-out,
+			border-color 150ms ease;
+	}
+
+	.tile-in {
+		@apply translate-y-0 opacity-100;
+	}
+
+	/* The frame settles first, so the tiles rise into a page that is already
+	   there instead of the whole thing appearing at once. */
+	.page {
+		@apply opacity-0;
+		transition: opacity 220ms ease-out;
+	}
+
+	.page-in {
+		@apply opacity-100;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tile,
+	.page {
+		transition: none;
+		transform: none;
+		opacity: 1;
+	}
 }

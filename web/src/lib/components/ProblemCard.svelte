@@ -15,6 +15,7 @@
 
 	let visible = $state(false);
 	let figure = $state.raw(null);
+	let arrived = $state(false);
 
 	const selected = $derived(ui.problem === problem.id);
 	const mode = $derived(PROBLEM_MODES.find((m) => m.key === ui.problemMode) ?? PROBLEM_MODES[0]);
@@ -29,10 +30,12 @@
 			.then((profile) => {
 				if (stale) return;
 				figure = active.figure(profile, problem, { compact: true });
+				arrived = true;
 			})
 			.catch((error) => {
 				if (stale || isCancelled(error)) return;
 				figure = empty('unavailable');
+				arrived = true;
 			});
 		return () => {
 			stale = true;
@@ -42,7 +45,9 @@
 
 <article
 	use:viewport={(value) => (visible = value)}
-	class="flex aspect-square flex-col overflow-hidden border bg-charcoal-light transition-colors {selected
+	class="tile flex aspect-square flex-col overflow-hidden border bg-charcoal-light {arrived
+		? 'tile-in'
+		: ''} {selected
 		? 'border-amber'
 		: 'border-cream/10 hover:border-cream/25'}"
 >

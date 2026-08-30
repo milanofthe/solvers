@@ -18,6 +18,9 @@
 
 	let visible = $state(false);
 	let figure = $state.raw(null);
+	// Set once and never cleared: a tile arrives at most one time, and switching
+	// modes should redraw it in place rather than fade it in again.
+	let arrived = $state(false);
 
 	const selected = $derived(ui.selection.includes(method.id));
 	const mode = $derived(METHOD_MODES.find((m) => m.key === ui.mode) ?? METHOD_MODES[0]);
@@ -34,10 +37,12 @@
 			.then((result) => {
 				if (stale) return;
 				figure = active.figure(result, method, { compact: true });
+				arrived = true;
 			})
 			.catch((error) => {
 				if (stale || isCancelled(error)) return;
 				figure = empty('unavailable');
+				arrived = true;
 			});
 		return () => {
 			stale = true;
@@ -67,7 +72,9 @@
 
 <article
 	use:viewport={(value) => (visible = value)}
-	class="flex aspect-square flex-col overflow-hidden border bg-charcoal-light transition-colors {selected
+	class="tile flex aspect-square flex-col overflow-hidden border bg-charcoal-light {arrived
+		? 'tile-in'
+		: ''} {selected
 		? 'border-amber'
 		: 'border-cream/10 hover:border-cream/25'}"
 >
