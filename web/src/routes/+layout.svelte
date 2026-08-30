@@ -26,7 +26,8 @@
 	const links = [
 		{ href: '/', label: 'methods' },
 		{ href: '/problems', label: 'problems' },
-		{ href: '/compare', label: 'compare' }
+		{ href: '/compare', label: 'compare' },
+		{ href: '/reference', label: 'reference' }
 	];
 
 	// After the first paint, so the frame fades in rather than appearing. The

@@ -10,6 +10,7 @@
 	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
 	import { getContext } from 'svelte';
+	import { page } from '$app/state';
 	import MethodCard from '$lib/components/MethodCard.svelte';
 	import { catalog, engine, ui, toggleTag } from '$lib/store.svelte.js';
 	import { METHOD_MODES, MODES_NEEDING_A_PROBLEM } from '$lib/figures.js';
@@ -72,6 +73,19 @@
 			for (const [name] of names) index.set(name, group);
 		}
 		return index;
+	});
+
+	// A filter can arrive in the address, which is what lets the reference page
+	// link a definition to the methods that satisfy it. Applied once: after that
+	// the rail owns the selection, and a back navigation should not undo it.
+	let arrived = false;
+	$effect(() => {
+		if (arrived) return;
+		arrived = true;
+		const wanted = page.url.searchParams.get('tag');
+		const within = page.url.searchParams.get('family');
+		if (wanted) ui.tags = [wanted];
+		if (within) ui.query = within;
 	});
 
 	const shown = $derived.by(() => {
