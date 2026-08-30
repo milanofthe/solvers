@@ -7,6 +7,7 @@ type: software
 authors:
   - family-names: Rother
     given-names: Milan
+    website: https://milanrother.com
 repository-code: https://github.com/milanofthe/solvers
 url: https://solvers.milanrother.com
 abstract: >-

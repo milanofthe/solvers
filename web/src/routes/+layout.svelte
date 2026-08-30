@@ -80,6 +80,12 @@
 				rel="noreferrer">source</a
 			>
 			<a href="/api/methods.json" class="rail-link" download>download as json</a>
+			<a
+				href="https://milanrother.com"
+				class="rail-link mt-2"
+				target="_blank"
+				rel="noreferrer">milanrother.com</a
+			>
 		</div>
 	</aside>
 

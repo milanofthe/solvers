@@ -116,4 +116,4 @@ repository page.
 
 ## License
 
-MIT
+MIT, by [Milan Rother](https://milanrother.com).
