@@ -4,7 +4,7 @@
   "class": "runge_kutta",
   "family": "irk",
   "order": 5,
-  "aliases": ["radau5", "radau_iia_3s"],
+  "aliases": ["radau5"],
   "properties": {
     "a_stable": true,
     "l_stable": true,
@@ -13,12 +13,12 @@
   },
   "tableau": {
     "a": [
-      ["(88 - 7*sqrt(6))/360", "(296 - 169*sqrt(6))/1800", "(-2 + 3*sqrt(6))/225"],
-      ["(296 + 169*sqrt(6))/1800", "(88 + 7*sqrt(6))/360", "(-2 - 3*sqrt(6))/225"],
-      ["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"]
+      [0.1968154772236604, -0.0655354258501984, 0.0237709743482202],
+      [0.3944243147390873, 0.2920734116652285, -0.0415487521259979],
+      [0.3764030627004673, 0.5124858261884216, 0.1111111111111111]
     ],
-    "b": ["(16 - sqrt(6))/36", "(16 + sqrt(6))/36", "1/9"],
-    "c": ["(4 - sqrt(6))/10", "(4 + sqrt(6))/10", 1]
+    "b": [0.3764030627004673, 0.5124858261884216, 0.1111111111111111],
+    "c": [0.1550510257216822, 0.6449489742783178, 1.0]
   },
   "references": [
     {
@@ -27,6 +27,12 @@
       "year": 1964,
       "source": "Mathematics of Computation, 18(85), 50-64",
       "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Ehle, B. L.",
+      "title": "On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems",
+      "year": 1969,
+      "source": "Research Report CSRR 2010, University of Waterloo"
     },
     {
       "authors": "Hairer, E., & Wanner, G.",

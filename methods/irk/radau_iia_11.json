@@ -1,0 +1,48 @@
+{
+  "id": "radau_iia_11",
+  "name": "Radau IIA 11",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 11,
+  "aliases": ["radau11"],
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true,
+    "stage_order": 6
+  },
+  "tableau": {
+    "a": [
+      [0.0509500109946406, -0.0189073065542921, 0.0136860714330882, -0.010370038766046, 0.0073606563966398, -0.0029095364525617],
+      [0.1082216589190587, 0.1069755199373326, -0.0275390233553924, 0.0174967471412282, -0.0116537218911956, 0.0045122371225768],
+      [0.0977796700926453, 0.2231722506368958, 0.1363146792730519, -0.0296469659881962, 0.0163585788434372, -0.0060034026104479],
+      [0.1021223756129338, 0.2029759573730911, 0.2763991363807478, 0.131006023136043, -0.0248763031998223, 0.0078370840506426],
+      [0.1003310013849608, 0.2102473085533385, 0.2560853720503376, 0.2533659347045656, 0.0924305343356996, -0.0109952368277286],
+      [0.1007941926267404, 0.2084506671559539, 0.2604633915947875, 0.242693594234485, 0.1598203766102555, 0.0277777777777778]
+    ],
+    "b": [0.1007941926267404, 0.2084506671559539, 0.2604633915947875, 0.242693594234485, 0.1598203766102555, 0.0277777777777778],
+    "c": [0.0398098570514687, 0.1980134178736082, 0.4379748102473862, 0.6954642733536361, 0.9014649142011736, 1.0]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Ehle, B. L.",
+      "title": "On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems",
+      "year": 1969,
+      "source": "Research Report CSRR 2010, University of Waterloo"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

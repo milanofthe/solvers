@@ -31,6 +31,13 @@ pub struct ConvergenceStudy {
     /// Slope between the last two usable points, which is closer to the
     /// asymptotic rate when the coarse steps are still preasymptotic.
     pub local_order: f64,
+    /// How many decades of error the fit actually spans.
+    ///
+    /// A slope is only worth as much as the range it was fitted over. Where a
+    /// method is so accurate that its error meets round off within the window
+    /// its stability region allows, this collapses, and the number to report is
+    /// that rather than a slope.
+    pub usable_decades: f64,
     /// True when the comparison used a closed form solution.
     pub exact_reference: bool,
 }
@@ -110,13 +117,14 @@ pub fn study(
         }
     }
 
-    let (estimated_order, local_order) = fit_order(&points);
+    let (estimated_order, local_order, usable_decades) = fit_order_with_span(&points);
     ConvergenceStudy {
         method: method.id.clone(),
         problem: problem.id().to_string(),
         points,
         estimated_order,
         local_order,
+        usable_decades,
         exact_reference,
     }
 }
@@ -129,30 +137,60 @@ pub fn study(
 /// is already several units in the last place, and a slope drawn through two
 /// such points measures the arithmetic rather than the method.
 pub fn fit_order(points: &[ConvergencePoint]) -> (f64, f64) {
-    let above_floor: Vec<&ConvergencePoint> = points
-        .iter()
-        .filter(|p| p.error.is_finite() && p.error > 1e-11 && p.error < 0.5)
-        .collect();
-    if above_floor.len() < 2 {
-        return (f64::NAN, f64::NAN);
-    }
+    let (slope, local, _) = fit_order_with_span(points);
+    (slope, local)
+}
 
+/// The same fit, and how many decades of error it had to work with.
+pub fn fit_order_with_span(points: &[ConvergencePoint]) -> (f64, f64, f64) {
     // Convergence data falls steadily until round off takes over, and then it
-    // wanders. A point that fails to improve on the one before it by a clear
-    // margin is the start of that wandering, and everything from there on says
-    // more about the arithmetic than about the method. The magnitude floor
-    // alone does not catch it, because noise can land just above the floor.
-    let mut decreasing: Vec<&ConvergencePoint> = Vec::new();
-    for point in &above_floor {
-        match decreasing.last() {
-            None => decreasing.push(point),
-            Some(previous) if point.error < 0.8 * previous.error => decreasing.push(point),
-            Some(_) => break,
+    // wanders. The usable part is therefore a contiguous run from the coarse
+    // end, ending at the first point that fails to improve on the one before it
+    // by a clear margin or that has sunk to where double precision runs out.
+    //
+    // It has to be contiguous. Filtering the ladder and fitting whatever
+    // survives compares rungs that are not neighbours, and the slope between a
+    // point of signal and a point of noise two rungs away is a number about
+    // neither.
+    // The run may not start at the coarse end either: a step size the method is
+    // barely stable at is preasymptotic, and its error can sit above the one
+    // beside it. So the longest contiguous run is taken, measured in decades,
+    // which is what a slope is worth.
+    let clean = |p: &ConvergencePoint| p.error.is_finite() && p.error > 1e-13 && p.error < 0.5;
+    let mut best: Vec<&ConvergencePoint> = Vec::new();
+    let mut run: Vec<&ConvergencePoint> = Vec::new();
+    let decades = |r: &[&ConvergencePoint]| {
+        if r.len() < 2 {
+            0.0
+        } else {
+            (r[0].error / r[r.len() - 1].error).log10()
+        }
+    };
+    for point in points.iter() {
+        let continues = match run.last() {
+            Some(previous) => clean(point) && point.error < 0.8 * previous.error,
+            None => clean(point),
+        };
+        if continues {
+            run.push(point);
+        } else {
+            if decades(&run) > decades(&best) {
+                best = std::mem::take(&mut run);
+            } else {
+                run.clear();
+            }
+            if clean(point) {
+                run.push(point);
+            }
         }
     }
-    // Below three points the run is too short to tell a preasymptotic wobble
-    // from round off, so nothing is thrown away.
-    let usable = if decreasing.len() >= 3 { decreasing } else { above_floor };
+    if decades(&run) > decades(&best) {
+        best = run;
+    }
+    let usable = best;
+    if usable.len() < 2 {
+        return (f64::NAN, f64::NAN, 0.0);
+    }
 
     let n = usable.len() as f64;
     let (mut sx, mut sy, mut sxx, mut sxy) = (0.0, 0.0, 0.0, 0.0);
@@ -174,8 +212,9 @@ pub fn fit_order(points: &[ConvergencePoint]) -> (f64, f64) {
     let last = usable[usable.len() - 1];
     let second_last = usable[usable.len() - 2];
     let local = (last.error.ln() - second_last.error.ln()) / (last.h.ln() - second_last.h.ln());
+    let decades = (usable[0].error / last.error).log10();
 
-    (slope, local)
+    (slope, local, decades)
 }
 
 /// Default step size ladder: halving from `coarse` for `count` levels.

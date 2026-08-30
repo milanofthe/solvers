@@ -9,8 +9,8 @@
 //! Both determinants are characteristic polynomials in disguise, so they are
 //! obtained exactly from the tableau with Faddeev-LeVerrier rather than by
 //! evaluating a determinant on a grid. That gives the poles, the value at
-//! infinity and an exact A-stability test through the E-polynomial, instead of
-//! a picture that has to be eyeballed.
+//! infinity and a test for A-stability on the imaginary axis, instead of a
+//! picture that has to be eyeballed.
 //!
 //! For a linear multistep method the same questions are answered through the
 //! root condition on `rho(w) - z sigma(w)`.
@@ -202,6 +202,15 @@ impl StabilityFunction {
     /// A-stable: no pole in the closed left half plane and `|R| <= 1` on the
     /// imaginary axis. The maximum modulus principle then gives `|R| <= 1`
     /// throughout the left half plane.
+    ///
+    /// The condition on the axis is `|N(iy)| <= |D(iy)|`, and it is decided by
+    /// evaluating the two rather than by expanding their difference. That
+    /// expansion is the E-polynomial, and from six stages upwards its
+    /// coefficients are differences of numbers that agree to fifteen digits:
+    /// for Radau IIA, where the truth is a single positive term in `u^s`, what
+    /// comes out is round off whose leading coefficients have arbitrary signs.
+    /// The roots of it are still worth having, because they say where `|R|`
+    /// could touch one and therefore where a crossing would hide.
     pub fn is_a_stable(&self) -> bool {
         for pole in self.poles() {
             if pole.re <= 1e-10 {
@@ -212,7 +221,17 @@ impl StabilityFunction {
         if !(infinity.abs() <= 1.0 + 1e-10) {
             return false;
         }
-        polynomial_is_non_negative(&self.e_polynomial())
+
+        let mut probes: Vec<f64> = (0..=240).map(|i| 10f64.powf(-8.0 + i as f64 / 15.0)).collect();
+        probes.push(0.0);
+        for square in positive_real_roots(&self.e_polynomial()) {
+            let y = square.sqrt();
+            probes.extend([0.98 * y, y, 1.02 * y]);
+        }
+        probes.into_iter().all(|y| {
+            let modulus = self.eval(Complex::new(0.0, y)).abs();
+            modulus.is_finite() && modulus <= 1.0 + 1e-9
+        })
     }
 
     /// L-stable: A-stable and infinitely stiff modes are killed outright.
@@ -268,47 +287,23 @@ fn squared_modulus_on_imaginary_axis(p: &[f64]) -> Vec<f64> {
     (0..n).map(|m| in_y[2 * m]).collect()
 }
 
-/// Whether a real polynomial is non negative on `[0, infinity)`.
-///
-/// The sign can only change at a real root, so evaluating between consecutive
-/// positive roots and beyond the largest one decides it.
-fn polynomial_is_non_negative(p: &[f64]) -> bool {
-    let trimmed: Vec<f64> = {
-        let mut t = p.to_vec();
-        while t.len() > 1 && t.last().map_or(false, |v| v.abs() < 1e-13) {
-            t.pop();
-        }
-        t
-    };
-    if trimmed.len() == 1 {
-        return trimmed[0] >= -1e-12;
+/// The positive real roots of a real polynomial, in increasing order.
+fn positive_real_roots(p: &[f64]) -> Vec<f64> {
+    let mut trimmed = p.to_vec();
+    while trimmed.len() > 1 && trimmed.last().map_or(false, |v| v.abs() < 1e-13) {
+        trimmed.pop();
     }
-
+    if trimmed.len() < 2 {
+        return Vec::new();
+    }
     let coefficients: Vec<Complex> = trimmed.iter().map(|v| Complex::real(*v)).collect();
-    let mut breakpoints: Vec<f64> = poly_roots(&coefficients)
+    let mut roots: Vec<f64> = poly_roots(&coefficients)
         .into_iter()
         .filter(|r| r.im.abs() < 1e-7 && r.re > 0.0)
         .map(|r| r.re)
         .collect();
-    breakpoints.sort_by(|a, b| a.total_cmp(b));
-
-    let mut samples = vec![0.0];
-    let mut previous = 0.0;
-    for point in &breakpoints {
-        samples.push(0.5 * (previous + point));
-        previous = *point;
-    }
-    samples.push(previous + 1.0);
-    samples.push(previous * 2.0 + 10.0);
-
-    let magnitude = trimmed.iter().fold(0.0f64, |acc, v| acc.max(v.abs()));
-    samples.into_iter().all(|u| {
-        let mut acc = 0.0;
-        for coefficient in trimmed.iter().rev() {
-            acc = acc * u + coefficient;
-        }
-        acc >= -1e-9 * magnitude
-    })
+    roots.sort_by(f64::total_cmp);
+    roots
 }
 
 /// Walk outwards from the origin along a direction until stability is lost.
