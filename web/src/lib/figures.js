@@ -63,8 +63,10 @@ function covering({ re, im }, widest = 2.2, tallest = 0.7) {
 	const height = im[1] - im[0];
 	const middleX = (re[0] + re[1]) / 2;
 	const middleY = (im[0] + im[1]) / 2;
-	const reach = Math.max(width, height * widest) / 2;
-	const rise = Math.max(height, width / tallest) / 2;
+	// Two percent over what is needed, so a window that matches the panel
+	// exactly still has data at its very edge.
+	const reach = (1.02 * Math.max(width, height * widest)) / 2;
+	const rise = (1.02 * Math.max(height, width / tallest)) / 2;
 	return {
 		re: [middleX - reach, middleX + reach],
 		im: [middleY - rise, middleY + rise]
@@ -90,6 +92,13 @@ function resolutionFor(method, box) {
 	const wanted = Math.round((box?.width ?? 320) / 4);
 	const cap = method.class === 'linear_multistep' ? 72 : 110;
 	return Math.min(Math.max(wanted, 40), cap);
+}
+
+/** A window as a cache key, rounded so a nudge is not a refetch. */
+function windowKey({ re, im }) {
+	const span = Math.max(re[1] - re[0], im[1] - im[0]);
+	const round = (v) => Math.round((v / span) * 200) / 200;
+	return [...re, ...im].map(round).join(',') + ':' + span.toPrecision(4);
 }
 
 /** The panel shape the sampling is cut to, rounded so a nudge is not a refetch. */
@@ -185,6 +194,31 @@ const stability = {
 			'stabilityGridAuto',
 			{ id: method.id, aspect, width: resolution, height: resolution },
 			{ key: `stability:${method.id}:${resolution}:${aspect}`, priority }
+		);
+	},
+	/**
+	 * The same figure over a window the reader chose by panning or zooming.
+	 *
+	 * The measured window says where the region is, which is the right answer
+	 * until somebody looks somewhere else. Then the only sensible window is the
+	 * one on screen, and the samples follow it: zooming in buys detail rather
+	 * than magnifying what was already sampled.
+	 */
+	resample(engine, method, view, box, priority) {
+		const resolution = resolutionFor(method, box);
+		const aspect = aspectOf(box);
+		const sample = covering(view, aspect * 1.1, aspect / 1.1);
+		return engine.request(
+			'stabilityWindow',
+			{
+				id: method.id,
+				re: sample.re,
+				im: sample.im,
+				view,
+				width: resolution,
+				height: resolution
+			},
+			{ key: `stability:${method.id}:${windowKey(sample)}:${resolution}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
@@ -592,10 +626,27 @@ const orderStar = {
 			{ key: `orderStar:${method.id}:${resolution}:${aspect}`, priority }
 		);
 	},
+	resample(engine, method, view, box, priority) {
+		const resolution = resolutionFor(method, box);
+		const aspect = aspectOf(box);
+		const sample = covering(view, aspect * 1.1, aspect / 1.1);
+		return engine.request(
+			'orderStar',
+			{
+				id: method.id,
+				re: sample.re,
+				im: sample.im,
+				view,
+				width: resolution,
+				height: resolution
+			},
+			{ key: `orderStar:${method.id}:${windowKey(sample)}:${resolution}`, priority }
+		);
+	},
 	figure(result, method, { compact = true } = {}) {
 		if (!result) return empty('no rational stability function');
 		const { data, width, height, re, im } = result;
-		const view = orderStarWindow(method);
+		const view = result.view ?? orderStarWindow(method);
 		const z = reshape(data, width, height);
 		const x = axisValues(re[0], re[1], width);
 		const y = axisValues(im[0], im[1], height);

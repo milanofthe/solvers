@@ -260,15 +260,57 @@ pub struct Condition {
     pub satisfied: bool,
 }
 
+/// How far each of the three simplifying assumptions holds.
+///
+/// ```text
+/// B(p): sum_i b_i c_i^(k-1) = 1/k                       k = 1..p
+/// C(q): sum_j a_ij c_j^(k-1) = c_i^k / k       every i, k = 1..q
+/// D(r): sum_i b_i c_i^(k-1) a_ij = b_j (1 - c_j^k)/k    every j, k = 1..r
+/// ```
+///
+/// `B` says the weights integrate a polynomial exactly, `C` says each stage
+/// does, and `D` is the same statement for the adjoint method. They are worth
+/// having because of Butcher's theorem: a method satisfying all three has order
+/// at least `min(p, q + r + 1, 2q + 2)`, with no reference to trees at all.
+///
+/// That is the only affordable route to the order of a high stage collocation
+/// method. Gauss-Legendre on eight nodes has order sixteen, and the rooted trees
+/// up to that order number in the hundreds of thousands; these are a few hundred
+/// sums.
+///
+/// Reference: E. Hairer, S. P. Noersett, G. Wanner, "Solving Ordinary
+/// Differential Equations I", 2nd ed., Springer 1993, Theorem II.7.4.
+#[derive(Copy, Clone, Debug, Serialize)]
+pub struct SimplifyingAssumptions {
+    pub quadrature: usize,
+    pub stage: usize,
+    pub adjoint: usize,
+}
+
+impl SimplifyingAssumptions {
+    /// The order Butcher's theorem certifies from these three alone.
+    pub fn certified_order(&self) -> usize {
+        self.quadrature
+            .min(self.stage + self.adjoint + 1)
+            .min(2 * self.stage + 2)
+    }
+}
+
 /// Result of verifying a tableau against the order conditions.
 #[derive(Clone, Debug, Serialize)]
 pub struct OrderReport {
-    /// Highest order whose conditions all hold.
+    /// Highest order established, by whichever route got furthest.
     pub order: usize,
     /// Same for the embedded weights, if there are any.
     pub embedded_order: Option<usize>,
     /// Largest `q` with `sum_j a_ij c_j^(q-1) = c_i^q / q` for every stage.
     pub stage_order: usize,
+    /// How far the simplifying assumptions hold.
+    pub assumptions: SimplifyingAssumptions,
+    /// True when the order came from the rooted tree conditions rather than
+    /// from Butcher's theorem, which is the case for every method whose order
+    /// is low enough for the trees to be enumerated.
+    pub from_trees: bool,
     /// Whether `c` equals the row sums of `A`.
     pub consistent_abscissae: bool,
     /// True when every condition could be checked in exact arithmetic.
@@ -361,15 +403,105 @@ pub fn error_constant(method: &dyn StageWeights, weights: &[Coeff], order: usize
         .sqrt()
 }
 
-/// Verify a tableau. `max_order` bounds the search; ten is enough for every
-/// published method and keeps the tree count manageable.
-pub fn verify(tableau: &RkTableau, max_order: usize) -> OrderReport {
-    let (order, exact, failing) = attained_order(tableau, &tableau.b, max_order);
+/// How far `B`, `C` and `D` hold for one set of weights.
+///
+/// `C` does not involve the weights, so it is the same for a method and its
+/// embedded partner; the other two are not.
+pub fn simplifying_assumptions(
+    tableau: &RkTableau,
+    weights: &[Coeff],
+    max_order: usize,
+) -> SimplifyingAssumptions {
+    let s = tableau.stages;
+    let c = &tableau.c;
 
-    let embedded_order = tableau
-        .b_embedded
-        .as_ref()
-        .map(|be| attained_order(tableau, be, max_order).0);
+    let mut quadrature = 0;
+    for k in 1..=max_order {
+        let mut sum = Coeff::zero();
+        for i in 0..s {
+            sum = sum + weights[i] * c[i].powi(k as i32 - 1);
+        }
+        let target = Coeff::one() / Coeff::from_i64(k as i64);
+        if !satisfied(sum - target, target.value().abs()) {
+            break;
+        }
+        quadrature = k;
+    }
+
+    let mut stage = 0;
+    for k in 1..=max_order {
+        let ok = (0..s).all(|i| {
+            let mut sum = Coeff::zero();
+            for j in 0..s {
+                sum = sum + tableau.a[(i, j)] * c[j].powi(k as i32 - 1);
+            }
+            let target = c[i].powi(k as i32) / Coeff::from_i64(k as i64);
+            satisfied(sum - target, target.value().abs().max(1.0))
+        });
+        if !ok {
+            break;
+        }
+        stage = k;
+    }
+
+    let mut adjoint = 0;
+    for k in 1..=max_order {
+        let ok = (0..s).all(|j| {
+            let mut sum = Coeff::zero();
+            for i in 0..s {
+                sum = sum + weights[i] * c[i].powi(k as i32 - 1) * tableau.a[(i, j)];
+            }
+            let target = weights[j] * (Coeff::one() - c[j].powi(k as i32))
+                / Coeff::from_i64(k as i64);
+            satisfied(sum - target, target.value().abs().max(1.0))
+        });
+        if !ok {
+            break;
+        }
+        adjoint = k;
+    }
+
+    SimplifyingAssumptions {
+        quadrature,
+        stage,
+        adjoint,
+    }
+}
+
+/// Verify a tableau.
+///
+/// `max_order` bounds the search through the rooted trees, which is what limits
+/// it: the number of trees at order `n` grows faster than any method's stage
+/// count. Where the trees run out, Butcher's theorem takes over. The report says
+/// which of the two established the order, because they are different kinds of
+/// evidence and a reader is entitled to know which one is on offer.
+pub fn verify(tableau: &RkTableau, max_order: usize) -> OrderReport {
+    let (tree_order, exact, failing) = attained_order(tableau, &tableau.b, max_order);
+
+    // The assumptions are cheap, so they are checked well past where the trees
+    // stop rather than only as far.
+    let limit = 24;
+    let assumptions = simplifying_assumptions(tableau, &tableau.b, limit);
+    let certified = assumptions.certified_order();
+
+    // A tree search that stopped short of its own limit found a condition that
+    // genuinely fails, and that settles the order. One that ran to the limit
+    // only means the search ended, and the assumptions may know more.
+    let found_a_failure = tree_order < max_order;
+    let order = if found_a_failure {
+        tree_order
+    } else {
+        tree_order.max(certified)
+    };
+
+    let embedded_order = tableau.b_embedded.as_ref().map(|be| {
+        let (embedded_tree, ..) = attained_order(tableau, be, max_order);
+        if embedded_tree < max_order {
+            embedded_tree
+        } else {
+            embedded_tree.max(simplifying_assumptions(tableau, be, limit).certified_order())
+        }
+    });
 
     // Abscissae consistency: c must be the row sums of A.
     let mut consistent = true;
@@ -411,6 +543,8 @@ pub fn verify(tableau: &RkTableau, max_order: usize) -> OrderReport {
         order,
         embedded_order,
         stage_order,
+        assumptions,
+        from_trees: found_a_failure || certified <= tree_order,
         consistent_abscissae: consistent,
         exact,
         failing,
@@ -435,6 +569,12 @@ pub fn verify_rosenbrock(tableau: &RosenbrockTableau, max_order: usize) -> Order
         order,
         embedded_order,
         stage_order: 0,
+        assumptions: SimplifyingAssumptions {
+            quadrature: 0,
+            stage: 0,
+            adjoint: 0,
+        },
+        from_trees: true,
         consistent_abscissae: true,
         exact,
         failing,

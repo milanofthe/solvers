@@ -7,7 +7,7 @@
 	import { onDestroy } from 'svelte';
 	import Plotly from '$lib/plot.js';
 
-	let { figure = null, class: className = '', onsize = null } = $props();
+	let { figure = null, class: className = '', onsize = null, onview = null } = $props();
 
 	let node;
 	let drawn = false;
@@ -25,6 +25,26 @@
 		return () => observer.disconnect();
 	});
 
+	// Panning and zooming change what the figure has to cover, and the data it
+	// was given covers what it used to cover. The new window is reported so the
+	// owner can ask for the data that reaches it. Settling first, because a
+	// scroll wheel emits one relayout per notch.
+	let timer;
+	let listening = false;
+
+	function listen() {
+		if (listening || !onview || typeof node?.on !== 'function') return;
+		listening = true;
+		node.on('plotly_relayout', () => {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				const layout = node?._fullLayout;
+				if (!layout) return;
+				onview({ re: [...layout.xaxis.range], im: [...layout.yaxis.range] });
+			}, 220);
+		});
+	}
+
 	$effect(() => {
 		// Depend on the figure's identity alone. Plotly writes its own
 		// bookkeeping into the objects it is handed, so anything reactive passed
@@ -32,11 +52,14 @@
 		// are therefore always raw state, replaced rather than edited.
 		const current = figure;
 		if (!node || !current) return;
-		Plotly.react(node, current.data, current.layout, current.config);
+		// A plot only gains its event emitter once it has been drawn once, so
+		// the listener is attached on the way out rather than on mount.
+		Plotly.react(node, current.data, current.layout, current.config).then(listen);
 		drawn = true;
 	});
 
 	onDestroy(() => {
+		clearTimeout(timer);
 		if (node && drawn) Plotly.purge(node);
 	});
 </script>

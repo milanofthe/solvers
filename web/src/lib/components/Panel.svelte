@@ -32,14 +32,34 @@
 		box = snapped;
 	}
 
+	// The window the reader has moved to, if they have moved it. Held apart from
+	// the box because a resize and a zoom are different events with the same
+	// answer: ask for the data that covers what is on screen now.
+	let view = $state.raw(null);
+
+	function look(next) {
+		if (view && close(view, next)) return;
+		view = next;
+	}
+
+	/** Whether two windows are the same to within a percent of their own size. */
+	function close(a, b) {
+		const near = ([p, q], [r, s]) => {
+			const span = Math.abs(q - p) + Math.abs(s - r);
+			return Math.abs(p - r) + Math.abs(q - s) < 0.01 * span;
+		};
+		return near(a.re, b.re) && near(a.im, b.im);
+	}
+
 	$effect(() => {
 		const request = load;
 		const measured = box;
+		const window = view;
 		if (!measured) return;
 		let stale = false;
 		if (!drawn) figure = empty('');
 		Promise.resolve()
-			.then(() => request(measured))
+			.then(() => request(measured, window))
 			.then((result) => {
 				if (stale) return;
 				figure = result;
@@ -56,5 +76,5 @@
 
 <section>
 	<p class="label mb-2">{label}</p>
-	<Plot {figure} class="{height} w-full" onsize={measure} />
+	<Plot {figure} class="{height} w-full" onsize={measure} onview={look} />
 </section>

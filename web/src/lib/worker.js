@@ -32,8 +32,10 @@ function covering({ re, im }, widest = 2.2, tallest = 0.7) {
 	const height = im[1] - im[0];
 	const middleX = (re[0] + re[1]) / 2;
 	const middleY = (im[0] + im[1]) / 2;
-	const reach = Math.max(width, height * widest) / 2;
-	const rise = Math.max(height, width / tallest) / 2;
+	// Two percent over what is needed, so a window that matches the panel
+	// exactly still has data at its very edge.
+	const reach = (1.02 * Math.max(width, height * widest)) / 2;
+	const rise = (1.02 * Math.max(height, width / tallest)) / 2;
 	return {
 		re: [middleX - reach, middleX + reach],
 		im: [middleY - rise, middleY + rise]
@@ -65,6 +67,17 @@ const HANDLERS = {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
+	// The same figure over a window the caller names, for a reader who has
+	// panned or zoomed somewhere the measured window does not reach.
+	stabilityWindow: ({ id, re, im, view, width, height }) => ({
+		data: wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height),
+		width,
+		height,
+		re,
+		im,
+		view,
+		boundary: wasm.region_boundary(id, re[0], re[1], im[0], im[1])
+	}),
 	stabilityGridAuto: ({ id, width, height, aspect = 1.6 }) => {
 		const view = JSON.parse(wasm.stability_window(id));
 		// Sample wider than the frame. Both axes of the picture carry the same
