@@ -1,0 +1,36 @@
+{
+  "id": "ros2pr",
+  "name": "ROS2PR",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 2,
+  "embedded_order": 1,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [1],
+      [0, 1]
+    ],
+    "gamma": [
+      [0.228155493653962],
+      [-0.228155493653962, 0.228155493653962],
+      [0.647798871261042, -0.875954364915004, 0.228155493653962]
+    ],
+    "b": [0.647798871261042, 0.124045635084996, 0.228155493653962],
+    "b_embedded": [0.771844506346038, 0.228155493653962, 0]
+  },
+  "references": [
+    {
+      "authors": "Rang, J.",
+      "title": "The Prothero and Robinson example: Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods",
+      "year": 2016,
+      "source": "Applied Numerical Mathematics, 108, 37-56",
+      "doi": "10.1016/j.apnum.2016.04.013"
+    }
+  ]
+}

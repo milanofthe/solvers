@@ -1,0 +1,36 @@
+{
+  "id": "ros34pw1a",
+  "name": "ROS34PW1a",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 3,
+  "embedded_order": 2,
+  "properties": {
+    "a_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [2.218787467653287],
+      [0, 0],
+      [1.208587690772214, 0.075116102419193, 0.5]
+    ],
+    "gamma": [
+      [0.435866521508459],
+      [-2.218787467653286, 0.435866521508459],
+      [-0.094619661439407, -0.007913526735718, 0.435866521508459],
+      [-1.870323744195384, -0.096243401128251, 0.272630127667551, 0.435866521508459]
+    ],
+    "b": [0.328560953631636, -0.578560953631635, 0.25, 1],
+    "b_embedded": [-0.25, 0, 0.25, 1]
+  },
+  "references": [
+    {
+      "authors": "Rang, J., & Angermann, L.",
+      "title": "New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1",
+      "year": 2005,
+      "source": "BIT Numerical Mathematics, 45(4), 761-787",
+      "doi": "10.1007/s10543-005-0035-y"
+    }
+  ]
+}

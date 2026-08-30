@@ -6,6 +6,8 @@
 	 * get the same treatment as the methods. Picking one makes it the problem the
 	 * method cards and the comparison run on.
 	 */
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
 	import { getContext } from 'svelte';
 	import ProblemCard from '$lib/components/ProblemCard.svelte';
 	import { catalog, engine, ui } from '$lib/store.svelte.js';
@@ -51,7 +53,9 @@
 	<p class="label mb-2">non stiff</p>
 	<div class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
 		{#each nonStiff as problem (problem.id)}
-			<ProblemCard {problem} />
+			<div animate:flip={{ duration: 320, easing: cubicOut }}>
+				<ProblemCard {problem} />
+			</div>
 		{/each}
 	</div>
 </section>
@@ -60,7 +64,9 @@
 	<p class="label mb-2">stiff</p>
 	<div class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
 		{#each stiff as problem (problem.id)}
-			<ProblemCard {problem} />
+			<div animate:flip={{ duration: 320, easing: cubicOut }}>
+				<ProblemCard {problem} />
+			</div>
 		{/each}
 	</div>
 </section>

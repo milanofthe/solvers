@@ -31,16 +31,66 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "methods", "rosenbrock")
-DEFAULT_SOURCE = os.path.join(
-    "C:/Repositories/TEMP/OrdinaryDiffEq.jl/lib",
-    "OrdinaryDiffEqRosenbrockTableaus/src/rosenbrock_tableaus.jl",
-)
+LIB = "C:/Repositories/TEMP/OrdinaryDiffEq.jl/lib"
+DEFAULT_SOURCES = [
+    os.path.join(LIB, "OrdinaryDiffEqRosenbrockTableaus/src/rosenbrock_tableaus.jl"),
+    os.path.join(LIB, "OrdinaryDiffEqRosenbrock/src/rosenbrock_tableaus.jl"),
+]
 INNER_ARRAY = re.compile(r"\[[^\[\]{}]*?\]", re.S)
 
 # Which constructors to take, and what the entry should say about itself. The
 # order is not recorded here: it is derived from the coefficients by the Rust
 # side, and this file only claims what the publication claims so the two can be
 # held against each other.
+RANG05 = {
+    "authors": "Rang, J., & Angermann, L.",
+    "title": "New Rosenbrock W-methods of order 3 for partial differential algebraic equations of index 1",
+    "year": 2005,
+    "source": "BIT Numerical Mathematics, 45(4), 761-787",
+    "doi": "10.1007/s10543-005-0035-y",
+}
+RANG15 = {
+    "authors": "Rang, J.",
+    "title": "Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs",
+    "year": 2015,
+    "source": "Journal of Computational and Applied Mathematics, 286, 128-144",
+    "doi": "10.1016/j.cam.2015.03.010",
+}
+RANG16 = {
+    "authors": "Rang, J.",
+    "title": "The Prothero and Robinson example: Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods",
+    "year": 2016,
+    "source": "Applied Numerical Mathematics, 108, 37-56",
+    "doi": "10.1016/j.apnum.2016.04.013",
+}
+STEINEBACH20 = {
+    "authors": "Steinebach, G.",
+    "title": "Improvement of Rosenbrock-Wanner method RODASP",
+    "year": 2020,
+    "source": "Progress in Differential-Algebraic Equations II, Springer, 165-184",
+    "doi": "10.1007/978-3-030-53905-4_6",
+}
+STEINEBACH23 = {
+    "authors": "Steinebach, G.",
+    "title": "Construction of Rosenbrock-Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package",
+    "year": 2023,
+    "source": "BIT Numerical Mathematics, 63(2), 27",
+    "doi": "10.1007/s10543-023-00967-x",
+}
+STEINEBACH24 = {
+    "authors": "Steinebach, G.",
+    "title": "Rosenbrock methods within OrdinaryDiffEq.jl: overview, recent developments and applications",
+    "year": 2024,
+    "source": "Proceedings of the JuliaCon Conferences",
+}
+STEINEBACH25 = {
+    "authors": "Steinebach, G.",
+    "title": "Rodas6P and Tsit5DA: two new Rosenbrock-type methods for DAEs",
+    "year": 2025,
+    "source": "arXiv:2511.21252",
+    "url": "https://arxiv.org/abs/2511.21252",
+}
+
 WANTED = {
     "ROS2": dict(
         id="ros2",
@@ -180,7 +230,163 @@ WANTED = {
             source="MSc mathematics thesis, Faculty of Science, University of Geneva",
         )],
     ),
+    "Rodas42": dict(
+        id="rodas42",
+        name="RODAS4.2",
+        order=4,
+        embedded_order=3,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[dict(
+            authors="Hairer, E., & Wanner, G.",
+            title="Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+            year=1996,
+            source="Springer Series in Computational Mathematics, Vol. 14, 2nd edition, IV.7",
+            doi="10.1007/978-3-642-05221-7",
+        )],
+    ),
+    "RosShamp4": dict(
+        id="rosshamp4",
+        name="Shampine 4",
+        order=4,
+        embedded_order=3,
+        properties={"a_stable": True},
+        references=[dict(
+            authors="Shampine, L. F.",
+            title="Implementation of Rosenbrock methods",
+            year=1982,
+            source="ACM Transactions on Mathematical Software, 8(2), 93-113",
+            doi="10.1145/355993.355994",
+        )],
+    ),
+    "Veldd4": dict(
+        id="veldd4",
+        name="van Veldhuizen D 4",
+        order=4,
+        embedded_order=3,
+        # D-stable rather than A-stable, which is what the paper is about.
+        properties={},
+        references=[dict(
+            authors="van Veldhuizen, M.",
+            title="D-stability and Kaps-Rentrop methods",
+            year=1984,
+            source="Computing, 32(3), 229-237",
+            doi="10.1007/BF02243575",
+        )],
+    ),
+    "Velds4": dict(
+        id="velds4",
+        name="van Veldhuizen S 4",
+        order=4,
+        embedded_order=3,
+        properties={"a_stable": True},
+        references=[dict(
+            authors="van Veldhuizen, M.",
+            title="D-stability and Kaps-Rentrop methods",
+            year=1984,
+            source="Computing, 32(3), 229-237",
+            doi="10.1007/BF02243575",
+        )],
+    ),
+    "ROS34PW1a": dict(
+        id="ros34pw1a",
+        name="ROS34PW1a",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG05],
+    ),
+    "ROS34PW1b": dict(
+        id="ros34pw1b",
+        name="ROS34PW1b",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG05],
+    ),
+    "ROS34PW3": dict(
+        id="ros34pw3",
+        name="ROS34PW3",
+        order=4,
+        # A W-method of order three, which with an exact Jacobian reaches four.
+        # Its embedded pair is second order, not third.
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG05],
+    ),
+    "ROS2PR": dict(
+        id="ros2pr",
+        name="ROS2PR",
+        order=2,
+        embedded_order=1,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[RANG16],
+    ),
+    "ROS3PR": dict(
+        id="ros3pr",
+        name="ROS3PR",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG16],
+    ),
+    "ROS3PRL2": dict(
+        id="ros3prl2",
+        name="ROS3PRL2",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG16],
+    ),
+    "ROS34PRw": dict(
+        id="ros34prw",
+        name="ROS34PRw",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG15],
+    ),
+    "Rodas4P2": dict(
+        id="rodas4p2",
+        name="RODAS4P2",
+        order=4,
+        embedded_order=3,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[STEINEBACH20],
+    ),
+    "Rodas3P": dict(
+        id="rodas3p",
+        name="RODAS3P",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[STEINEBACH24],
+    ),
+    "Rodas5P": dict(
+        id="rodas5p",
+        name="RODAS5P",
+        order=5,
+        embedded_order=4,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[STEINEBACH23],
+    ),
+    "Rodas5Pe": dict(
+        id="rodas5pe",
+        name="RODAS5Pe",
+        order=5,
+        embedded_order=4,
+        properties={"a_stable": True, "l_stable": True, "stiffly_accurate": True},
+        references=[STEINEBACH24],
+    ),
+    "Rodas6P": dict(
+        id="rodas6p",
+        name="RODAS6P",
+        order=6,
+        embedded_order=5,
+        properties={"a_stable": True, "l_stable": True},
+        references=[STEINEBACH25],
+    ),
 }
+
 
 
 # ---------------------------------------------------------------------------
@@ -243,9 +449,23 @@ def as_array(value):
 
 def translate(body):
     """Julia straight line arithmetic into the equivalent Python."""
+    # A statement runs on while its brackets are open, so join before parsing.
+    joined = []
+    current = ""
+    depth = 0
+    for raw in body.splitlines():
+        raw = raw.split("#")[0]
+        current += " " + raw.strip()
+        depth += raw.count("(") + raw.count("[") - raw.count(")") - raw.count("]")
+        if depth <= 0:
+            joined.append(current.strip())
+            current = ""
+            depth = 0
+    if current.strip():
+        joined.append(current.strip())
+
     lines = []
-    for line in body.splitlines():
-        line = line.split("#")[0].strip()
+    for line in joined:
         if not line or line.startswith("return"):
             continue
         line = strip_converts(line)
@@ -273,6 +493,8 @@ def _close(line, opener, closers):
     if opener not in line:
         return line
     start = line.index(opener) + len(opener) - 1
+    if not opener.endswith("(") and "]" not in line:
+        return line
     end = balanced(line, start) if opener.endswith("(") else line.rindex("]")
     if opener.endswith("("):
         return line[:end] + ")" * (closers - 1) + line[end:]
@@ -391,8 +613,8 @@ def number(value):
 
 
 def main():
-    source_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SOURCE
-    text = io.open(source_path, encoding="utf-8").read()
+    paths = sys.argv[1:] or DEFAULT_SOURCES
+    text = "\n".join(io.open(path, encoding="utf-8").read() for path in paths)
     found = constructors(text)
     constants = constants_of(text)
 

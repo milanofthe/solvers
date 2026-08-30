@@ -1,0 +1,36 @@
+{
+  "id": "velds4",
+  "name": "van Veldhuizen S 4",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 4,
+  "embedded_order": 3,
+  "properties": {
+    "a_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [1],
+      [0.375, 0.125],
+      [0.375, 0.125, 0]
+    ],
+    "gamma": [
+      [0.5],
+      [-2, 0.5],
+      [-1, -0.25, 0.5],
+      [-0.375, -0.375, 0.5, 0.5]
+    ],
+    "b": [0.166666666666667, 0.166666666666667, 0, 0.666666666666667],
+    "b_embedded": [-0.833333333333333, -0.166666666666667, 0.666666666666667, 1.333333333333333]
+  },
+  "references": [
+    {
+      "authors": "van Veldhuizen, M.",
+      "title": "D-stability and Kaps-Rentrop methods",
+      "year": 1984,
+      "source": "Computing, 32(3), 229-237",
+      "doi": "10.1007/BF02243575"
+    }
+  ]
+}

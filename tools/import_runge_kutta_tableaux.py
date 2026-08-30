@@ -63,6 +63,19 @@ VERNER10 = {
     "doi": "10.1007/s11075-009-9290-3",
 }
 
+# Not imported, and worth saying why. Verner and Tanaka-Yamashita state some of
+# their coefficients as rationals too large for a machine word, split across
+# lines in a shape this does not read; what comes out is a tableau missing two
+# rows, which passes a quadrature check and fails the order conditions. Their
+# decimal alternatives are given to about twelve digits, which is not enough for
+# the order conditions at the tolerance used here. Tsitouras and
+# Tsitouras-Papakostas build their caches differently again.
+#
+#   Vern6, Vern7, Vern8, Vern9      Verner 2010
+#   TanYam7                         Tanaka, Muramatsu & Yamashita 1992
+#   Tsit5                           Tsitouras 2011
+#   TsitPap8                        Tsitouras & Papakostas 1999
+
 WANTED = [
     dict(
         source="low",
@@ -129,79 +142,6 @@ WANTED = [
                 "doi": "10.1090/S0025-5718-1962-0150954-0",
             }
         ],
-    ),
-    dict(
-        source="tsit",
-        constructor="Tsit5ConstantCacheActual",
-        id="tsit5",
-        name="Tsitouras 5(4)",
-        family="erk",
-        order=5,
-        embedded_order=4,
-        references=[
-            {
-                "authors": "Tsitouras, C.",
-                "title": "Runge-Kutta pairs of order 5(4) satisfying only the first column simplifying assumption",
-                "year": 2011,
-                "source": "Computers & Mathematics with Applications, 62(2), 770-775",
-                "doi": "10.1016/j.camwa.2011.06.002",
-            }
-        ],
-    ),
-    dict(
-        source="high",
-        constructor="TanYam7ConstantCache",
-        id="tanyam7",
-        name="Tanaka-Yamashita 7(6)",
-        family="erk",
-        order=7,
-        embedded_order=6,
-        references=[
-            {
-                "authors": "Tanaka, M., Muramatsu, S., & Yamashita, S.",
-                "title": "On the optimization of some nine-stage seventh-order Runge-Kutta method",
-                "year": 1992,
-                "source": "Information Processing Society of Japan, 33(12), 1512-1526",
-            }
-        ],
-    ),
-    dict(
-        source="high",
-        constructor="TsitPap8ConstantCache",
-        id="tsitpap8",
-        name="Tsitouras-Papakostas 8(7)",
-        family="erk",
-        order=8,
-        embedded_order=7,
-        references=[
-            {
-                "authors": "Tsitouras, C., & Papakostas, S. N.",
-                "title": "Cheap error estimation for Runge-Kutta pairs",
-                "year": 1999,
-                "source": "SIAM Journal on Scientific Computing, 20(6), 2067-2088",
-                "doi": "10.1137/S1064827597315509",
-            }
-        ],
-    ),
-    dict(
-        source="verner",
-        constructor="Vern6Tableau",
-        id="rkv65",
-        name="Verner 6(5)",
-        family="erk",
-        order=6,
-        embedded_order=5,
-        references=[VERNER10],
-    ),
-    dict(
-        source="verner",
-        constructor="Vern8Tableau",
-        id="rkv87",
-        name="Verner 8(7)",
-        family="erk",
-        order=8,
-        embedded_order=7,
-        references=[VERNER10],
     ),
 ]
 
@@ -286,7 +226,7 @@ def evaluate(body):
     source = translate(body)
     if source is None:
         return None
-    scope = {"Fraction": Fraction, "sqrt": math.sqrt, "float": float}
+    scope = {"Fraction": Fraction, "sqrt": math.sqrt, "float": float, "BigInt": int}
     for line in source.splitlines():
         try:
             exec(compile(line, "<tableau>", "exec"), scope)
@@ -406,21 +346,23 @@ def main():
             print(entry["id"], ": constructor not found")
             continue
         # The exact definition comes last where there are two of them.
+        # The exact definition is preferred where there is one, but only if it
+        # survives being read: some are written with integer types this cannot
+        # evaluate, and what comes out of a half evaluated one looks like a
+        # tableau and is not. The quadrature gate decides, per candidate.
         table = None
         for body in reversed(candidates):
             scope = evaluate(body)
             if scope is None:
                 continue
-            table = assemble(scope)
-            if table:
+            candidate = assemble(scope)
+            if candidate and integrates_to(candidate[0], candidate[1], entry["order"]):
+                table = candidate
                 break
         if not table:
-            print(entry["id"], ": could not be read")
+            print(entry["id"], ": no definition read out of the source integrates to order", entry["order"])
             continue
         a, b, b_embedded = table
-        if not integrates_to(a, b, entry["order"]):
-            print(entry["id"], ": read out of the source but does not integrate to order", entry["order"])
-            continue
 
         method = {
             "id": entry["id"],

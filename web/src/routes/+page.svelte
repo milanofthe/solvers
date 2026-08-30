@@ -7,6 +7,8 @@
 	 * decide a choice, and see the consequence of that choice drawn on every
 	 * card at once.
 	 */
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
 	import { getContext } from 'svelte';
 	import MethodCard from '$lib/components/MethodCard.svelte';
 	import { catalog, engine, ui, toggleTag } from '$lib/store.svelte.js';
@@ -206,8 +208,14 @@
 	</p>
 </header>
 
+<!-- Keyed by id, so re-sorting moves the tiles that are already there rather
+     than rebuilding them, and `flip` takes them to their new places instead of
+     letting them jump. The wrapper exists because an animation goes on an
+     element and a card is a component. -->
 <div class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
 	{#each shown as method (method.id)}
-		<MethodCard {method} />
+		<div animate:flip={{ duration: 320, easing: cubicOut }}>
+			<MethodCard {method} />
+		</div>
 	{/each}
 </div>

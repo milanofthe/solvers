@@ -1,0 +1,39 @@
+{
+  "id": "rodas3p",
+  "name": "RODAS3P",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 3,
+  "embedded_order": 2,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [0.444444444444444],
+      [0, 0],
+      [-0.565104166666667, 1.4296875, 0.135416666666667],
+      [-0.565104166666667, 1.4296875, 0.135416666666667, 0]
+    ],
+    "gamma": [
+      [0.333333333333333],
+      [-0.444444444444444, 0.333333333333333],
+      [-0.083333333333333, 0.75, 0.333333333333333],
+      [0.940104166666667, -1.0546875, -0.21875, 0.333333333333333],
+      [4.690104166666667, -4.8046875, -0.885416666666667, 0.666666666666667, 0.333333333333333]
+    ],
+    "b": [4.125, -3.375, -0.75, 0.666666666666667, 0.333333333333333],
+    "b_embedded": [0.375, 0.375, -0.083333333333333, 0.333333333333333, 0]
+  },
+  "references": [
+    {
+      "authors": "Steinebach, G.",
+      "title": "Rosenbrock methods within OrdinaryDiffEq.jl: overview, recent developments and applications",
+      "year": 2024,
+      "source": "Proceedings of the JuliaCon Conferences"
+    }
+  ]
+}
