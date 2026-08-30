@@ -12,7 +12,11 @@ const config = {
 			precompress: false,
 			strict: false
 		}),
-		paths: { base: '' }
+		paths: { base: '' },
+		// Nothing is server rendered, so nothing links to anything at build time
+		// and the crawler finds nothing. The fixed routes are named instead; the
+		// method pages are deliberately absent and fall back to the shell.
+		prerender: { entries: ['/', '/problems', '/compare', '/reference'] }
 	}
 };
 
