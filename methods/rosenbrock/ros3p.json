@@ -1,0 +1,35 @@
+{
+  "id": "ros3p",
+  "name": "ROS3P",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 3,
+  "embedded_order": 2,
+  "properties": {
+    "a_stable": true,
+    "l_stable": false
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [1],
+      [1, 0]
+    ],
+    "gamma": [
+      [0.788675134594813],
+      [-1, 0.788675134594813],
+      [-0.788675134594813, -1.077350269189626, 0.788675134594813]
+    ],
+    "b": [0.666666666666667, 0, 0.333333333333333],
+    "b_embedded": [0.333333333333333, 0.333333333333333, 0.333333333333333]
+  },
+  "references": [
+    {
+      "authors": "Lang, J., & Verwer, J.",
+      "title": "ROS3P - an accurate third-order Rosenbrock solver designed for parabolic problems",
+      "year": 2001,
+      "source": "BIT Numerical Mathematics, 41(4), 731-738",
+      "doi": "10.1023/A:1021900219772"
+    }
+  ]
+}

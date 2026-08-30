@@ -103,7 +103,7 @@
 		<dl class="flex flex-wrap gap-x-3 px-3 pt-2 font-mono text-xs text-cream/50">
 			<div><dt class="inline">order</dt> <dd class="inline text-cream">{method.order}</dd></div>
 			<div>
-				<dt class="inline">{method.class === 'runge_kutta' ? 'stages' : 'steps'}</dt>
+				<dt class="inline">{method.class === 'linear_multistep' ? 'steps' : 'stages'}</dt>
 				<dd class="inline text-cream">{method.size}</dd>
 			</div>
 			<div><dt class="inline">cost</dt> <dd class="inline text-cream">{method.stageCost}</dd></div>

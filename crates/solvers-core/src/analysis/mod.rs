@@ -183,6 +183,79 @@ pub fn analyze(method: &Method) -> MethodReport {
                 discrepancies,
             }
         }
+        MethodKind::Rosenbrock(tableau) => {
+            let report = order::verify_rosenbrock(tableau, 10);
+            let function = StabilityFunction::from_rosenbrock(tableau);
+            let a_stable = function.is_a_stable();
+            let l_stable = function.is_l_stable();
+
+            if let Some(declared) = method.declared_order {
+                if declared as usize != report.order {
+                    discrepancies.push(format!(
+                        "file claims order {declared}, the coefficients satisfy order {}",
+                        report.order
+                    ));
+                }
+            }
+            if let (Some(declared), Some(computed)) =
+                (method.declared_embedded_order, report.embedded_order)
+            {
+                if declared as usize != computed {
+                    discrepancies.push(format!(
+                        "file claims embedded order {declared}, the coefficients satisfy {computed}"
+                    ));
+                }
+            }
+            if let Some(claimed) = method.properties.a_stable {
+                if claimed != a_stable {
+                    discrepancies.push(format!("file claims a_stable = {claimed}, computed {a_stable}"));
+                }
+            }
+            if let Some(claimed) = method.properties.l_stable {
+                if claimed != l_stable {
+                    discrepancies.push(format!("file claims l_stable = {claimed}, computed {l_stable}"));
+                }
+            }
+            if let Some(claimed) = method.properties.stiffly_accurate {
+                if claimed != tableau.stiffly_accurate {
+                    discrepancies.push(format!(
+                        "file claims stiffly_accurate = {claimed}, computed {}",
+                        tableau.stiffly_accurate
+                    ));
+                }
+            }
+
+            MethodReport {
+                id: method.id.clone(),
+                name: method.name.clone(),
+                family: method.family.clone(),
+                class: "rosenbrock",
+                size: tableau.stages,
+                implicit: true,
+                adaptive: tableau.has_embedded(),
+                declared_order: method.declared_order,
+                computed_order: report.order,
+                declared_embedded_order: method.declared_embedded_order,
+                computed_embedded_order: report.embedded_order,
+                stage_order: None,
+                consistent_abscissae: None,
+                exact_arithmetic: report.exact,
+                a_stable,
+                l_stable,
+                stiffly_accurate: Some(tableau.stiffly_accurate),
+                damping_at_infinity: Some(function.at_infinity().into()),
+                alpha_angle: if a_stable { Some(90.0) } else { None },
+                real_stability_limit: Some(function.real_stability_limit().into()),
+                imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),
+                zero_stable: None,
+                // One evaluation per stage. The factorization and the back
+                // substitutions are counted separately by the cost model; what
+                // this number carries is the same thing it carries everywhere
+                // else, the number of times the right hand side is touched.
+                stage_cost: tableau.stages,
+                discrepancies,
+            }
+        }
         MethodKind::LinearMultistep(family) => {
             let coefficients = family.uniform_coefficients();
             let (computed_order, polynomials) = match &coefficients {
@@ -265,6 +338,16 @@ pub fn stability_region(
                 height,
             ))
         }
+        MethodKind::Rosenbrock(tableau) => {
+            let function = StabilityFunction::from_rosenbrock(tableau);
+            Some(stability::sample_region(
+                |z| function.eval(z).abs(),
+                re,
+                im,
+                width,
+                height,
+            ))
+        }
         MethodKind::LinearMultistep(family) => {
             let coefficients = family.uniform_coefficients().ok()?;
             let polynomials = GeneratingPolynomials::from_coefficients(&coefficients);
@@ -288,13 +371,18 @@ pub fn stability_region(
 /// pair needs more still. So the window is measured rather than guessed.
 ///
 /// For a multistep method the boundary is known in closed form and there is
-/// nothing to probe for: the curve is the frame. For a Runge-Kutta method a
-/// coarse probe is sampled instead, and whichever of the stable and the
+/// nothing to probe for: the curve is the frame. For a Runge-Kutta or Rosenbrock
+/// method a coarse probe is sampled instead, and whichever of the stable and the
 /// unstable set turns out to be bounded is the one that sets the extent; the
 /// other is the half plane the method lives in and has no extent to speak of.
-pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)) {
+///
+/// The box is the tight one, not one stretched to the shape of a panel. Both
+/// axes of these figures carry the same scale, so a panel wider than the box
+/// shows more of the plane rather than a wider version of the same picture, and
+/// padding here to some assumed shape would only be undone twice over.
+pub fn suggested_window(method: &Method) -> ((f64, f64), (f64, f64)) {
     let scale = probe_scale(method);
-    let fallback = shape_to_aspect((-scale * 0.6, scale * 0.4), (-scale * 0.5, scale * 0.5), aspect);
+    let fallback = ((-scale * 0.6, scale * 0.4), (-scale * 0.5, scale * 0.5));
 
     let chosen = match boundary_bounds(method).or_else(|| probe_bounds(method, scale)) {
         Some(bounds) => bounds,
@@ -317,7 +405,7 @@ pub fn suggested_window(method: &Method, aspect: f64) -> ((f64, f64), (f64, f64)
     y0 -= pad;
     y1 += pad;
 
-    shape_to_aspect((x0, x1), (y0, y1), aspect)
+    ((x0, x1), (y0, y1))
 }
 
 /// The extent of a multistep stability region, taken from its own boundary.
@@ -428,25 +516,6 @@ impl Bounds {
     }
 }
 
-/// Grow the shorter side until the box has the aspect the panel does, so the
-/// data fills the frame without a shape being stretched out of true.
-fn shape_to_aspect(re: (f64, f64), im: (f64, f64), aspect: f64) -> ((f64, f64), (f64, f64)) {
-    let width = re.1 - re.0;
-    let height = im.1 - im.0;
-    if width <= 0.0 || height <= 0.0 || !aspect.is_finite() || aspect <= 0.0 {
-        return (re, im);
-    }
-    if width / height < aspect {
-        let target = height * aspect;
-        let centre = 0.5 * (re.0 + re.1);
-        ((centre - target / 2.0, centre + target / 2.0), im)
-    } else {
-        let target = width / aspect;
-        let centre = 0.5 * (im.0 + im.1);
-        (re, (centre - target / 2.0, centre + target / 2.0))
-    }
-}
-
 /// A generous first guess at the extent, only used to place the probe.
 fn probe_scale(method: &Method) -> f64 {
     let scale = match &method.kind {
@@ -464,6 +533,15 @@ fn probe_scale(method: &Method) -> f64 {
                 } else {
                     12.0
                 }
+            }
+        }
+        MethodKind::Rosenbrock(tableau) => {
+            let function = StabilityFunction::from_rosenbrock(tableau);
+            let poles = function.poles();
+            if poles.is_empty() {
+                12.0
+            } else {
+                3.0 * poles.iter().fold(1.0f64, |acc, p| acc.max(p.abs()))
             }
         }
         MethodKind::LinearMultistep(family) => match family.uniform_coefficients() {

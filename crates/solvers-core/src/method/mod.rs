@@ -7,10 +7,12 @@
 pub mod coeff_serde;
 pub mod lmm;
 pub mod rk;
+pub mod rosenbrock;
 
 pub use coeff_serde::{CoeffValue, Slot};
 pub use lmm::{LmmCoefficients, LmmFamily, LmmFile, Normalization};
 pub use rk::{RkRuntime, RkTableau, RkTableauFile, Structure};
+pub use rosenbrock::{RosenbrockFile, RosenbrockRuntime, RosenbrockTableau};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -21,6 +23,7 @@ use std::collections::HashMap;
 pub enum MethodClass {
     RungeKutta,
     LinearMultistep,
+    Rosenbrock,
 }
 
 /// Bibliographic reference including the DOI of the original publication.
@@ -112,6 +115,8 @@ pub struct MethodFile {
     pub tableau: Option<RkTableauFile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub multistep: Option<LmmFile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rosenbrock: Option<RosenbrockFile>,
 }
 
 /// The coefficient carrying part of a method.
@@ -119,6 +124,7 @@ pub struct MethodFile {
 pub enum MethodKind {
     RungeKutta(RkTableau),
     LinearMultistep(LmmFamily),
+    Rosenbrock(RosenbrockTableau),
 }
 
 /// A validated method: metadata plus coefficients.
@@ -157,25 +163,27 @@ impl std::error::Error for MethodError {}
 
 impl Method {
     pub fn from_file(file: MethodFile) -> Result<Method, MethodError> {
-        let kind = match (file.class, &file.tableau, &file.multistep) {
-            (MethodClass::RungeKutta, Some(t), None) => MethodKind::RungeKutta(
-                RkTableau::from_file(t).map_err(|e| MethodError::Invalid(format!("{}: {e}", file.id)))?,
+        let id = file.id.clone();
+        let invalid = move |e: String| MethodError::Invalid(format!("{id}: {e}"));
+        let blocks = (
+            file.tableau.is_some(),
+            file.multistep.is_some(),
+            file.rosenbrock.is_some(),
+        );
+        let kind = match (file.class, blocks) {
+            (MethodClass::RungeKutta, (true, false, false)) => MethodKind::RungeKutta(
+                RkTableau::from_file(file.tableau.as_ref().unwrap())
+                    .map_err(|e| invalid(e.to_string()))?,
             ),
-            (MethodClass::LinearMultistep, None, Some(m)) => MethodKind::LinearMultistep(
-                LmmFamily::from_file(m).map_err(|e| MethodError::Invalid(format!("{}: {e}", file.id)))?,
+            (MethodClass::LinearMultistep, (false, true, false)) => MethodKind::LinearMultistep(
+                LmmFamily::from_file(file.multistep.as_ref().unwrap())
+                    .map_err(|e| invalid(e.to_string()))?,
             ),
-            (MethodClass::RungeKutta, None, _) => {
-                return Err(MethodError::Invalid(format!("{}: missing tableau", file.id)))
-            }
-            (MethodClass::LinearMultistep, _, None) => {
-                return Err(MethodError::Invalid(format!("{}: missing multistep block", file.id)))
-            }
-            _ => {
-                return Err(MethodError::Invalid(format!(
-                    "{}: class does not match the coefficient block",
-                    file.id
-                )))
-            }
+            (MethodClass::Rosenbrock, (false, false, true)) => MethodKind::Rosenbrock(
+                RosenbrockTableau::from_file(file.rosenbrock.as_ref().unwrap())
+                    .map_err(|e| invalid(e.to_string()))?,
+            ),
+            _ => return Err(invalid("the class and the coefficient block do not match".into())),
         };
 
         Ok(Method {
@@ -203,6 +211,7 @@ impl Method {
         match self.kind {
             MethodKind::RungeKutta(_) => MethodClass::RungeKutta,
             MethodKind::LinearMultistep(_) => MethodClass::LinearMultistep,
+            MethodKind::Rosenbrock(_) => MethodClass::Rosenbrock,
         }
     }
 
@@ -220,11 +229,20 @@ impl Method {
         }
     }
 
-    /// Number of stages for Runge-Kutta, number of steps for multistep.
+    pub fn rosenbrock(&self) -> Option<&RosenbrockTableau> {
+        match &self.kind {
+            MethodKind::Rosenbrock(r) => Some(r),
+            _ => None,
+        }
+    }
+
+    /// Number of stages for Runge-Kutta and Rosenbrock, number of steps for
+    /// multistep.
     pub fn size(&self) -> usize {
         match &self.kind {
             MethodKind::RungeKutta(t) => t.stages,
             MethodKind::LinearMultistep(m) => m.steps,
+            MethodKind::Rosenbrock(r) => r.stages,
         }
     }
 
@@ -232,6 +250,9 @@ impl Method {
         match &self.kind {
             MethodKind::RungeKutta(t) => !t.is_explicit(),
             MethodKind::LinearMultistep(m) => m.implicit,
+            // A Rosenbrock method solves a linear system at every stage. It
+            // never iterates, but it is not explicit either.
+            MethodKind::Rosenbrock(_) => true,
         }
     }
 
@@ -241,6 +262,7 @@ impl Method {
             // Multistep error estimates come from the order reduced formula,
             // which only exists while the family still has a shorter member.
             MethodKind::LinearMultistep(m) => m.steps > m.min_steps,
+            MethodKind::Rosenbrock(r) => r.has_embedded(),
         }
     }
 }

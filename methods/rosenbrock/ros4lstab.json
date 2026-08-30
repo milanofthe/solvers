@@ -1,0 +1,37 @@
+{
+  "id": "ros4lstab",
+  "name": "RODAS4 L-stable",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 4,
+  "embedded_order": 3,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [1.14564],
+      [0.520922095447223, 0.134294768368366],
+      [0.520922095447223, 0.134294768368366, 0]
+    ],
+    "gamma": [
+      [0.57282],
+      [-2.342013891319233, 0.57282],
+      [-0.027359803566462, 0.21380314735851, 0.57282],
+      [-0.259090622164488, -0.190594622729967, -0.22803686381559, 0.57282]
+    ],
+    "b": [0.324535747628317, 0.049084292146666, 0, 0.626379960225017],
+    "b_embedded": [0.029122678834822, -0.09451413788424, -0.187368461400615, 1.252759920450034]
+  },
+  "references": [
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition, IV.7",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

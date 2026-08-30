@@ -41,21 +41,29 @@ function axisValues(low, high, count) {
 }
 
 /**
- * The panel is wider than it is tall, and the window is cut to that ratio so a
- * region fills the frame without a shape being stretched out of true. Where the
- * window sits is not guessed here: the core probes the method and reports back
- * a box that actually contains its region.
+ * Where the window sits is not guessed here: the core measures the method and
+ * reports the tight box around its region. How much of the plane ends up on
+ * screen around that box is the container's business, because both axes of
+ * these figures carry the same scale.
  */
-const PANEL_ASPECT = 1.7;
+
+/** A window grown about its own centre, for sampling past what is framed. */
+function grown({ re, im }, factor) {
+	const stretch = ([low, high]) => {
+		const middle = (low + high) / 2;
+		const half = ((high - low) / 2) * factor;
+		return [middle - half, middle + half];
+	};
+	return { re: stretch(re), im: stretch(im) };
+}
 
 /** The order star lives around the origin and reaches about as far as the order. */
 function orderStarWindow(method) {
 	const reach = Math.max(3.5, (method.order ?? 4) * 1.1);
-	const half = reach / PANEL_ASPECT;
-	return { re: [-reach, reach], im: [-half, half] };
+	return { re: [-reach, reach], im: [-reach, reach] };
 }
 
-const GRID = { runge_kutta: 140, linear_multistep: 72 };
+const GRID = { runge_kutta: 140, rosenbrock: 140, linear_multistep: 72 };
 
 /** How finely the closed form multistep boundary is traced. */
 const BOUNDARY_SAMPLES = 720;
@@ -142,7 +150,6 @@ const stability = {
 			'stabilityGridAuto',
 			{
 				id: method.id,
-				aspect: PANEL_ASPECT,
 				width: resolution,
 				height: resolution,
 				locus: method.class === 'linear_multistep' ? BOUNDARY_SAMPLES : 0
@@ -151,7 +158,7 @@ const stability = {
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
-		const { data, width, height, re, im, locus } = result;
+		const { data, width, height, re, im, view, locus } = result;
 		// The colour range follows the data rather than a fixed span. A method
 		// whose region is a half plane varies by a fraction of a decade across
 		// the whole window, and a fixed range would render it as one flat wash.
@@ -208,8 +215,8 @@ const stability = {
 				...layout({
 					compact,
 					equalScale: true,
-					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
-					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
+					x: { title: compact ? undefined : { text: 'Re(z)' }, range: view.re },
+					y: { title: compact ? undefined : { text: 'Im(z)' }, range: view.im }
 				}),
 				shapes: originLines({ compact })
 			},
@@ -237,6 +244,21 @@ const structure = {
 			rows = coefficients.a.map((row) => row.map((entry) => entry.value));
 			rows.push(coefficients.b.map((entry) => entry.value));
 			labels = coefficients.a.map((_, i) => `stage ${i + 1}`).concat(['b']);
+			if (coefficients.bEmbedded) {
+				rows.push(coefficients.bEmbedded.map((entry) => entry.value));
+				labels.push('b hat');
+			}
+		} else if (coefficients.kind === 'rosenbrock') {
+			// Two matrices stacked, because a Rosenbrock method has two: one
+			// coupling the function argument and one coupling the Jacobian.
+			rows = coefficients.alpha.map((row) => row.map((entry) => entry.value));
+			labels = coefficients.alpha.map((_, i) => `alpha ${i + 1}`);
+			coefficients.gamma.forEach((row, i) => {
+				rows.push(row.map((entry) => entry.value));
+				labels.push(`gamma ${i + 1}`);
+			});
+			rows.push(coefficients.b.map((entry) => entry.value));
+			labels.push('b');
 			if (coefficients.bEmbedded) {
 				rows.push(coefficients.bEmbedded.map((entry) => entry.value));
 				labels.push('b hat');
@@ -526,18 +548,27 @@ const orderStar = {
 	label: 'order star',
 	note: 'log |R(z) exp(-z)|. Where the stability region says whether a mode decays, the star says whether the method tracks the exact solution: the sectors meeting at the origin count one more than the order, and a method is A-acceptable exactly when no sector reaches into the left half plane.',
 	request(engine, method, priority) {
-		if (method.class !== 'runge_kutta') return Promise.resolve(null);
+		if (method.class === 'linear_multistep') return Promise.resolve(null);
 		const view = orderStarWindow(method);
+		const sample = grown(view, 1.7);
 		const resolution = 160;
 		return engine.request(
 			'orderStar',
-			{ id: method.id, re: view.re, im: view.im, width: resolution, height: resolution },
+			{
+				id: method.id,
+				re: sample.re,
+				im: sample.im,
+				view,
+				width: resolution,
+				height: resolution
+			},
 			{ key: `orderStar:${method.id}`, priority }
 		);
 	},
 	figure(result, method, { compact = true } = {}) {
-		if (!result) return empty('Runge-Kutta only');
+		if (!result) return empty('no rational stability function');
 		const { data, width, height, re, im } = result;
+		const view = orderStarWindow(method);
 		const z = reshape(data, width, height);
 		const x = axisValues(re[0], re[1], width);
 		const y = axisValues(im[0], im[1], height);
@@ -574,8 +605,8 @@ const orderStar = {
 				...layout({
 					compact,
 					equalScale: true,
-					x: { title: compact ? undefined : { text: 'Re(z)' }, range: re },
-					y: { title: compact ? undefined : { text: 'Im(z)' }, range: im }
+					x: { title: compact ? undefined : { text: 'Re(z)' }, range: view.re },
+					y: { title: compact ? undefined : { text: 'Im(z)' }, range: view.im }
 				}),
 				shapes: originLines({ compact })
 			},
@@ -595,7 +626,7 @@ export const errorCoefficients = {
 	key: 'errorCoefficients',
 	label: 'error coefficients',
 	request(engine, method, priority) {
-		if (method.class !== 'runge_kutta') return Promise.resolve(null);
+		if (method.class === 'linear_multistep') return Promise.resolve(null);
 		return engine.request(
 			'errorCoefficients',
 			{ id: method.id },

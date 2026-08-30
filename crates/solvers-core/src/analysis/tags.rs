@@ -68,6 +68,24 @@ pub fn tags(method: &Method, report: &MethodReport) -> Vec<Tag> {
             }
             tags.push(tag("control", "order reduced estimate"));
         }
+        MethodKind::Rosenbrock(tableau) => {
+            tags.push(tag("structure", "linearly implicit"));
+            if tableau.singly_diagonal {
+                tags.push(tag("structure", "singly diagonal"));
+            }
+            if tableau.stiffly_accurate {
+                tags.push(tag("structure", "stiffly accurate"));
+            }
+            // The Jacobian is the formula here, not an accelerator, so it is
+            // worth saying out loud: this is the one family that cannot be run
+            // without one.
+            tags.push(tag("structure", "needs a Jacobian"));
+            if tableau.has_embedded() {
+                tags.push(tag("control", "embedded pair"));
+            } else {
+                tags.push(tag("control", "step doubling"));
+            }
+        }
     }
 
     // Stability: the property that decides whether a method can be used at all

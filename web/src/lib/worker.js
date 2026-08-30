@@ -16,6 +16,16 @@ import wasmUrl from './wasm/solvers_wasm_bg.wasm?url';
 
 const ready = init({ module_or_path: wasmUrl });
 
+/** A window grown about its own centre, for sampling past what is framed. */
+function grown({ re, im }, factor) {
+	const stretch = ([low, high]) => {
+		const middle = (low + high) / 2;
+		const half = ((high - low) / 2) * factor;
+		return [middle - half, middle + half];
+	};
+	return { re: stretch(re), im: stretch(im) };
+}
+
 const HANDLERS = {
 	methodCatalog: () => JSON.parse(wasm.method_catalog()),
 	problemCatalog: () => JSON.parse(wasm.problem_catalog()),
@@ -41,14 +51,19 @@ const HANDLERS = {
 		const data = wasm.stability_grid(id, re[0], re[1], im[0], im[1], width, height);
 		return { data, width, height, re, im };
 	},
-	stabilityGridAuto: ({ id, aspect, width, height, locus = 0 }) => {
-		const view = JSON.parse(wasm.stability_window(id, aspect));
+	stabilityGridAuto: ({ id, width, height, locus = 0 }) => {
+		const view = JSON.parse(wasm.stability_window(id));
+		// Sample wider than the frame. Both axes of the picture carry the same
+		// scale, so a panel of any other shape than the measured box widens one
+		// of the two; sampling only the box would leave that strip empty and
+		// read as a hole in the figure rather than as more of the plane.
+		const sample = grown(view, 1.7);
 		const data = wasm.stability_grid(
 			id,
-			view.re[0],
-			view.re[1],
-			view.im[0],
-			view.im[1],
+			sample.re[0],
+			sample.re[1],
+			sample.im[0],
+			sample.im[1],
 			width,
 			height
 		);
@@ -61,8 +76,9 @@ const HANDLERS = {
 			data,
 			width,
 			height,
-			re: view.re,
-			im: view.im,
+			re: sample.re,
+			im: sample.im,
+			view,
 			locus: locus ? wasm.region_boundary(id, locus) : null
 		};
 	}

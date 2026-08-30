@@ -1,0 +1,33 @@
+{
+  "id": "ros2",
+  "name": "ROS2",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 2,
+  "embedded_order": 1,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [1]
+    ],
+    "gamma": [
+      [1.707106781186547],
+      [-3.414213562373095, 1.707106781186547]
+    ],
+    "b": [0.5, 0.5],
+    "b_embedded": [1, 0]
+  },
+  "references": [
+    {
+      "authors": "Verwer, J. G., Spee, E. J., Blom, J. G., & Hundsdorfer, W.",
+      "title": "A second-order Rosenbrock method applied to photochemical dispersion problems",
+      "year": 1999,
+      "source": "SIAM Journal on Scientific Computing, 20(4), 1456-1480",
+      "doi": "10.1137/S1064827597326651"
+    }
+  ]
+}

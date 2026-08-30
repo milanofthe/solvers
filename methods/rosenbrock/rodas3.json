@@ -1,0 +1,38 @@
+{
+  "id": "rodas3",
+  "name": "RODAS3",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 3,
+  "embedded_order": 2,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [0],
+      [1, 0],
+      [0.75, -0.25, 0.5]
+    ],
+    "gamma": [
+      [0.5],
+      [1, 0.5],
+      [-0.25, -0.25, 0.5],
+      [0.083333333333333, 0.083333333333333, -0.666666666666667, 0.5]
+    ],
+    "b": [0.833333333333333, -0.166666666666667, -0.166666666666667, 0.5],
+    "b_embedded": [0.75, -0.25, 0.5, 0]
+  },
+  "references": [
+    {
+      "authors": "Sandu, A., Verwer, J. G., Blom, J. G., Spee, E. J., Carmichael, G. R., & Potra, F. A.",
+      "title": "Benchmarking stiff ODE solvers for atmospheric chemistry problems II: Rosenbrock solvers",
+      "year": 1997,
+      "source": "Atmospheric Environment, 31(20), 3459-3472",
+      "doi": "10.1016/S1352-2310(97)83212-8"
+    }
+  ]
+}

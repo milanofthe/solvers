@@ -51,7 +51,7 @@
 			})
 			.catch(() => {});
 
-		if (current.class === 'runge_kutta') {
+		if (current.class !== 'linear_multistep') {
 			engine()
 				.request(
 					'stabilityFunction',
@@ -82,7 +82,7 @@
 		return [
 			['order', report.computed_order],
 			['embedded', report.computed_embedded_order ?? '–'],
-			[report.class === 'runge_kutta' ? 'stages' : 'steps', report.size],
+			[report.class === 'linear_multistep' ? 'steps' : 'stages', report.size],
 			['stage order', report.stage_order ?? '–'],
 			['cost per step', report.stage_cost],
 			['A-stable', report.a_stable ? 'yes' : 'no'],
@@ -108,6 +108,15 @@
 				c.singlyDiagonal ? 'singly diagonal' : null,
 				c.explicitFirstStage ? 'explicit first stage' : null,
 				c.fsal ? 'FSAL' : null
+			]
+				.filter(Boolean)
+				.join(' · ');
+		}
+		if (c.kind === 'rosenbrock') {
+			return [
+				'linearly implicit',
+				c.singlyDiagonal ? 'singly diagonal' : null,
+				c.stifflyAccurate ? 'stiffly accurate' : null
 			]
 				.filter(Boolean)
 				.join(' · ');
@@ -239,7 +248,9 @@
 			<p class="label mb-2">
 				{detail.coefficients.kind === 'runge_kutta'
 					? 'butcher tableau'
-					: 'coefficients on a uniform grid'}
+					: detail.coefficients.kind === 'rosenbrock'
+						? 'alpha, gamma and the weights'
+						: 'coefficients on a uniform grid'}
 			</p>
 			<div class="overflow-x-auto border border-cream/10 bg-charcoal-light p-3">
 				{#if detail.coefficients.kind === 'runge_kutta'}
@@ -251,6 +262,53 @@
 										{detail.coefficients.c[i].exact
 											? detail.coefficients.c[i].text
 											: num(detail.coefficients.c[i].value, 8)}
+									</td>
+									{#each row as entry}
+										<td class="px-3 text-right {entry.value === 0 ? 'text-cream/20' : 'text-cream'}">
+											{entry.value === 0 ? '0' : entry.exact ? entry.text : num(entry.value, 8)}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+							<tr class="border-t border-cream/20">
+								<td class="border-r border-cream/20 px-3 text-right text-accent">b</td>
+								{#each detail.coefficients.b as entry}
+									<td class="px-3 text-right {entry.value === 0 ? 'text-cream/20' : 'text-cream'}">
+										{entry.value === 0 ? '0' : entry.exact ? entry.text : num(entry.value, 8)}
+									</td>
+								{/each}
+							</tr>
+							{#if detail.coefficients.bEmbedded}
+								<tr>
+									<td class="border-r border-cream/20 px-3 text-right text-accent">b hat</td>
+									{#each detail.coefficients.bEmbedded as entry}
+										<td class="px-3 text-right {entry.value === 0 ? 'text-cream/20' : 'text-cream'}">
+											{entry.value === 0 ? '0' : entry.exact ? entry.text : num(entry.value, 8)}
+										</td>
+									{/each}
+								</tr>
+							{/if}
+						</tbody>
+					</table>
+				{:else if detail.coefficients.kind === 'rosenbrock'}
+					<table class="border-collapse font-mono text-xs">
+						<tbody>
+							{#each detail.coefficients.alpha as row, i}
+								<tr>
+									<td class="border-r border-cream/20 px-3 text-right text-accent">
+										{i === 0 ? 'alpha' : ''}
+									</td>
+									{#each row as entry}
+										<td class="px-3 text-right {entry.value === 0 ? 'text-cream/20' : 'text-cream'}">
+											{entry.value === 0 ? '0' : entry.exact ? entry.text : num(entry.value, 8)}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+							{#each detail.coefficients.gamma as row, i}
+								<tr class={i === 0 ? 'border-t border-cream/20' : ''}>
+									<td class="border-r border-cream/20 px-3 text-right text-accent">
+										{i === 0 ? 'gamma' : ''}
 									</td>
 									{#each row as entry}
 										<td class="px-3 text-right {entry.value === 0 ? 'text-cream/20' : 'text-cream'}">

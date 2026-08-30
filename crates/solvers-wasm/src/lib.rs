@@ -72,6 +72,58 @@ pub fn method_catalog() -> String {
     serde_json::to_string(&entries).unwrap_or_else(|_| "[]".into())
 }
 
+/// The stability function of whichever kinds have one.
+///
+/// A Rosenbrock method is a single Newton step of the diagonally implicit
+/// Runge-Kutta method with `A = alpha + gamma`, and on a linear problem that
+/// step is exact, so the two share a stability function outright.
+fn stability_function_of(method: &solvers_core::Method) -> Option<stability::StabilityFunction> {
+    match &method.kind {
+        MethodKind::RungeKutta(tableau) => Some(stability::StabilityFunction::from_tableau(tableau)),
+        MethodKind::Rosenbrock(tableau) => {
+            Some(stability::StabilityFunction::from_rosenbrock(tableau))
+        }
+        MethodKind::LinearMultistep(_) => None,
+    }
+}
+
+/// Everything the order conditions need from a method whose conditions are
+/// indexed by rooted trees. Runge-Kutta and Rosenbrock both are, with different
+/// rules for turning a tree into stage weights and the same trees underneath.
+struct TreeConditions<'a> {
+    rule: &'a dyn analysis::order::StageWeights,
+    b: &'a [solvers_core::num::Coeff],
+    b_embedded: Option<&'a [solvers_core::num::Coeff]>,
+    order: usize,
+    embedded_order: Option<usize>,
+}
+
+fn tree_conditions(method: &solvers_core::Method) -> Option<TreeConditions<'_>> {
+    match &method.kind {
+        MethodKind::RungeKutta(tableau) => {
+            let report = analysis::order::verify(tableau, 10);
+            Some(TreeConditions {
+                rule: tableau,
+                b: &tableau.b,
+                b_embedded: tableau.b_embedded.as_deref(),
+                order: report.order,
+                embedded_order: report.embedded_order,
+            })
+        }
+        MethodKind::Rosenbrock(tableau) => {
+            let report = analysis::order::verify_rosenbrock(tableau, 10);
+            Some(TreeConditions {
+                rule: tableau,
+                b: &tableau.b,
+                b_embedded: tableau.b_embedded.as_deref(),
+                order: report.order,
+                embedded_order: report.embedded_order,
+            })
+        }
+        MethodKind::LinearMultistep(_) => None,
+    }
+}
+
 /// Full detail for one method: coefficients, analysis and references.
 #[wasm_bindgen]
 pub fn method_detail(id: &str) -> Result<String, JsValue> {
@@ -101,6 +153,32 @@ pub fn method_detail(id: &str) -> Result<String, JsValue> {
                 "explicitFirstStage": tableau.explicit_first_stage,
                 "fsal": tableau.is_fsal(),
                 "gamma": tableau.gamma.map(|g| g.to_string()),
+            })
+        }
+        MethodKind::Rosenbrock(tableau) => {
+            let row = |values: &[solvers_core::num::Coeff]| -> Vec<Value> {
+                values
+                    .iter()
+                    .map(|c| json!({ "text": c.to_string(), "value": c.value(), "exact": c.is_exact() }))
+                    .collect()
+            };
+            let matrix = |m: &solvers_core::linalg::Matrix<solvers_core::num::Coeff>| -> Vec<Vec<Value>> {
+                (0..tableau.stages)
+                    .map(|i| row(&(0..tableau.stages).map(|j| m[(i, j)]).collect::<Vec<_>>()))
+                    .collect()
+            };
+            json!({
+                "kind": "rosenbrock",
+                "stages": tableau.stages,
+                "alpha": matrix(&tableau.alpha),
+                "gamma": matrix(&tableau.gamma),
+                "b": row(&tableau.b),
+                "c": row(&tableau.c),
+                "d": row(&tableau.d),
+                "bEmbedded": tableau.b_embedded.as_ref().map(|v| row(v)),
+                "singlyDiagonal": tableau.singly_diagonal,
+                "stifflyAccurate": tableau.stiffly_accurate,
+                "diagonal": tableau.diagonal.map(|g| g.to_string()),
             })
         }
         MethodKind::LinearMultistep(family) => {
@@ -181,9 +259,9 @@ pub fn stability_grid(
 /// The caller says how wide its panel is relative to its height; where to look
 /// is worked out from the method, by probing where its region actually is.
 #[wasm_bindgen]
-pub fn stability_window(id: &str, aspect: f64) -> Result<String, JsValue> {
+pub fn stability_window(id: &str) -> Result<String, JsValue> {
     let method = find(id)?;
-    let (re, im) = analysis::suggested_window(method, aspect);
+    let (re, im) = analysis::suggested_window(method);
     Ok(serde_json::to_string(&json!({ "re": [re.0, re.1], "im": [im.0, im.1] })).unwrap_or_default())
 }
 
@@ -212,10 +290,8 @@ pub fn region_boundary(id: &str, samples: usize) -> Result<Vec<f64>, JsValue> {
 #[wasm_bindgen]
 pub fn stability_function(id: &str) -> Result<String, JsValue> {
     let method = find(id)?;
-    let tableau = method
-        .tableau()
-        .ok_or_else(|| JsValue::from_str("stability function needs a Runge-Kutta tableau"))?;
-    let function = stability::StabilityFunction::from_tableau(tableau);
+    let function = stability_function_of(method)
+        .ok_or_else(|| JsValue::from_str("a multistep method has no rational stability function"))?;
     let poles: Vec<Value> = function
         .poles()
         .iter()
@@ -395,8 +471,7 @@ pub fn options_catalog() -> String {
 #[wasm_bindgen]
 pub fn problem_profile(id: &str, samples: usize) -> Result<String, JsValue> {
     use solvers_core::linalg::Matrix;
-    use solvers_core::problem::Problem;
-
+    
     let problem = find_problem(id)?;
     let span = problem.t_span();
     let y0 = problem.y0();
@@ -458,9 +533,7 @@ pub fn problem_profile(id: &str, samples: usize) -> Result<String, JsValue> {
 pub fn method_summary(id: &str) -> Result<String, JsValue> {
     let method = find(id)?;
     let report = analysis::analyze(method);
-    let function = method
-        .tableau()
-        .map(stability::StabilityFunction::from_tableau);
+    let function = stability_function_of(method);
 
     // Damping along the negative real axis, the direct read on how a method
     // treats a stiff decaying mode: a value below one means the mode decays, and
@@ -513,10 +586,8 @@ pub fn order_star_grid(
     height: usize,
 ) -> Result<Vec<f64>, JsValue> {
     let method = find(id)?;
-    let tableau = method
-        .tableau()
-        .ok_or_else(|| JsValue::from_str("an order star needs a Runge-Kutta tableau"))?;
-    let function = stability::StabilityFunction::from_tableau(tableau);
+    let function = stability_function_of(method)
+        .ok_or_else(|| JsValue::from_str("an order star needs a rational stability function"))?;
 
     // |R exp(-z)| in logarithms is log|R| minus the real part over ln 10, which
     // avoids overflowing the exponential far out in the plane.
@@ -547,27 +618,25 @@ pub fn order_star_grid(
 #[wasm_bindgen]
 pub fn error_coefficients(id: &str) -> Result<String, JsValue> {
     let method = find(id)?;
-    let tableau = method
-        .tableau()
-        .ok_or_else(|| JsValue::from_str("error coefficients need a Runge-Kutta tableau"))?;
-    let report = analysis::order::verify(tableau, 10);
-    let order = report.order + 1;
+    let conditions = tree_conditions(method)
+        .ok_or_else(|| JsValue::from_str("error coefficients need order conditions on trees"))?;
+    let order = conditions.order + 1;
 
-    let conditions = analysis::order::conditions_at(tableau, &tableau.b, order);
-    let embedded = tableau.b_embedded.as_ref().map(|weights| {
-        let embedded_order = report.embedded_order.unwrap_or(0) + 1;
+    let at_order = analysis::order::conditions_at(conditions.rule, conditions.b, order);
+    let embedded = conditions.b_embedded.map(|weights| {
+        let embedded_order = conditions.embedded_order.unwrap_or(0) + 1;
         (
             embedded_order,
-            analysis::order::conditions_at(tableau, weights, embedded_order),
+            analysis::order::conditions_at(conditions.rule, weights, embedded_order),
         )
     });
 
     let value = json!({
         "id": method.id,
-        "order": report.order,
+        "order": conditions.order,
         "atOrder": order,
-        "constant": analysis::order::error_constant(tableau, &tableau.b, order),
-        "conditions": conditions,
+        "constant": analysis::order::error_constant(conditions.rule, conditions.b, order),
+        "conditions": at_order,
         "embedded": embedded.map(|(embedded_order, list)| json!({
             "atOrder": embedded_order,
             "conditions": list,

@@ -23,7 +23,7 @@
 //!   BIT 3, 1963, doi:10.1007/BF01963532
 
 use crate::linalg::{poly_roots, Matrix};
-use crate::method::{LmmCoefficients, RkTableau};
+use crate::method::{LmmCoefficients, RkTableau, RosenbrockTableau};
 use crate::num::Complex;
 use serde::Serialize;
 
@@ -80,12 +80,30 @@ pub struct StabilityFunction {
 impl StabilityFunction {
     /// Build `R(z)` from a Butcher tableau.
     pub fn from_tableau(tableau: &RkTableau) -> StabilityFunction {
-        let s = tableau.stages;
         let a = tableau.a.map(|v| v.value());
         let b: Vec<f64> = tableau.b.iter().map(|v| v.value()).collect();
+        StabilityFunction::from_parts(&a, &b)
+    }
+
+    /// Build `R(z)` for a Rosenbrock method.
+    ///
+    /// On a linear problem the Jacobian is the problem, so the two couplings
+    /// add and the method behaves exactly like the diagonally implicit
+    /// Runge-Kutta method with `A = alpha + gamma`. That is the reason a ROW
+    /// method has a DIRK stability function and can be L-stable at all.
+    pub fn from_rosenbrock(tableau: &RosenbrockTableau) -> StabilityFunction {
+        let a = tableau.implicit_matrix().map(|v| v.value());
+        let b: Vec<f64> = tableau.b.iter().map(|v| v.value()).collect();
+        StabilityFunction::from_parts(&a, &b)
+    }
+
+    /// `R(z) = det(I - zA + z e b^T) / det(I - zA)` from the two pieces it is
+    /// made of.
+    pub fn from_parts(a: &Matrix<f64>, b: &[f64]) -> StabilityFunction {
+        let s = b.len();
 
         // det(I - zA) = z^s * charpoly_A(1/z), so the coefficients just reverse.
-        let ca = characteristic_polynomial(&a);
+        let ca = characteristic_polynomial(a);
         let denominator: Vec<f64> = (0..=s).map(|j| ca[s - j]).collect();
 
         // The numerator is the same determinant for A - e b^T.

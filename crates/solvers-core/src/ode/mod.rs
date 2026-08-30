@@ -10,11 +10,13 @@ pub mod decouple;
 pub mod lmm;
 mod newton_matrix;
 pub mod rk;
+pub mod rosenbrock;
 
 pub use decouple::{DecoupledLinear, StageDecoupling};
 pub use lmm::LmmStepper;
 pub use newton_matrix::NewtonMatrix;
 pub use rk::RkStepper;
+use rosenbrock::RosenbrockStepper;
 
 use crate::control::{Controller, ControllerConfig};
 use crate::method::{Method, MethodKind};
@@ -200,6 +202,13 @@ pub fn stepper_for<P: Problem + ?Sized>(
         MethodKind::LinearMultistep(family) => {
             Box::new(LmmStepper::with_startup(family, dim, options, startup_for(family, dim, options)))
         }
+        MethodKind::Rosenbrock(tableau) => Box::new(RosenbrockStepper::new(
+            tableau,
+            method.declared_order.unwrap_or(1) as usize,
+            method.declared_embedded_order.map(|v| v as usize),
+            dim,
+            options,
+        )),
     }
 }
 

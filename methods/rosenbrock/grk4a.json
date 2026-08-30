@@ -1,0 +1,36 @@
+{
+  "id": "grk4a",
+  "name": "GRK4A",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 4,
+  "embedded_order": 3,
+  "properties": {
+    "a_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [0.438],
+      [0.796920457938462, 0.073079542061538],
+      [0.796920457938462, 0.073079542061538, 0]
+    ],
+    "gamma": [
+      [0.395],
+      [-0.767672395484092, 0.395],
+      [-0.851675323742331, 0.522967289188046, 0.395],
+      [0.288463109545475, 0.088021427338116, -0.337389840626728, 0.395]
+    ],
+    "b": [0.19929327570063, 0.482645235673738, 0.068061488625632, 0.25],
+    "b_embedded": [0.052260717643313, 0.6795972956352, -0.231858013278512, 0.5]
+  },
+  "references": [
+    {
+      "authors": "Kaps, P., & Rentrop, P.",
+      "title": "Generalized Runge-Kutta methods of order four with stepsize control for stiff ordinary differential equations",
+      "year": 1979,
+      "source": "Numerische Mathematik, 33(1), 55-68",
+      "doi": "10.1007/BF01396495"
+    }
+  ]
+}
