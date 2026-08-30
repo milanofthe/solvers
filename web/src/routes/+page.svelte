@@ -18,6 +18,8 @@
 		{ key: 'family', label: 'family', of: (m) => `${m.family}/${m.id}` },
 		{ key: 'name', label: 'name', of: (m) => m.name.toLowerCase() },
 		{ key: 'order', label: 'order', of: (m) => -m.order },
+		// Undated entries sort to the end rather than to 1900.
+		{ key: 'year', label: 'year', of: (m) => m.year ?? 9999 },
 		{ key: 'size', label: 'size', of: (m) => m.size },
 		{ key: 'cost', label: 'cost', of: (m) => m.stageCost },
 		{

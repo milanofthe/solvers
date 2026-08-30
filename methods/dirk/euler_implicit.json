@@ -20,6 +20,12 @@
   },
   "references": [
     {
+      "authors": "Euler, L.",
+      "title": "Institutionum calculi integralis, Volumen Primum",
+      "year": 1768,
+      "source": "Academia Imperialis Scientiarum Petropolitana, Sectio Secunda, Caput VII"
+    },
+    {
       "authors": "Hairer, E., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
       "year": 1996,

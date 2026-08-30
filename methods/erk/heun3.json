@@ -15,6 +15,12 @@
   },
   "references": [
     {
+      "authors": "Heun, K.",
+      "title": "Neue Methoden zur approximativen Integration der Differentialgleichungen einer unabhaengigen Veraenderlichen",
+      "year": 1900,
+      "source": "Zeitschrift fuer Mathematik und Physik, 45, 23-38"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

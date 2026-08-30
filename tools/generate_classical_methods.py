@@ -155,6 +155,95 @@ def lmm_order(alpha_slots, beta_slots):
     return order
 
 
+# ---------------------------------------------------------------------------
+# Where each method was first published
+# ---------------------------------------------------------------------------
+#
+# The textbooks below carry every one of these, and citing only a textbook
+# would be citing the collector rather than the author. Where the original is
+# identifiable it goes first; several of them predate the DOI by a century and
+# are named in full instead.
+
+EULER1768 = {
+    "authors": "Euler, L.",
+    "title": "Institutionum calculi integralis, Volumen Primum",
+    "year": 1768,
+    "source": "Academia Imperialis Scientiarum Petropolitana, Sectio Secunda, Caput VII",
+}
+RUNGE1895 = {
+    "authors": "Runge, C.",
+    "title": "Ueber die numerische Aufloesung von Differentialgleichungen",
+    "year": 1895,
+    "source": "Mathematische Annalen, 46(2), 167-178",
+    "doi": "10.1007/BF01446807",
+}
+HEUN1900 = {
+    "authors": "Heun, K.",
+    "title": "Neue Methoden zur approximativen Integration der Differentialgleichungen einer unabhaengigen Veraenderlichen",
+    "year": 1900,
+    "source": "Zeitschrift fuer Mathematik und Physik, 45, 23-38",
+}
+KUTTA1901 = {
+    "authors": "Kutta, W.",
+    "title": "Beitrag zur naeherungsweisen Integration totaler Differentialgleichungen",
+    "year": 1901,
+    "source": "Zeitschrift fuer Mathematik und Physik, 46, 435-453",
+}
+BASHFORTH1883 = {
+    "authors": "Bashforth, F., & Adams, J. C.",
+    "title": "An attempt to test the theories of capillary action by comparing the theoretical and measured forms of drops of fluid",
+    "year": 1883,
+    "source": "Cambridge University Press",
+}
+MOULTON1926 = {
+    "authors": "Moulton, F. R.",
+    "title": "New Methods in Exterior Ballistics",
+    "year": 1926,
+    "source": "University of Chicago Press",
+}
+NYSTROM1925 = {
+    "authors": "Nystroem, E. J.",
+    "title": "Ueber die numerische Integration von Differentialgleichungen",
+    "year": 1925,
+    "source": "Acta Societatis Scientiarum Fennicae, 50(13), 1-55",
+}
+MILNE1926 = {
+    "authors": "Milne, W. E.",
+    "title": "Numerical integration of ordinary differential equations",
+    "year": 1926,
+    "source": "The American Mathematical Monthly, 33(9), 455-460",
+    "doi": "10.2307/2299609",
+}
+CRANK1947 = {
+    "authors": "Crank, J., & Nicolson, P.",
+    "title": "A practical method for numerical evaluation of solutions of partial differential equations of the heat-conduction type",
+    "year": 1947,
+    "source": "Mathematical Proceedings of the Cambridge Philosophical Society, 43(1), 50-67",
+    "doi": "10.1017/S0305004100023197",
+}
+
+PRIMARY = {
+    "euler_explicit": EULER1768,
+    "euler_implicit": EULER1768,
+    "midpoint_explicit": RUNGE1895,
+    "ralston2": RUNGE1895,
+    "heun_euler21": RUNGE1895,
+    "heun3": HEUN1900,
+    "kutta3": KUTTA1901,
+    "rk4": KUTTA1901,
+    "rk38": KUTTA1901,
+    "trapezoidal": CRANK1947,
+    "implicit_midpoint": CRANK1947,
+    "milne_simpson": MILNE1926,
+}
+for step in range(1, 9):
+    PRIMARY[f"adams_bashforth_{step}"] = BASHFORTH1883
+for step in range(2, 8):
+    PRIMARY[f"adams_moulton_{step}"] = MOULTON1926
+for step in range(2, 5):
+    PRIMARY[f"nystrom{step}"] = NYSTROM1925
+
+
 def render(method):
     text = json.dumps(method, indent=2, ensure_ascii=False)
     text = INNER_ARRAY.sub(lambda m: "[" + " ".join(m.group(0)[1:-1].split()) + "]", text)
@@ -162,6 +251,12 @@ def render(method):
 
 
 def write(directory, method):
+    original = PRIMARY.get(method["id"])
+    if original is not None:
+        existing = method.get("references", [])
+        if not any(r.get("title") == original["title"] for r in existing):
+            method["references"] = [original] + existing
+
     folder = os.path.join(OUT, directory)
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, method["id"] + ".json")

@@ -17,6 +17,12 @@
   },
   "references": [
     {
+      "authors": "Kutta, W.",
+      "title": "Beitrag zur naeherungsweisen Integration totaler Differentialgleichungen",
+      "year": 1901,
+      "source": "Zeitschrift fuer Mathematik und Physik, 46, 435-453"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

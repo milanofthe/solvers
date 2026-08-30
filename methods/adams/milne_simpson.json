@@ -15,6 +15,13 @@
   },
   "references": [
     {
+      "authors": "Milne, W. E.",
+      "title": "Numerical integration of ordinary differential equations",
+      "year": 1926,
+      "source": "The American Mathematical Monthly, 33(9), 455-460",
+      "doi": "10.2307/2299609"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

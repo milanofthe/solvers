@@ -65,6 +65,9 @@ pub fn method_catalog() -> String {
                 "exactArithmetic": report.exact_arithmetic,
                 "discrepancies": report.discrepancies,
                 "doi": method.references.first().and_then(|r| r.doi.clone()),
+                // The earliest reference, which is the one that introduced the
+                // method rather than a textbook that later collected it.
+                "year": method.references.iter().filter_map(|r| r.year).min(),
                 "tags": analysis::tags(method, &report),
             })
         })

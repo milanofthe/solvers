@@ -14,6 +14,12 @@
   },
   "references": [
     {
+      "authors": "Moulton, F. R.",
+      "title": "New Methods in Exterior Ballistics",
+      "year": 1926,
+      "source": "University of Chicago Press"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

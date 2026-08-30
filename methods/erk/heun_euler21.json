@@ -16,6 +16,13 @@
   },
   "references": [
     {
+      "authors": "Runge, C.",
+      "title": "Ueber die numerische Aufloesung von Differentialgleichungen",
+      "year": 1895,
+      "source": "Mathematische Annalen, 46(2), 167-178",
+      "doi": "10.1007/BF01446807"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

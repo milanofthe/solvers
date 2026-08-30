@@ -15,6 +15,12 @@
   },
   "references": [
     {
+      "authors": "Nystroem, E. J.",
+      "title": "Ueber die numerische Integration von Differentialgleichungen",
+      "year": 1925,
+      "source": "Acta Societatis Scientiarum Fennicae, 50(13), 1-55"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

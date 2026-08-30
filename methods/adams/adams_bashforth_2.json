@@ -14,6 +14,12 @@
   },
   "references": [
     {
+      "authors": "Bashforth, F., & Adams, J. C.",
+      "title": "An attempt to test the theories of capillary action by comparing the theoretical and measured forms of drops of fluid",
+      "year": 1883,
+      "source": "Cambridge University Press"
+    },
+    {
       "authors": "Hairer, E., Noersett, S. P., & Wanner, G.",
       "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
       "year": 1993,

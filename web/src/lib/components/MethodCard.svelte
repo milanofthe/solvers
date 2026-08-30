@@ -133,6 +133,9 @@
 					<dd class="inline text-cream">{limit(method.dampingAtInfinity)}</dd>
 				</div>
 			{/if}
+			{#if method.year}
+				<div><dt class="inline">year</dt> <dd class="inline text-cream">{method.year}</dd></div>
+			{/if}
 		</dl>
 
 		<p class="px-3 pb-3 pt-1 font-mono text-xs text-accent">

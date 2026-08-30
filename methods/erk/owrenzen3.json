@@ -1,0 +1,27 @@
+{
+  "id": "owrenzen3",
+  "name": "Owren-Zennaro 3(2)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 3,
+  "embedded_order": 2,
+  "tableau": {
+    "a": [
+      [],
+      ["12/23"],
+      ["-68/375", "368/375"],
+      ["31/144", "529/1152", "125/384"]
+    ],
+    "b": ["31/144", "529/1152", "125/384", 0],
+    "b_embedded": ["7/18", "-23/576", "125/192", 0]
+  },
+  "references": [
+    {
+      "authors": "Owren, B., & Zennaro, M.",
+      "title": "Derivation of efficient, continuous, explicit Runge-Kutta methods",
+      "year": 1992,
+      "source": "SIAM Journal on Scientific and Statistical Computing, 13(6), 1488-1501",
+      "doi": "10.1137/0913072"
+    }
+  ]
+}

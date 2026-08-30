@@ -1,0 +1,25 @@
+{
+  "id": "ralston4",
+  "name": "Ralston 4",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 4,
+  "tableau": {
+    "a": [
+      [],
+      ["2/5"],
+      [0.29697760924775357, 0.15875964497103584],
+      [0.21810038822592004, -3.0509651486929306, 3.8328647604670105]
+    ],
+    "b": [0.1747602822626904, -0.551480662878733, 1.2055355993965235, 0.17118478121951902]
+  },
+  "references": [
+    {
+      "authors": "Ralston, A.",
+      "title": "Runge-Kutta methods with minimum error bounds",
+      "year": 1962,
+      "source": "Mathematics of Computation, 16(80), 431-437",
+      "doi": "10.1090/S0025-5718-1962-0150954-0"
+    }
+  ]
+}
