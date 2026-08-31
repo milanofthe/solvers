@@ -1,0 +1,36 @@
+{
+  "id": "cfnlirk3",
+  "name": "CFNLIRK3",
+  "class": "additive_runge_kutta",
+  "family": "imex",
+  "order": 3,
+  "additive": {
+    "explicit": {
+      "a": [
+        [],
+        [0.43586652150846],
+        [1.06793326075423, -0.35],
+        [0, 1.989175724679859, -0.989175724679859]
+      ],
+      "b": [0, 1.2084966491760127, -0.6443631706844728, 0.43586652150846]
+    },
+    "implicit": {
+      "a": [
+        [0, 0, 0, 0],
+        [0, 0.43586652150846, 0, 0],
+        [0, 0.28206673924576997, 0.43586652150846, 0],
+        [0, 1.2084966491760127, -0.6443631706844728, 0.43586652150846]
+      ],
+      "b": [0, 1.2084966491760127, -0.6443631706844728, 0.43586652150846]
+    }
+  },
+  "references": [
+    {
+      "authors": "Calvo, M. P., de Frutos, J., & Novo, J.",
+      "title": "Linearly implicit Runge-Kutta methods for advection-reaction-diffusion equations",
+      "year": 2001,
+      "source": "Applied Numerical Mathematics, 37(4), 535-549",
+      "doi": "10.1016/S0168-9274(00)00061-1"
+    }
+  ]
+}

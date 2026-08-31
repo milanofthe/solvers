@@ -3,13 +3,17 @@
 An additive method is two tableaux, and the reference writes them as two
 matrices filled entry by entry, which is the one convention in that file that
 can be read without knowing anything about the method: `Ae` and `be` are the
-explicit half, `Ai` and `bi` the implicit one, on shared abscissae `c`.
+explicit half, `Ai` and `bi` the implicit one.
 
-Nothing is assumed about how the halves fit together. The loader refuses a pair
-whose halves disagree on their abscissae, and the Rust side derives the order of
-the pair from the two coloured trees, which is a stronger statement than either
-half satisfying its own conditions. A pair that does not reach the order claimed
-for it is reported here and no file is written.
+Nothing is assumed about how the halves fit together, not even that they share
+their abscissae, which several of these do not. The Rust side derives the order
+of the pair from the two coloured trees, which is a stronger statement than
+either half satisfying its own conditions.
+
+ARS(3,4,3) is not here. The reference states its explicit half to ten decimal
+digits, which leaves a residual in the second order condition larger than the
+analysis calls zero, so its order cannot be confirmed from what is written down.
+Its siblings are stated as exact rationals and are.
 
 Requires the reference checkout:
     git clone https://github.com/SciML/OrdinaryDiffEq.jl C:/Repositories/TEMP/OrdinaryDiffEq.jl
@@ -61,7 +65,6 @@ CALVO01 = {
 WANTED = [
     dict(constructor="ARS222Tableau", id="ars222", name="ARS(2,2,2)", order=2, references=[ARS97]),
     dict(constructor="ARS232Tableau", id="ars232", name="ARS(2,3,2)", order=2, references=[ARS97]),
-    dict(constructor="ARS343Tableau", id="ars343", name="ARS(3,4,3)", order=3, references=[ARS97]),
     dict(constructor="ARS443Tableau", id="ars443", name="ARS(4,4,3)", order=3, references=[ARS97]),
     dict(constructor="IMEXSSP222Tableau", id="imexssp222", name="IMEX-SSP2(2,2,2)", order=2,
          references=[PARESCHI_RUSSO05]),
@@ -71,14 +74,15 @@ WANTED = [
          references=[PARESCHI_RUSSO05]),
     dict(constructor="IMEXSSP3433Tableau", id="imexssp3433", name="IMEX-SSP3(4,3,3)", order=3,
          references=[PARESCHI_RUSSO05]),
-    dict(constructor="CFNLIRK3Tableau", id="cfnlirk3", name="CFNLIRK3", order=3,
+    dict(constructor="CFNLIRK3ESDIRKIMEXTableau", id="cfnlirk3", name="CFNLIRK3", order=3,
          references=[CALVO01]),
 ]
 
 MATRIX = re.compile(r"^\s*(Ai|Ae)\[\s*(\d+)\s*,\s*(\d+)\s*\]\s*=\s*(.+?)\s*$")
 VECTOR = re.compile(r"^\s*(bi|be)\[\s*(\d+)\s*\]\s*=\s*(.+?)\s*$")
-# The weights are written either entry by entry or as one array literal.
-LITERAL = re.compile(r"^\s*(bi|be)\s*=\s*T\[(.+)\]\s*$")
+# The weights are written either entry by entry or as one array literal, and the
+# literal is sometimes named for the vector it is.
+LITERAL = re.compile(r"^\s*(bi|be)(?:_vec)?\s*=\s*T\[(.+)\]\s*$")
 SIZE = re.compile(r"^\s*s\s*=\s*(\d+)\s*$")
 
 
