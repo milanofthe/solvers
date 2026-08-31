@@ -1,0 +1,30 @@
+{
+  "id": "sdirk34",
+  "name": "SDIRK 3 stage 4th order",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 4,
+  "tableau": {
+    "a": [
+      [1.0685790213016289, 0, 0],
+      [-0.5685790213016289, 1.0685790213016289, 0],
+      [2.1371580426032577, -3.2743160852065154, 1.0685790213016289]
+    ],
+    "b": [0.12888640051572042, 0.7422271989685592, 0.12888640051572042]
+  },
+  "references": [
+    {
+      "authors": "Norsett, S. P.",
+      "title": "Semi-explicit Runge-Kutta methods",
+      "year": 1974,
+      "source": "Report Mathematics and Computation No. 6/74, University of Trondheim"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

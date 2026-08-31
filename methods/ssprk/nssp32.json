@@ -1,0 +1,24 @@
+{
+  "id": "nssp32",
+  "name": "NSSP(3,2)",
+  "class": "runge_kutta",
+  "family": "ssprk",
+  "order": 2,
+  "tableau": {
+    "a": [
+      [0],
+      ["1/3", 0],
+      [0, 1, 0]
+    ],
+    "b": ["1/2", 0, "1/2"]
+  },
+  "references": [
+    {
+      "authors": "Wang, R., & Spiteri, R. J.",
+      "title": "Linear instability of the fifth-order WENO method",
+      "year": 2007,
+      "source": "SIAM Journal on Numerical Analysis, 45(5), 1871-1901",
+      "doi": "10.1137/050637868"
+    }
+  ]
+}

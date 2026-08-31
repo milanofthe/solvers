@@ -1,0 +1,30 @@
+{
+  "id": "hh54",
+  "name": "Higham-Hall 5(4)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 5,
+  "embedded_order": 4,
+  "tableau": {
+    "a": [
+      [0],
+      ["2/9", 0],
+      ["1/12", "1/4", 0],
+      ["1/8", 0, "3/8", 0],
+      ["91/500", "-27/100", "78/125", "8/125", 0],
+      ["-11/20", "27/20", "12/5", "-36/5", 5, 0],
+      ["1/12", 0, "27/32", "-4/3", "125/96", "5/48", 0]
+    ],
+    "b": ["1/12", 0, "27/32", "-4/3", "125/96", "5/48", 0],
+    "b_embedded": ["2/15", 0, "27/80", "-2/15", "25/48", "1/24", "1/10"]
+  },
+  "references": [
+    {
+      "authors": "Higham, D. J., & Hall, G.",
+      "title": "Embedded Runge-Kutta formulae with stable equilibrium states",
+      "year": 1990,
+      "source": "Journal of Computational and Applied Mathematics, 29(1), 25-33",
+      "doi": "10.1016/0377-0427(90)90192-3"
+    }
+  ]
+}

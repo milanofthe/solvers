@@ -1,0 +1,34 @@
+{
+  "id": "butcher5",
+  "name": "Butcher 5",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 5,
+  "tableau": {
+    "a": [
+      [0],
+      ["1/4", 0],
+      ["1/8", "1/8", 0],
+      [0, 0, "1/2", 0],
+      ["3/16", "-3/8", "3/8", "9/16", 0],
+      ["-3/7", "8/7", "6/7", "-12/7", "8/7", 0]
+    ],
+    "b": ["7/90", 0, "16/45", "2/15", "16/45", "7/90"]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "On Runge-Kutta processes of high order",
+      "year": 1964,
+      "source": "Journal of the Australian Mathematical Society, 4(2), 179-194",
+      "doi": "10.1017/S1446788700023387"
+    },
+    {
+      "authors": "Hairer, E., Norsett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

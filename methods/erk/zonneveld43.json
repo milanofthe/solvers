@@ -1,0 +1,34 @@
+{
+  "id": "zonneveld43",
+  "name": "Zonneveld 4(3)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 4,
+  "embedded_order": 3,
+  "tableau": {
+    "a": [
+      [0],
+      ["1/2", 0],
+      [0, "1/2", 0],
+      [0, 0, 1, 0],
+      ["5/32", "7/32", "13/32", "-1/32", 0]
+    ],
+    "b": ["1/6", "1/3", "1/3", "1/6", 0],
+    "b_embedded": ["-1/2", "7/3", "7/3", "13/6", "-16/3"]
+  },
+  "references": [
+    {
+      "authors": "Zonneveld, J. A.",
+      "title": "Automatic Numerical Integration",
+      "year": 1963,
+      "source": "Mathematical Centre Tracts 8, Mathematisch Centrum, Amsterdam"
+    },
+    {
+      "authors": "Hairer, E., Norsett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}

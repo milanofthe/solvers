@@ -1,0 +1,34 @@
+{
+  "id": "rkf43",
+  "name": "Fehlberg 4(3)",
+  "class": "runge_kutta",
+  "family": "erk",
+  "order": 4,
+  "embedded_order": 3,
+  "tableau": {
+    "a": [
+      [0],
+      ["1/4", 0],
+      ["4/81", "32/81", 0],
+      ["57/98", "-432/343", "1053/686", 0],
+      ["1/6", 0, "27/52", "49/156", 0]
+    ],
+    "b": ["43/288", 0, "243/416", "343/1872", "1/12"],
+    "b_embedded": ["1/6", 0, "27/52", "49/156", 0]
+  },
+  "references": [
+    {
+      "authors": "Fehlberg, E.",
+      "title": "Low-order classical Runge-Kutta formulas with stepsize control and their application to some heat transfer problems",
+      "year": 1969,
+      "source": "NASA Technical Report R-315"
+    },
+    {
+      "authors": "Hairer, E., Norsett, S. P., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations I: Nonstiff Problems",
+      "year": 1993,
+      "source": "Springer Series in Computational Mathematics, Vol. 8, 2nd edition",
+      "doi": "10.1007/978-3-540-78862-1"
+    }
+  ]
+}
