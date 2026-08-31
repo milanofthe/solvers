@@ -2,12 +2,13 @@
 
 ODE integration methods as data. A Butcher tableau or a multistep coefficient
 pattern lives in a JSON file with the DOI it was published under; order, stage
-order, stability and cost are derived from those coefficients rather than
-declared.
+order, stability and cost are computed from those coefficients.
 
-74 methods: explicit and SSP Runge-Kutta, DIRK and ESDIRK, Gauss-Legendre,
-Radau IIA, Lobatto IIIA/IIIB/IIIC, BDF, Adams-Bashforth and Adams-Moulton,
-Nystrom, Milne-Simpson.
+Explicit Runge-Kutta from Euler to Feagin's fourteenth order, the strong
+stability preserving families explicit and implicit, DIRK and ESDIRK including
+Kvaerno and Kennedy-Carpenter, Rosenbrock-Wanner, Runge-Kutta-Chebyshev,
+Gauss-Legendre, Radau IA and IIA, Lobatto IIIA/IIIB/IIIC/IIIC*/IIID, BDF,
+Adams-Bashforth and Adams-Moulton, Nystrom and Milne-Simpson.
 
 ## Layout
 
