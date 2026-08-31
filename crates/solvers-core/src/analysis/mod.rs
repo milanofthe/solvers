@@ -113,6 +113,16 @@ pub struct MethodReport {
 /// so the error constant is only offered where it can be had.
 const TREE_LIMIT: usize = 10;
 
+/// How deep the tree search goes before Butcher's theorem has to take over.
+///
+/// Fourteen is where the published explicit methods stop, and it has to reach
+/// that far or their order could not be falsified: an explicit method satisfies
+/// none of the simplifying assumptions deeply enough for the theorem to say
+/// anything useful about it. The cost is only paid by a method that survives to
+/// the limit, since the search stops at the first condition that fails, and
+/// there are only a handful of those.
+const ORDER_SEARCH_LIMIT: usize = 14;
+
 fn error_constant_of(
     rule: &dyn order::StageWeights,
     weights: &[crate::num::Coeff],
@@ -127,7 +137,7 @@ pub fn analyze(method: &Method) -> MethodReport {
 
     match &method.kind {
         MethodKind::RungeKutta(tableau) => {
-            let report = order::verify(tableau, 10);
+            let report = order::verify(tableau, ORDER_SEARCH_LIMIT);
             let function = StabilityFunction::from_tableau(tableau);
             let a_stable = function.is_a_stable();
             let l_stable = function.is_l_stable();
@@ -227,7 +237,7 @@ pub fn analyze(method: &Method) -> MethodReport {
             }
         }
         MethodKind::Rosenbrock(tableau) => {
-            let report = order::verify_rosenbrock(tableau, 10);
+            let report = order::verify_rosenbrock(tableau, ORDER_SEARCH_LIMIT);
             let function = StabilityFunction::from_rosenbrock(tableau);
             let a_stable = function.is_a_stable();
             let l_stable = function.is_l_stable();

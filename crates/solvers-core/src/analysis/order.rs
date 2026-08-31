@@ -102,29 +102,51 @@ impl Tree {
 
 /// All rooted trees with exactly `order` nodes, in a canonical order.
 pub fn trees_of_order(order: usize) -> Vec<Tree> {
-    if order == 0 {
+    let mut by_order = trees_by_order(order);
+    if order == 0 || order >= by_order.len() {
         return Vec::new();
-    }
-    let mut by_order: Vec<Vec<Tree>> = vec![Vec::new(); order + 1];
-    by_order[1] = vec![Tree::leaf()];
-    for n in 2..=order {
-        let mut pool: Vec<Tree> = Vec::new();
-        for smaller in by_order.iter().take(n) {
-            pool.extend(smaller.iter().cloned());
-        }
-        pool.sort_by_key(|t| (t.order(), t.to_string_compact()));
-        let mut result = Vec::new();
-        for children in multisets(&pool, 0, n - 1) {
-            result.push(Tree { children });
-        }
-        by_order[n] = result;
     }
     by_order.remove(order)
 }
 
-/// All rooted trees with up to `order` nodes.
+/// Every tree of every order up to `order`, indexed by order.
+///
+/// Building the levels in one pass matters once the search runs deep: level `n`
+/// is assembled from all the levels below it, so asking for the levels one at a
+/// time rebuilds the whole pyramid every time. The ordering key is cached rather
+/// than recomputed, because it is a formatted string and the pool it sorts runs
+/// to tens of thousands of trees at order fourteen.
+pub fn trees_by_order(order: usize) -> Vec<Vec<Tree>> {
+    let mut by_order: Vec<Vec<Tree>> = vec![Vec::new()];
+    for n in 1..=order {
+        let level = level_of_order(&by_order, n);
+        by_order.push(level);
+    }
+    by_order
+}
+
+/// The trees with `n` nodes, from the levels below them.
+///
+/// A tree of order `n` is a root over a multiset of smaller trees whose orders
+/// sum to `n - 1`, so every level is assembled from the ones already built.
+fn level_of_order(by_order: &[Vec<Tree>], n: usize) -> Vec<Tree> {
+    if n == 1 {
+        return vec![Tree::leaf()];
+    }
+    let mut pool: Vec<Tree> = Vec::new();
+    for smaller in by_order.iter().take(n) {
+        pool.extend(smaller.iter().cloned());
+    }
+    pool.sort_by_cached_key(|t| (t.order(), t.to_string_compact()));
+    multisets(&pool, 0, n - 1)
+        .into_iter()
+        .map(|children| Tree { children })
+        .collect()
+}
+
+/// All rooted trees with up to `order` nodes, flattened.
 pub fn trees_up_to(order: usize) -> Vec<Tree> {
-    (1..=order).flat_map(trees_of_order).collect()
+    trees_by_order(order).into_iter().flatten().collect()
 }
 
 /// Multisets of trees from `pool[start..]` whose orders sum to `remaining`.
@@ -136,8 +158,11 @@ fn multisets(pool: &[Tree], start: usize, remaining: usize) -> Vec<Vec<Tree>> {
     let mut out = Vec::new();
     for index in start..pool.len() {
         let order = pool[index].order();
+        // The pool is sorted by order, so the first tree too large to fit ends
+        // the scan. Skipping past it instead walks the whole pool at every node
+        // of the recursion, which is what made deep orders unusable.
         if order > remaining {
-            continue;
+            break;
         }
         for rest in multisets(pool, index, remaining - order) {
             let mut combination = Vec::with_capacity(rest.len() + 1);
@@ -336,17 +361,25 @@ fn attained_order(
     let mut exact = true;
     let mut failing = Vec::new();
 
+    // Only the conditions that fail are ever reported, and naming a tree means
+    // formatting it, so the satisfied ones are dropped. The levels are built as
+    // the search reaches them: most methods fail early and never pay for the
+    // deep ones.
+    let mut levels: Vec<Vec<Tree>> = vec![Vec::new()];
     for n in 1..=max_order {
+        levels.push(level_of_order(&levels, n));
         let mut all_ok = true;
         let mut level = Vec::new();
-        for tree in trees_of_order(n) {
-            let weight = elementary_weight(method, weights, &tree);
+        for tree in &levels[n] {
+            let weight = elementary_weight(method, weights, tree);
             let target = Coeff::one() / tree.density();
             let residual = weight - target;
             let is_exact = weight.is_exact() && target.is_exact();
             exact &= is_exact;
-            let ok = satisfied(residual, target.value().abs());
-            all_ok &= ok;
+            if satisfied(residual, target.value().abs()) {
+                continue;
+            }
+            all_ok = false;
             level.push(Condition {
                 tree: tree.to_string_compact(),
                 order: n,
@@ -354,13 +387,13 @@ fn attained_order(
                 target: target.value(),
                 residual: residual.value(),
                 exact: is_exact,
-                satisfied: ok,
+                satisfied: false,
             });
         }
         if all_ok {
             order = n;
         } else {
-            failing = level.into_iter().filter(|c| !c.satisfied).collect();
+            failing = level;
             break;
         }
     }
