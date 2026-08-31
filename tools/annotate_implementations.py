@@ -57,7 +57,7 @@ KNOWN = {
         "trbdf2": "TRBDF2",
         "ssprk22": "SSPRK22",
         "ssprk33": "SSPRK33",
-        "ssprk34": "SSPRK43",
+        "ssprk43": "SSPRK43",
         "ros2": "ROS2",
         "ros3p": "ROS3P",
         "ros34pw1a": "ROS34PW1a",

@@ -1,0 +1,53 @@
+{
+  "id": "ssprk10_2",
+  "name": "SSPRK(10,2)",
+  "class": "runge_kutta",
+  "family": "ssprk",
+  "order": 2,
+  "tableau": {
+    "a": [
+      [0],
+      ["1/9", 0],
+      ["1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", 0],
+      ["1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", "1/9", 0]
+    ],
+    "b": ["1/10", "1/10", "1/10", "1/10", "1/10", "1/10", "1/10", "1/10", "1/10", "1/10"],
+    "c": [0, "1/9", "2/9", "1/3", "4/9", "5/9", "2/3", "7/9", "8/9", 1]
+  },
+  "references": [
+    {
+      "authors": "Kraaijevanger, J. F. B. M.",
+      "title": "Contractivity of Runge-Kutta methods",
+      "year": 1991,
+      "source": "BIT Numerical Mathematics, 31(3), 482-528",
+      "doi": "10.1007/BF01933264"
+    },
+    {
+      "authors": "Gottlieb, S., Shu, C.-W., & Tadmor, E.",
+      "title": "Strong stability-preserving high-order time discretization methods",
+      "year": 2001,
+      "source": "SIAM Review, 43(1), 89-112",
+      "doi": "10.1137/S003614450036757X"
+    },
+    {
+      "authors": "Ketcheson, D. I.",
+      "title": "Highly efficient strong stability preserving Runge-Kutta methods with low-storage implementations",
+      "year": 2008,
+      "source": "SIAM Journal on Scientific Computing, 30(4), 2113-2136",
+      "doi": "10.1137/07070485X"
+    },
+    {
+      "authors": "Gottlieb, S., Ketcheson, D. I., & Shu, C.-W.",
+      "title": "Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations",
+      "year": 2011,
+      "source": "World Scientific",
+      "doi": "10.1142/7498"
+    }
+  ]
+}

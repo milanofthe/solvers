@@ -1,0 +1,33 @@
+{
+  "id": "sspirk42",
+  "name": "SSPIRK(4,2)",
+  "class": "runge_kutta",
+  "family": "dirk",
+  "order": 2,
+  "tableau": {
+    "a": [
+      ["1/8", 0, 0, 0],
+      ["1/4", "1/8", 0, 0],
+      ["1/4", "1/4", "1/8", 0],
+      ["1/4", "1/4", "1/4", "1/8"]
+    ],
+    "b": ["1/4", "1/4", "1/4", "1/4"],
+    "c": ["1/8", "3/8", "5/8", "7/8"]
+  },
+  "references": [
+    {
+      "authors": "Ketcheson, D. I., Macdonald, C. B., & Gottlieb, S.",
+      "title": "Optimal implicit strong stability preserving Runge-Kutta methods",
+      "year": 2009,
+      "source": "Applied Numerical Mathematics, 59(2), 373-392",
+      "doi": "10.1016/j.apnum.2008.03.034"
+    },
+    {
+      "authors": "Gottlieb, S., Ketcheson, D. I., & Shu, C.-W.",
+      "title": "Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations",
+      "year": 2011,
+      "source": "World Scientific",
+      "doi": "10.1142/7498"
+    }
+  ]
+}

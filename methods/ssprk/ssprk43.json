@@ -1,9 +1,10 @@
 {
-  "id": "ssprk34",
-  "name": "SSPRK(3,4)",
+  "id": "ssprk43",
+  "name": "SSPRK(4,3)",
   "class": "runge_kutta",
   "family": "ssprk",
   "order": 3,
+  "aliases": ["ssprk34"],
   "tableau": {
     "a": [
       [0],
@@ -16,18 +17,18 @@
   },
   "references": [
     {
-      "doi": "10.1137/S0036142901389025",
-      "year": 2002,
-      "authors": "Spiteri, R. J., & Ruuth, S. J",
-      "title": "A new class of optimal high-order strong-stability-preserving time discretization methods",
-      "source": "SIAM Journal on Numerical Analysis, 40(2), 469-491"
+      "authors": "Ketcheson, D. I.",
+      "title": "Highly efficient strong stability preserving Runge-Kutta methods with low-storage implementations",
+      "year": 2008,
+      "source": "SIAM Journal on Scientific Computing, 30(4), 2113-2136",
+      "doi": "10.1137/07070485X"
     },
     {
-      "doi": "10.1142/7498",
-      "year": 2011,
-      "authors": "Gottlieb, S., Ketcheson, D. I., & Shu, C.-W",
+      "authors": "Gottlieb, S., Ketcheson, D. I., & Shu, C.-W.",
       "title": "Strong Stability Preserving Runge-Kutta and Multistep Time Discretizations",
-      "source": "World Scientific"
+      "year": 2011,
+      "source": "World Scientific",
+      "doi": "10.1142/7498"
     }
   ],
   "implementations": [
