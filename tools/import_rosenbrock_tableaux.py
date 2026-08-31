@@ -313,6 +313,22 @@ WANTED = {
         properties={"a_stable": True},
         references=[RANG05],
     ),
+    "ROS2S": dict(
+        id="ros2s",
+        name="ROS2S",
+        order=2,
+        embedded_order=1,
+        properties={"a_stable": True},
+        references=[RANG15],
+    ),
+    "ROS3PRL": dict(
+        id="ros3prl",
+        name="ROS3PRL",
+        order=3,
+        embedded_order=2,
+        properties={"a_stable": True},
+        references=[RANG15],
+    ),
     "ROS2PR": dict(
         id="ros2pr",
         name="ROS2PR",

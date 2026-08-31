@@ -1,0 +1,34 @@
+{
+  "id": "ros2s",
+  "name": "ROS2S",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 2,
+  "embedded_order": 1,
+  "properties": {
+    "a_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [0.585786437626905],
+      [0, 1]
+    ],
+    "gamma": [
+      [0.292893218813452],
+      [-0.585786437626905, 0.292893218813452],
+      [0.353553390593274, -0.646446609406726, 0.292893218813452]
+    ],
+    "b": [0.353553390593274, 0.353553390593274, 0.292893218813452],
+    "b_embedded": [0.333333333333333, 0.333333333333333, 0.333333333333333]
+  },
+  "references": [
+    {
+      "authors": "Rang, J.",
+      "title": "Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs",
+      "year": 2015,
+      "source": "Journal of Computational and Applied Mathematics, 286, 128-144",
+      "doi": "10.1016/j.cam.2015.03.010"
+    }
+  ]
+}

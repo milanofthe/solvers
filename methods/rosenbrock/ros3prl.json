@@ -1,0 +1,36 @@
+{
+  "id": "ros3prl",
+  "name": "ROS3PRL",
+  "class": "rosenbrock",
+  "family": "rosenbrock",
+  "order": 3,
+  "embedded_order": 2,
+  "properties": {
+    "a_stable": true
+  },
+  "rosenbrock": {
+    "alpha": [
+      [],
+      [0.5],
+      [0.5, 0.5],
+      [0.5, 0.5, 0]
+    ],
+    "gamma": [
+      [0.435866521508459],
+      [-0.5, 0.435866521508459],
+      [-0.791564804204642, 0.352442167927514, 0.435866521508459],
+      [-0.497889699145187, 0.386075154415805, -0.324051976779077, 0.435866521508459]
+    ],
+    "b": [0.002110300854813, 0.886075154415805, -0.324051976779077, 0.435866521508459],
+    "b_embedded": [0.5, 0.387524229532982, -0.209492263150452, 0.32196803361747]
+  },
+  "references": [
+    {
+      "authors": "Rang, J.",
+      "title": "Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs",
+      "year": 2015,
+      "source": "Journal of Computational and Applied Mathematics, 286, 128-144",
+      "doi": "10.1016/j.cam.2015.03.010"
+    }
+  ]
+}
