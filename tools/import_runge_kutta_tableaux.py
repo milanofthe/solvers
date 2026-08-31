@@ -53,7 +53,7 @@ OWREN92 = {
     "title": "Derivation of efficient, continuous, explicit Runge-Kutta methods",
     "year": 1992,
     "source": "SIAM Journal on Scientific and Statistical Computing, 13(6), 1488-1501",
-    "doi": "10.1137/0913072",
+    "doi": "10.1137/0913084",
 }
 VERNER10 = {
     "authors": "Verner, J. H.",

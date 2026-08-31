@@ -61,7 +61,7 @@ RANG16 = {
     "title": "The Prothero and Robinson example: Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods",
     "year": 2016,
     "source": "Applied Numerical Mathematics, 108, 37-56",
-    "doi": "10.1016/j.apnum.2016.04.013",
+    "doi": "10.1016/j.apnum.2016.04.012",
 }
 STEINEBACH20 = {
     "authors": "Steinebach, G.",
@@ -270,7 +270,7 @@ WANTED = {
             title="D-stability and Kaps-Rentrop methods",
             year=1984,
             source="Computing, 32(3), 229-237",
-            doi="10.1007/BF02243575",
+            doi="10.1007/BF02243574",
         )],
     ),
     "Velds4": dict(
@@ -284,7 +284,7 @@ WANTED = {
             title="D-stability and Kaps-Rentrop methods",
             year=1984,
             source="Computing, 32(3), 229-237",
-            doi="10.1007/BF02243575",
+            doi="10.1007/BF02243574",
         )],
     ),
     "ROS34PW1a": dict(
