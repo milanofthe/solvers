@@ -44,6 +44,9 @@ function covering({ re, im }, widest = 2.2, tallest = 0.7) {
 
 const HANDLERS = {
 	methodCatalog: () => JSON.parse(wasm.method_catalog()),
+	methodCount: () => wasm.method_count(),
+	methodCatalogSlice: ({ offset, count }) =>
+		JSON.parse(wasm.method_catalog_slice(offset, count)),
 	problemCatalog: () => JSON.parse(wasm.problem_catalog()),
 	optionsCatalog: () => JSON.parse(wasm.options_catalog()),
 	methodDetail: ({ id }) => JSON.parse(wasm.method_detail(id)),

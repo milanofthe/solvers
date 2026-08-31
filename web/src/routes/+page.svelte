@@ -222,7 +222,13 @@
 
 <header class="mb-4">
 	<p class="label">
-		{shown.length} of {catalog.methods.length}
+		{shown.length} of {catalog.total || catalog.methods.length}
+		<!-- The library arrives in slices, so while they are still landing the
+		     count says how far along it is rather than pretending the grid is
+		     already the whole thing. -->
+		{#if catalog.total && catalog.loaded < catalog.total}
+			<span class="text-cream/40">&middot; deriving {catalog.loaded}/{catalog.total}</span>
+		{/if}
 		{#if ui.selection.length > 0}
 			<span class="text-amber">&middot; {ui.selection.length} selected</span>
 		{/if}

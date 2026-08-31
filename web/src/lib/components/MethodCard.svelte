@@ -17,7 +17,7 @@
 	let { method } = $props();
 
 	let visible = $state(false);
-	let figure = $state.raw(null);
+	let figure = $state.raw(empty('…'));
 	// Set once and never cleared: a tile arrives at most one time, and switching
 	// modes should redraw it in place rather than fade it in again. `arrived`
 	// drives the reveal and is only ever written here; `drawn` is the same fact
@@ -25,6 +25,15 @@
 	// effect below would make the effect depend on something it writes.
 	let arrived = $state(false);
 	let drawn = false;
+
+	// The card shows itself as soon as it exists. Everything on it except the
+	// figure is already known by then, and waiting for the figure would hold a
+	// screenful of cards back behind one slow region, which is what made the
+	// grid appear all at once instead of filling.
+	$effect(() => {
+		const frame = requestAnimationFrame(() => (arrived = true));
+		return () => cancelAnimationFrame(frame);
+	});
 
 	// The figure is sampled to fit its container, so the container is measured
 	// before it is asked for and again when it changes. Snapping to a step keeps
@@ -57,12 +66,10 @@
 				if (stale) return;
 				figure = active.figure(result, method, { compact: true });
 				drawn = true;
-				arrived = true;
 			})
 			.catch((error) => {
 				if (stale || isCancelled(error)) return;
 				figure = empty('unavailable');
-				arrived = true;
 			});
 		return () => {
 			stale = true;

@@ -37,11 +37,33 @@ fn reference_method(stiff: bool) -> &'static Method {
     library().get(id).expect("reference method must exist")
 }
 
+/// How many methods the library holds.
+///
+/// The catalogue is asked for in slices, so the caller needs to know how many
+/// there are before it can ask.
+#[wasm_bindgen]
+pub fn method_count() -> usize {
+    library().iter().count()
+}
+
 /// Every method with the properties the catalogue view needs.
 #[wasm_bindgen]
 pub fn method_catalog() -> String {
+    method_catalog_slice(0, usize::MAX)
+}
+
+/// A slice of the catalogue, `count` methods from `offset`.
+///
+/// Deriving the properties of the whole library is seconds of work, and doing
+/// it in one call means the grid shows nothing until all of it is done. In
+/// slices it is several jobs instead, which the worker pool runs at once and
+/// the grid draws as they land.
+#[wasm_bindgen]
+pub fn method_catalog_slice(offset: usize, count: usize) -> String {
     let entries: Vec<Value> = library()
         .iter()
+        .skip(offset)
+        .take(count)
         .map(|method| {
             let report = analysis::analyze(method);
             json!({
