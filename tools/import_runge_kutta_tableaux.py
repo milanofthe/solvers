@@ -283,10 +283,20 @@ def translate(body):
         # diagonal gamma and write it as one.
         if not name.isidentifier():
             continue
-        value = re.sub(r"(\d+)\s*//\s*(-?\d+)", r"Fraction(\1, \2)", value)
+        # A rational written with big integers is still a rational. Left alone
+        # it would become Python's floor division, which turns a coefficient
+        # into zero without saying so.
+        value = re.sub(
+            r"BigInt\((-?\d+)\)\s*//\s*BigInt\((-?\d+)\)", r"Fraction(\1, \2)", value
+        )
+        value = re.sub(r"(-?\d+)\s*//\s*(-?\d+)", r"Fraction(\1, \2)", value)
         value = value.replace("^", "**")
         if "big" in value or "parse" in value:
             return None
+        # Anything still dividing with `//` is a rational this did not recognise,
+        # and reading it as floor division would be silent and wrong.
+        if "//" in value:
+            continue
         lines.append(f"{name} = {value.strip()}")
     return "\n".join(lines)
 

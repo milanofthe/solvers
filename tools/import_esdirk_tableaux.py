@@ -8,7 +8,10 @@ row by row:
 
   * `a_ii = gamma` for every implicit stage, and `a_11 = 0` where the first
     stage is explicit, which is what the E in ESDIRK means.
-  * `a_21` is not stated. It follows from the abscissa: `c_2 = a_21 + gamma`.
+  * `a_21` is not stated for those, because the abscissa fixes it:
+    `c_2 = a_21 + gamma`. Where it is stated, the first stage is implicit too
+    and the method is an SDIRK rather than an ESDIRK, which is how the two are
+    told apart here.
   * `b` is not stated either. These methods are stiffly accurate, so the last
     row of `A` is the weight vector, which is the whole point of the design.
   * `btilde` is the difference `b - bhat`, so the embedded weights are recovered
@@ -19,11 +22,12 @@ is trusted. What comes out is read back by the Rust side, which derives the
 order and the stage structure from the coefficients; a tableau that does not
 satisfy the order claimed for it is reported here and no file is written.
 
-The reference states the rest of its diagonally implicit methods under other
-conventions again: KenCarp4, KenCarp5, KenCarp47, KenCarp58, the ESDIRK L[2]SA
-family, Cash4 and Hairer42 come out of this reader with a last row that is not
-their weight vector, so they are not imported here rather than imported wrong.
-Their weights would have to be read from the struct each one builds.
+Cash 4(3) is not here. Its coefficients are published to twelve digits, and a
+twelve digit tableau leaves a residual in the first order condition larger than
+the analysis is willing to call zero, so its order cannot be confirmed from what
+is written down. The Hairer-Wanner SDIRK is here without a claimed embedded
+order: the reference carries two estimators for it and which one this is cannot
+be told from the file.
 
 Requires the reference checkout:
     git clone https://github.com/SciML/OrdinaryDiffEq.jl C:/Repositories/TEMP/OrdinaryDiffEq.jl
@@ -37,6 +41,7 @@ import io
 import json
 import os
 import re
+from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "methods")
@@ -77,13 +82,6 @@ KENNEDY_CARPENTER16 = {
     "year": 2016,
     "source": "NASA/TM-2016-219173",
 }
-CASH79 = {
-    "authors": "Cash, J. R.",
-    "title": "Diagonally implicit Runge-Kutta formulae with error estimates",
-    "year": 1979,
-    "source": "IMA Journal of Applied Mathematics, 24(3), 293-301",
-    "doi": "10.1093/imamat/24.3.293",
-}
 HW96 = {
     "authors": "Hairer, E., & Wanner, G.",
     "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
@@ -101,9 +99,32 @@ WANTED = [
          order=5, embedded_order=4, references=[KVAERNO04]),
     dict(constructor="KenCarp3Tableau", id="kencarp3", name="Kennedy-Carpenter 3(2)",
          family="esdirk", order=3, embedded_order=2, references=[KENNEDY_CARPENTER03]),
+    dict(constructor="KenCarp4Tableau", id="kencarp4", name="Kennedy-Carpenter 4(3)",
+         family="esdirk", order=4, embedded_order=3, references=[KENNEDY_CARPENTER03]),
+    dict(constructor="KenCarp5Tableau", id="kencarp5", name="Kennedy-Carpenter 5(4)",
+         family="esdirk", order=5, embedded_order=4, references=[KENNEDY_CARPENTER03]),
+    dict(constructor="KenCarp47Tableau", id="kencarp47", name="Kennedy-Carpenter 4(3) 7 stage",
+         family="esdirk", order=4, embedded_order=3, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="KenCarp58Tableau", id="kencarp58", name="Kennedy-Carpenter 5(4) 8 stage",
+         family="esdirk", order=5, embedded_order=4, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="ESDIRK325L2SATableau", id="esdirk325l2sa", name="ESDIRK3(2)5L[2]SA",
+         family="esdirk", order=3, embedded_order=2, references=[KENNEDY_CARPENTER16]),
+    dict(constructor="ESDIRK436L2SA2Tableau", id="esdirk436l2sa2", name="ESDIRK4(3)6L[2]SA2",
+         family="esdirk", order=4, embedded_order=3, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="ESDIRK437L2SATableau", id="esdirk437l2sa", name="ESDIRK4(3)7L[2]SA",
+         family="esdirk", order=4, embedded_order=3, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="ESDIRK547L2SA2Tableau", id="esdirk547l2sa2", name="ESDIRK5(4)7L[2]SA2",
+         family="esdirk", order=5, embedded_order=4, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="ESDIRK54I8L2SATableau", id="esdirk54i8l2sa", name="ESDIRK5(4)I8L[2]SA",
+         family="esdirk", order=5, embedded_order=4, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="ESDIRK659L2SATableau", id="esdirk659l2sa", name="ESDIRK6(5)9L[2]SA",
+         family="esdirk", order=6, embedded_order=5, references=[KENNEDY_CARPENTER19]),
+    dict(constructor="Hairer42Tableau", id="hairer42", name="Hairer-Wanner SDIRK 4",
+         family="dirk", order=4, references=[HW96]),
 ]
 
 ROW = re.compile(r"^a(\d)(\d)$")
+BH = re.compile(r"^bh(\d+)$")
 ERROR = re.compile(r"^btilde(\d+)$")
 NODE = re.compile(r"^c(\d+)$")
 
@@ -115,7 +136,7 @@ def assemble(scope):
         return None
     lower, errors, nodes = {}, {}, {}
     for name, value in scope.items():
-        if not isinstance(value, (int, float)):
+        if not isinstance(value, (int, float, Fraction)):
             continue
         match = ROW.match(name)
         if match:
@@ -139,11 +160,13 @@ def assemble(scope):
         if i > stages:
             return None
         a[i - 1][j - 1] = value
-    # The first stage is explicit and the rest share the diagonal. The second
-    # row is not stated because its abscissa fixes it.
-    for i in range(1, stages):
+    # A stated `a_21` means the first stage carries the diagonal like every
+    # other; an absent one means the first stage is explicit and the second row
+    # follows from its abscissa.
+    explicit_first = (2, 1) not in lower
+    for i in range(0 if not explicit_first else 1, stages):
         a[i][i] = gamma
-    if stages >= 2 and a[1][0] == 0.0:
+    if explicit_first and stages >= 2:
         a[1][0] = nodes.get(2, 2 * gamma) - gamma
 
     b = list(a[stages - 1])
