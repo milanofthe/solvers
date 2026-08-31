@@ -21,11 +21,5 @@
       "source": "Mathematics of Computation, 16(80), 431-437",
       "doi": "10.1090/S0025-5718-1962-0150954-0"
     }
-  ],
-  "implementations": [
-    {
-      "library": "OrdinaryDiffEq.jl",
-      "name": "Ralston4"
-    }
   ]
 }

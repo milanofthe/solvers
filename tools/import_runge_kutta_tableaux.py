@@ -55,6 +55,19 @@ OWREN92 = {
     "source": "SIAM Journal on Scientific and Statistical Computing, 13(6), 1488-1501",
     "doi": "10.1137/0913084",
 }
+TANAKA92 = {
+    "authors": "Tanaka, M., Muramatsu, S., & Yamashita, S.",
+    "title": "On the optimization of some nine-stage seventh-order Runge-Kutta method",
+    "year": 1992,
+    "source": "Information Processing Society of Japan, 33(12), 1512-1526",
+}
+TSITOURAS_PAPAKOSTAS99 = {
+    "authors": "Tsitouras, C., & Papakostas, S. N.",
+    "title": "Cheap error estimation for Runge-Kutta methods",
+    "year": 1999,
+    "source": "SIAM Journal on Scientific Computing, 20(6), 2067-2088",
+    "doi": "10.1137/S1064827596302230",
+}
 VERNER10 = {
     "authors": "Verner, J. H.",
     "title": "Numerically optimal Runge-Kutta pairs with interpolants",
@@ -63,20 +76,76 @@ VERNER10 = {
     "doi": "10.1007/s11075-009-9290-3",
 }
 
-# Not imported, and worth saying why. Verner and Tanaka-Yamashita state some of
-# their coefficients as rationals too large for a machine word, split across
-# lines in a shape this does not read; what comes out is a tableau missing two
-# rows, which passes a quadrature check and fails the order conditions. Their
-# decimal alternatives are given to about twelve digits, which is not enough for
-# the order conditions at the tolerance used here. Tsitouras and
-# Tsitouras-Papakostas build their caches differently again.
+# Verner, Tanaka-Yamashita and Tsitouras-Papakostas state their coefficients
+# twice: once as rationals with numerators of forty digits, which no machine
+# word holds and which are split across lines in a shape this does not read, and
+# once as doubles. The rational definition is still tried first, and when what
+# comes back cannot do quadrature the double one is taken instead. That is what
+# the gate below is for.
 #
-#   Vern6, Vern7, Vern8, Vern9      Verner 2010
-#   TanYam7                         Tanaka, Muramatsu & Yamashita 1992
-#   Tsit5                           Tsitouras 2011
-#   TsitPap8                        Tsitouras & Papakostas 1999
+# Tsitouras 2011 builds its cache differently again and is imported from NodePy.
 
 WANTED = [
+    dict(
+        source="verner",
+        constructor="Vern6Tableau",
+        id="vern6",
+        name="Verner 6(5) efficient",
+        family="erk",
+        order=6,
+        embedded_order=5,
+        references=[VERNER10],
+    ),
+    dict(
+        source="verner",
+        constructor="Vern7Tableau",
+        id="vern7",
+        name="Verner 7(6) efficient",
+        family="erk",
+        order=7,
+        embedded_order=6,
+        references=[VERNER10],
+    ),
+    dict(
+        source="verner",
+        constructor="Vern8Tableau",
+        id="vern8",
+        name="Verner 8(7) efficient",
+        family="erk",
+        order=8,
+        embedded_order=7,
+        references=[VERNER10],
+    ),
+    dict(
+        source="verner",
+        constructor="Vern9Tableau",
+        id="vern9",
+        name="Verner 9(8) efficient",
+        family="erk",
+        order=9,
+        embedded_order=8,
+        references=[VERNER10],
+    ),
+    dict(
+        source="high",
+        constructor="TanYam7ConstantCache",
+        id="tanyam7",
+        name="Tanaka-Muramatsu-Yamashita 7(6)",
+        family="erk",
+        order=7,
+        embedded_order=6,
+        references=[TANAKA92],
+    ),
+    dict(
+        source="high",
+        constructor="TsitPap8ConstantCache",
+        id="tsitpap87",
+        name="Tsitouras-Papakostas 8(7)",
+        family="erk",
+        order=8,
+        embedded_order=7,
+        references=[TSITOURAS_PAPAKOSTAS99],
+    ),
     dict(
         source="low",
         constructor="OwrenZen3ConstantCache",
@@ -177,9 +246,13 @@ def bodies(text, name):
 
     The reference gives two: one in decimals for compiled floats and one in
     rationals for everything else. The exact one is preferred and comes second.
+    Some are written behind a macro, which is part of the line and not part of
+    the definition.
     """
     found = []
-    pattern = re.compile(r"^function " + re.escape(name) + r"\(.*?\n(.*?)^end$", re.M | re.S)
+    pattern = re.compile(
+        r"^(?:@\w+\s+)?function " + re.escape(name) + r"\(.*?\n(.*?)^end$", re.M | re.S
+    )
     for match in pattern.finditer(text):
         found.append(match.group(1))
     return found
@@ -239,18 +312,29 @@ def evaluate(body):
 # Names into a tableau
 # ---------------------------------------------------------------------------
 
-ENTRY = re.compile(r"^a(\d\d)$|^a(\d+)_(\d+)$")
+ENTRY = re.compile(r"^a(\d+)$|^a(\d+)_(\d+)$")
 WEIGHT = re.compile(r"^b(\d+)$")
 ERROR = re.compile(r"^btilde(\d+)$")
 
 
 def indices(name):
+    """The row and column a name like `a21`, `a021` or `a0201` stands for.
+
+    Three widths are in use, because a tableau with more than nine stages cannot
+    write both indices as one digit each and the references pad differently.
+    They are told apart by counting: `j < i` always, so the row takes the extra
+    digit when there is an odd number of them.
+    """
     match = ENTRY.match(name)
     if not match:
         return None
-    if match.group(1):
-        return int(match.group(1)[0]), int(match.group(1)[1])
-    return int(match.group(2)), int(match.group(3))
+    if match.group(2):
+        return int(match.group(2)), int(match.group(3))
+    digits = match.group(1)
+    if len(digits) < 2:
+        return None
+    split = (len(digits) + 1) // 2
+    return int(digits[:split]), int(digits[split:])
 
 
 def assemble(scope):
@@ -315,20 +399,46 @@ def coefficient(value):
 
 
 def integrates_to(a, b, order):
-    """Whether the weights integrate a polynomial to the claimed order.
+    """Whether the tableau is the method it is supposed to be, roughly.
 
-    `sum_i b_i c_i^(k-1) = 1/k` for `k = 1..p` is necessary for order `p` and
-    costs nothing to check. It is here as a gate rather than as an analysis: a
-    tableau read out of a naming convention can be read wrong, and one that
-    cannot even do quadrature has been. The Rust side does the real work on
-    what survives.
+    Two things are asked. The weights have to integrate a polynomial,
+    `sum_i b_i c_i^(k-1) = 1/k` for `k = 1..p`, and the tableau has to satisfy
+    the order conditions through order four, which is where the matrix itself
+    first has to be right.
+
+    Quadrature alone is not enough, and that is the whole reason the second half
+    is here: a tableau read out of a naming convention can come back missing
+    rows, and a tableau missing rows still integrates polynomials. It fails the
+    conditions that involve `A`. The Rust side does the real work on whatever
+    survives this.
     """
-    c = [sum(row) for row in a]
+    size = len(b)
+    c = [float(sum(row)) for row in a]
+    weights = [float(v) for v in b]
+    matrix = [[float(v) for v in row] + [0.0] * (size - len(row)) for row in a]
+
     for k in range(1, order + 1):
-        total = sum(float(b[i]) * float(c[i]) ** (k - 1) for i in range(len(b)))
+        total = sum(weights[i] * c[i] ** (k - 1) for i in range(size))
         if abs(total - 1.0 / k) > 1e-10:
             return False
-    return True
+    if order < 3:
+        return True
+
+    def apply(vector):
+        return [sum(matrix[i][j] * vector[j] for j in range(size)) for i in range(size)]
+
+    def against(vector):
+        return sum(weights[i] * vector[i] for i in range(size))
+
+    ac = apply(c)
+    conditions = [(against(ac), 1.0 / 6.0)]
+    if order >= 4:
+        conditions += [
+            (against([c[i] * ac[i] for i in range(size)]), 1.0 / 8.0),
+            (against(apply([x * x for x in c])), 1.0 / 12.0),
+            (against(apply(ac)), 1.0 / 24.0),
+        ]
+    return all(abs(value - target) <= 1e-10 for value, target in conditions)
 
 
 def render(method):

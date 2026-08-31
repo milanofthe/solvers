@@ -262,12 +262,31 @@ fn stage_weights(tableau: &RkTableau, tree: &Tree) -> Vec<Coeff> {
 
 /// Elementary weight `Phi(t)` for a given set of weights.
 pub fn elementary_weight(method: &dyn StageWeights, weights: &[Coeff], tree: &Tree) -> Coeff {
+    elementary_weight_and_scale(method, weights, tree).0
+}
+
+/// The elementary weight together with the size of the sum that produced it.
+///
+/// A condition is a sum of signed terms, and how much of it survives says how
+/// much of the arithmetic can be believed. The high order explicit tableaux have
+/// entries in the hundreds that cancel down to a weight of order one, so a
+/// residual is only small relative to the terms it came out of, never relative
+/// to the target alone. Judging it against the target is what makes a correctly
+/// transcribed double precision tableau look like a method of order one.
+pub fn elementary_weight_and_scale(
+    method: &dyn StageWeights,
+    weights: &[Coeff],
+    tree: &Tree,
+) -> (Coeff, f64) {
     let psi = method.weights(tree);
     let mut acc = Coeff::zero();
+    let mut scale = 0.0;
     for j in 0..method.stages() {
-        acc = acc + weights[j] * psi[j];
+        let term = weights[j] * psi[j];
+        acc = acc + term;
+        scale += term.value().abs();
     }
-    acc
+    (acc, scale)
 }
 
 /// One order condition and how badly it is violated.
@@ -344,6 +363,11 @@ pub struct OrderReport {
     pub failing: Vec<Condition>,
 }
 
+/// Whether a residual counts as zero.
+///
+/// An exact coefficient has to give exactly zero. An approximate one is judged
+/// against `magnitude`, which callers pass as the larger of the target and the
+/// size of the sum the residual came out of.
 fn satisfied(residual: Coeff, magnitude: f64) -> bool {
     match residual {
         Coeff::Exact(r) => r.is_zero(),
@@ -371,12 +395,12 @@ fn attained_order(
         let mut all_ok = true;
         let mut level = Vec::new();
         for tree in &levels[n] {
-            let weight = elementary_weight(method, weights, tree);
+            let (weight, scale) = elementary_weight_and_scale(method, weights, tree);
             let target = Coeff::one() / tree.density();
             let residual = weight - target;
             let is_exact = weight.is_exact() && target.is_exact();
             exact &= is_exact;
-            if satisfied(residual, target.value().abs()) {
+            if satisfied(residual, target.value().abs().max(scale)) {
                 continue;
             }
             all_ok = false;
