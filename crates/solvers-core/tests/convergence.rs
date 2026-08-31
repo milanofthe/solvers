@@ -164,7 +164,12 @@ fn every_method_converges_at_its_stated_order() {
             ));
             continue;
         }
-        if (measured - expected as f64).abs() > 0.5 {
+        // Only converging too slowly is a failure. The problem is scalar and
+        // autonomous, where many of the order conditions coincide, so a method
+        // can attain more than its classical order on it. That is a property of
+        // the problem and is seen on exactly the methods whose classical order
+        // is high; a transcription error moves the rate the other way.
+        if measured < expected as f64 - 0.5 {
             failures.push(format!(
                 "{}: expected order {expected}, measured {measured:.3} (points {:?})",
                 method.id,

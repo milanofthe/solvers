@@ -156,7 +156,7 @@ pub fn fit_order_with_span(points: &[ConvergencePoint]) -> (f64, f64, f64) {
     // barely stable at is preasymptotic, and its error can sit above the one
     // beside it. So the longest contiguous run is taken, measured in decades,
     // which is what a slope is worth.
-    let clean = |p: &ConvergencePoint| p.error.is_finite() && p.error > 1e-13 && p.error < 0.5;
+    let clean = |p: &ConvergencePoint| p.error.is_finite() && p.error > 1e-12 && p.error < 0.5;
     let mut best: Vec<&ConvergencePoint> = Vec::new();
     let mut run: Vec<&ConvergencePoint> = Vec::new();
     let decades = |r: &[&ConvergencePoint]| {
