@@ -167,6 +167,17 @@
 				.filter(Boolean)
 				.join(' · ');
 		}
+		if (c.kind === 'additive_runge_kutta') {
+			return [
+				'additive',
+				c.singlyDiagonal ? 'singly diagonal' : null,
+				c.explicitFirstStage ? 'explicit first stage' : null,
+				c.stifflyAccurate ? 'stiffly accurate' : null,
+				c.sharesAbscissae ? null : 'separate abscissae'
+			]
+				.filter(Boolean)
+				.join(' · ');
+		}
 		if (c.kind === 'rosenbrock') {
 			return [
 				'linearly implicit',
@@ -358,6 +369,66 @@
 									{/if}
 								</tbody>
 							</table>
+						{:else if detail.coefficients.kind === 'additive_runge_kutta'}
+							<!-- A pair is two tableaux on shared stages, so both are shown, each
+							     with its own abscissae: the halves are allowed to evaluate at
+							     different points and some of these do. -->
+							{#snippet butcher(half)}
+								<table class="border-collapse font-mono text-xs">
+									<tbody>
+										{#each half.a as row, i}
+											<tr>
+												<td class="border-r border-cream/20 py-[2px] pr-3 text-right text-accent">
+													{entry(half.c[i])}
+												</td>
+												{#each row as value}
+													<td
+														class="py-[2px] pl-4 text-right {value.value === 0
+															? 'text-cream/20'
+															: 'text-cream'}">{entry(value)}</td
+													>
+												{/each}
+											</tr>
+										{/each}
+										<tr class="border-t border-cream/20">
+											<td class="border-r border-cream/20 py-[2px] pr-3 text-right text-accent"
+												>b</td
+											>
+											{#each half.b as value}
+												<td
+													class="py-[2px] pl-4 text-right {value.value === 0
+														? 'text-cream/20'
+														: 'text-cream'}">{entry(value)}</td
+												>
+											{/each}
+										</tr>
+										{#if half.bEmbedded}
+											<tr>
+												<td class="border-r border-cream/20 py-[2px] pr-3 text-right text-accent"
+													>b hat</td
+												>
+												{#each half.bEmbedded as value}
+													<td
+														class="py-[2px] pl-4 text-right {value.value === 0
+															? 'text-cream/20'
+															: 'text-cream'}">{entry(value)}</td
+													>
+												{/each}
+											</tr>
+										{/if}
+									</tbody>
+								</table>
+							{/snippet}
+							<div class="flex flex-col gap-6">
+								<div>
+									<p class="label mb-2">explicit half</p>
+									{@render butcher(detail.coefficients.explicit)}
+								</div>
+								<div>
+									<p class="label mb-2">implicit half</p>
+									{@render butcher(detail.coefficients.implicit)}
+								</div>
+							</div>
 						{:else if detail.coefficients.kind === 'rosenbrock'}
 							<table class="border-collapse font-mono text-xs">
 								<tbody>

@@ -323,6 +323,24 @@ const structure = {
 				rows.push(coefficients.bEmbedded.map((entry) => entry.value));
 				labels.push('b hat');
 			}
+		} else if (coefficients.kind === 'additive_runge_kutta') {
+			// The two halves stacked, which is where the picture earns its keep:
+			// the explicit triangle sits above the implicit one and the shape of
+			// the pair is the whole point.
+			const halves = [
+				['explicit', coefficients.explicit],
+				['implicit', coefficients.implicit]
+			];
+			rows = [];
+			labels = [];
+			for (const [name, half] of halves) {
+				half.a.forEach((row, i) => {
+					rows.push(row.map((entry) => entry.value));
+					labels.push(`${name} ${i + 1}`);
+				});
+				rows.push(half.b.map((entry) => entry.value));
+				labels.push(`${name} b`);
+			}
 		} else {
 			rows = [coefficients.alpha ?? [], coefficients.beta ?? []];
 			labels = ['alpha', 'beta'];

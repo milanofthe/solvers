@@ -232,13 +232,16 @@ pub fn method_detail(id: &str) -> Result<String, JsValue> {
                 json!({
                     "a": a,
                     "b": row(&tableau.b),
+                    // Each half carries its own abscissae: they are its own row
+                    // sums, and the two halves are allowed to differ on them.
+                    "c": row(&tableau.c),
                     "bEmbedded": tableau.b_embedded.as_ref().map(|v| row(v)),
                 })
             };
             json!({
                 "kind": "additive_runge_kutta",
                 "stages": pair.stages(),
-                "c": row(&pair.implicit.c),
+                "sharesAbscissae": pair.shares_abscissae(),
                 "explicit": half(&pair.explicit),
                 "implicit": half(&pair.implicit),
                 "singlyDiagonal": pair.implicit.singly_diagonal,
