@@ -73,21 +73,21 @@
 					fill: 'strict',
 					count: () => family('erk'),
 					href: '/?tag=explicit',
-					what: 'Nothing on or above the diagonal, so every stage is a formula in the ones before it and a step costs one right hand side per stage. There is no solve and no A-stability: the step size is bounded by the stability region, whatever the accuracy asks for.'
+					what: 'Nothing on or above the diagonal, so each stage is just a formula in the ones before it. One right hand side per stage, nothing to solve. The catch is stability: your step size is capped by the stability region no matter how much accuracy you actually need.'
 				},
 				{
 					name: 'strong stability preserving',
 					fill: 'strict',
 					count: () => family('ssprk'),
 					href: '/?tag=strong+stability+preserving',
-					what: 'Explicit methods whose step is a convex combination of forward Euler steps. Whatever bound holds for Euler, positivity or a maximum principle or total variation, then survives the whole step up to a step size limit, and how large that limit is is the number these are optimised for.'
+					what: 'Explicit methods whose step is a convex combination of forward Euler steps. Whatever holds for Euler (positivity, a maximum principle, total variation) still holds after a full step, up to some step size limit. How large that limit is is the number these are optimised for.'
 				},
 				{
 					name: 'Chebyshev',
 					fill: 'strict',
 					count: () => family('rkc'),
 					href: '/?family=rkc',
-					what: 'Explicit, with many stages spent stretching the stability region along the negative real axis instead of raising the order. Twenty stages reach past -700, which is what makes an explicit method usable on a problem whose stiffness is real and not oscillatory.'
+					what: 'Explicit, but with a lot of stages spent stretching the stability region down the negative real axis instead of raising the order. Twenty stages get you past -700, which is what makes an explicit method workable on a problem whose stiffness is real rather than oscillatory.'
 				}
 			]
 		},
@@ -99,21 +99,21 @@
 					fill: 'lower',
 					count: () => family('dirk'),
 					href: '/?tag=singly+diagonal',
-					what: 'The diagonal is filled and nothing above it, so the stages solve one after another, each of them a system the size of the problem rather than a multiple of it. Where the diagonal is one repeated value, a single factorization serves every stage of every step.'
+					what: 'Diagonal filled, nothing above it, so the stages solve one after the other. Each one is a system the size of the problem, not a multiple of it. If the diagonal is a single repeated value you factorize once and reuse it for every stage of every step.'
 				},
 				{
 					name: 'explicit first stage',
 					fill: 'esdirk',
 					count: () => family('esdirk'),
 					href: '/?tag=explicit+first+stage',
-					what: 'The same, with the first stage left explicit. That one free stage is what lets the rest share a diagonal and still end the step on the solution point, which is why these are the usual choice for a stiff nonlinear problem today.'
+					what: 'The same, but the first stage stays explicit. That one free stage is what lets the rest share a diagonal and still land on the solution point, and it is why these are the usual pick for a stiff nonlinear problem today.'
 				},
 				{
 					name: 'fully implicit',
 					fill: 'full',
 					count: () => family('irk'),
 					href: '/?tag=fully+implicit',
-					what: 'Nothing is zero, so the stages are one coupled system of size s times n. It buys the most order a stage count can carry, twice the stages for Gauss, and the best stability there is, and it pays for both in the size of the solve.'
+					what: 'Nothing is zero, so all the stages solve together as one system of size s times n. You get the most order a stage count can carry (Gauss gets you twice the stages) and the best stability available, and you pay for both in the size of that solve.'
 				}
 			]
 		},
@@ -125,7 +125,7 @@
 					fill: 'lower',
 					count: () => family('rosenbrock'),
 					href: '/?tag=linearly+implicit',
-					what: 'One linear solve per stage against the Jacobian and no iteration anywhere. On a linear problem that is exact; on a nonlinear one the Jacobian enters the order conditions, so the tableau carries a second matrix and the method is only what it claims to be with a Jacobian that is current.'
+					what: 'One linear solve per stage against the Jacobian, and nothing to iterate. On a linear problem it is exact. On a nonlinear one the Jacobian shows up in the order conditions, so the tableau carries a second matrix and the method only does what it says with a Jacobian that is current.'
 				}
 			]
 		},
@@ -137,7 +137,7 @@
 					fill: 'additive',
 					count: () => family('imex'),
 					href: '/?family=imex',
-					what: 'Two tableaux on one set of stages: the explicit one integrates the part of the right hand side that is cheap, the implicit one the part that is stiff. Its order is not the order of either half. Every way the two interleave has to be right as well, which is a longer list of conditions than either half alone.'
+					what: 'Two tableaux sharing one set of stages: the explicit one takes the cheap part of the right hand side, the implicit one takes the stiff part. Its order is not the order of either half. Every way the two interleave has to come out right too, which is a much longer list of conditions.'
 				}
 			]
 		},
@@ -149,28 +149,28 @@
 					fill: 'past-explicit',
 					count: () => family('adams_bashforth'),
 					href: '/?family=adams_bashforth',
-					what: 'Keeps the last k right hand sides and integrates the polynomial through them. Order k for one evaluation a step, which no one step method comes close to, and in exchange a stability region that shrinks as the order rises and a history that has to be started by something else.'
+					what: 'Keeps the last k right hand sides and integrates the polynomial through them. Order k for a single evaluation per step, which no one step method gets anywhere near. In exchange the stability region shrinks as the order goes up, and you need something else to start the history.'
 				},
 				{
 					name: 'Adams-Moulton',
 					fill: 'past',
 					count: () => family('adams_moulton'),
 					href: '/?family=adams_moulton',
-					what: 'The same construction with the new point included in the polynomial. One order more from the same number of past points, and a solve to pay for it.'
+					what: 'Same construction, but the new point is in the polynomial too. One order more out of the same number of past points, and a solve to pay for it.'
 				},
 				{
 					name: 'backward differentiation',
 					fill: 'past',
 					count: () => family('bdf'),
 					href: '/?family=bdf',
-					what: 'Differentiates the polynomial through the last k solution values instead of integrating the one through the derivatives. A-stable at orders one and two, a stability wedge that closes as the order rises, and not zero stable at all past six.'
+					what: 'Differentiates the polynomial through the last k solution values instead of integrating the one through the derivatives. A-stable at orders one and two, the wedge closes as the order goes up, and past six it is not zero stable at all.'
 				},
 				{
 					name: 'Nystrom and Milne-Simpson',
 					fill: 'past-explicit',
 					count: () => family('nystrom', 'milne_simpson'),
 					href: '/?family=nystrom',
-					what: 'Step across two intervals rather than one, which puts a second root of the characteristic polynomial on the unit circle. That root never decays, so these are only weakly stable and cannot be run on a decaying problem at all.'
+					what: 'These step across two intervals instead of one, which puts a second root of the characteristic polynomial on the unit circle. That root never decays, so they are only weakly stable and cannot be run on a decaying problem at all.'
 				}
 			]
 		}
@@ -313,7 +313,7 @@
 		<h1 class="font-display text-lg text-cream">reference</h1>
 		<span class="shrink-0 font-mono text-xs text-accent">{catalog.methods.length} methods</span>
 	</div>
-	<p class="label mt-2">what is being solved, and what the properties of a solver are</p>
+	<p class="label mt-2">what you are solving, and what the properties of a solver actually mean</p>
 </header>
 
 {#snippet problem()}
@@ -321,31 +321,31 @@
 		{@render term(
 			'initial value problem',
 			'\\dot{y} = f(t, y), \\qquad y(t_0) = y_0, \\qquad y(t) \\in \\mathbb{R}^n',
-			'A state and a rule for how fast it changes. Everything in this library is a rule for advancing that state by one step; solving the problem is applying it repeatedly.',
+			'A state and a rule for how fast it changes. Everything in this library is a way of moving that state forward by one step, and solving the problem is doing that over and over.',
 			null
 		)}
 		{@render term(
 			'step and error',
 			'y_{n+1} \\approx y(t_n + h_n), \\qquad \\|y_{n+1} - y(t_n + h_n)\\| = O(h^{p+1})',
-			'The step size is chosen anew each step. An error of order p + 1 in one step accumulates to order p over a fixed interval, and p is what a method is called.',
+			'The step size gets picked again every step. An error of order p + 1 in a single step piles up to order p over a fixed interval, and p is the number the method is named after.',
 			null
 		)}
 		{@render term(
 			'stiffness',
 			'\\dot{y} = J y, \\qquad \\frac{\\max_i |\\operatorname{Re}\\lambda_i(J)|}{\\min_i |\\operatorname{Re}\\lambda_i(J)|} \\gg 1',
-			'Rates in the problem separated by orders of magnitude. The fast ones die out but still bound the step an explicit method may take, so the step is set by stability rather than by accuracy. That is what the implicit families exist for.',
+			'Rates in the problem sitting orders of magnitude apart. The fast ones die out almost immediately but still cap the step an explicit method can take, so your step size ends up set by stability and not by the accuracy you wanted. That is the whole reason the implicit families exist.',
 			'stiff problems'
 		)}
 		{@render term(
 			'differential algebraic',
 			'M \\dot{y} = f(t, y), \\qquad M \\text{ singular}',
-			'Part of the system is a constraint rather than a derivative. The index is the number of differentiations of f needed to recover the derivative; from index two the order a method attains falls below its classical one. Not integrated by this library, which solves the explicit form.',
+			'Part of the system is a constraint instead of a derivative. The index counts how often you have to differentiate f to get that derivative back, and from index two on, methods drop below their classical order. This library does not integrate these, it solves the explicit form.',
 			null
 		)}
 		{@render term(
 			'what a solver is judged on',
 			null,
-			'Three things, and they trade against each other: the order it converges at, the region of the complex plane in which it is stable, and what one step costs. The rest of this page is the vocabulary for those three.',
+			'Three things, and they trade against each other: the order it converges at, where in the complex plane it stays stable, and what a single step costs you. The rest of this page is the vocabulary for those three.',
 			null
 		)}
 	</div>
@@ -354,11 +354,11 @@
 
 {#snippet families()}
 	<p class="mb-6 max-w-[52rem] text-xs text-cream/60">
-		The square beside each name is its coefficient matrix, and the filled cells are the entries the
-		family allows to be nonzero. That pattern is the family: it decides what a step costs, whether
-		there is a solve and how large it is, and how much stability is available at all. A multistep
-		family has no such matrix, so the row shown is the past it reads instead. The pair has two
-		matrices, and the lighter cells are what only its implicit half fills.
+		The square next to each name is the coefficient matrix, and the filled cells are the entries
+		that family lets be nonzero. That pattern is the family: it decides what a step costs, whether
+		you have to solve anything and how big that solve is, and how much stability is on the table at
+		all. Multistep families have no such matrix, so what you see is the past they read instead. The
+		pair has two matrices, and the lighter cells are the ones only its implicit half fills.
 	</p>
 	{#each GROUPS as group}
 		<div class="-mx-6 border-t border-cream/10 px-6 pt-5 first:border-t-0 first:pt-0">
@@ -419,9 +419,9 @@
 				display
 			/>
 			<p class="mt-3 text-xs text-cream/60">
-				No stages. A file here states which coefficients are free rather than their values; they are
-				solved for at every step from the step sizes actually taken, so a family is defined on a
-				nonuniform grid.
+				No stages at all. A file here says which coefficients are free instead of giving their
+				values, and they get solved for at every step from the step sizes actually taken, so a
+				family is defined on a nonuniform grid.
 			</p>
 		</div>
 		<div>
@@ -431,8 +431,8 @@
 				display
 			/>
 			<p class="mt-3 text-xs text-cream/60">
-				<Math formula={'J = f\'(y_n)'} /> is part of the formula. A step is
-				<Math formula={'s'} /> linear solves fixed in advance, with nothing to iterate.
+				<Math formula={'J = f\'(y_n)'} /> is part of the formula itself. A step is
+				<Math formula={'s'} /> linear solves decided in advance, with nothing to iterate.
 			</p>
 		</div>
 		<div>
@@ -447,8 +447,8 @@
 			/>
 			<p class="mt-3 text-xs text-cream/60">
 				Two arrays for one right hand side split in two, on shared stages. The abscissae are not
-				shared: each half evaluates at its own <Math formula={'c_i'} />, and several published
-				pairs differ there.
+				shared though: each half evaluates at its own <Math formula={'c_i'} />, and several
+				published pairs really do differ there.
 			</p>
 		</div>
 	</div>
@@ -460,19 +460,19 @@
 		{@render term(
 			'order',
 			'\\Phi(t) = \\sum_j b_j \\psi_j(t) = \\frac{1}{\\gamma(t)} \\quad \\text{for every rooted tree } |t| \\le p',
-			'One condition per rooted tree. Coefficients stated as fractions are checked as identities, decimals against a tolerance, and the report says which.',
+			'One condition per rooted tree. Fractions get checked as identities, decimals against a tolerance, and the report tells you which of the two happened.',
 			null
 		)}
 		{@render term(
 			'simplifying assumptions',
 			'\\begin{aligned} B(p) &: \\sum_i b_i c_i^{k-1} = \\tfrac{1}{k} \\\\ C(q) &: \\sum_j a_{ij} c_j^{k-1} = \\tfrac{c_i^k}{k} \\\\ D(r) &: \\sum_i b_i c_i^{k-1} a_{ij} = \\tfrac{b_j (1 - c_j^k)}{k} \\end{aligned}',
-			'All three together give order at least min(p, q + r + 1, 2q + 2), by Butcher. Above order ten the rooted trees number in the hundreds of thousands and this is the route that remains.',
+			'Butcher\'s theorem: the three together give you order at least min(p, q + r + 1, 2q + 2). Past order ten there are hundreds of thousands of rooted trees, so this is the only route left.',
 			null
 		)}
 		{@render term(
 			'stage order',
 			'q = \\max\\{k : C(k) \\text{ holds}\\}',
-			'The order the internal stages themselves attain. On a stiff problem a method converges at its stage order until the step is small enough, not at its order.',
+			'The order the internal stages hit on their own. On a stiff problem you see the stage order, not the real one, until the step gets small enough.',
 			null
 		)}
 	</div>
@@ -494,31 +494,31 @@
 		{@render term(
 			'stability function',
 			'R(z) = 1 + z\\, b^{\\top} (I - zA)^{-1} \\mathbb{1} = \\frac{\\det(I - zA + z\\,\\mathbb{1}b^{\\top})}{\\det(I - zA)}',
-			'One step applied to a scalar mode, with z the step size times the rate. The stability region is where its modulus is at most one; the black curve on every figure here is that boundary.',
+			'One step applied to a single scalar mode, with z the step size times the rate. The stability region is where the modulus stays at or below one, and the black curve on every figure here is that boundary.',
 			null
 		)}
 		{@render term(
 			'A-stable',
 			'|R(z)| \\le 1 \\quad \\text{for all } \\operatorname{Re} z \\le 0',
-			'No step size is too large for a decaying mode. Says nothing about how fast a stiff mode is damped.',
+			'No step size is too big for a decaying mode. It says nothing about how fast a stiff mode actually gets damped.',
 			'A-stable'
 		)}
 		{@render term(
 			'L-stable',
 			'\\text{A-stable and } \\lim_{z \\to -\\infty} R(z) = 0',
-			'The infinitely stiff modes are damped to nothing in one step rather than merely not amplified.',
+			'The infinitely stiff modes get damped to nothing in a single step, not just kept from growing.',
 			'L-stable'
 		)}
 		{@render term(
 			'A(alpha)-stable',
 			'\\{ z : |\\arg(-z)| \\le \\alpha \\} \\subseteq \\{ z : |R(z)| \\le 1 \\}',
-			'A wedge about the negative real axis instead of the half plane. For the backward differentiation formulae the angle falls from 86 degrees at order three to 18 at order six.',
+			'A wedge around the negative real axis instead of the whole half plane. For BDF the angle drops from 86 degrees at order three to 18 at order six.',
 			'A(alpha)-stable'
 		)}
 		{@render term(
 			'stiffly accurate',
 			'a_{sj} = b_j \\quad \\text{for all } j',
-			'The step ends on the solution point, so the last stage is the answer. Gives R at infinity equal to zero, and satisfies the constraint of a differential algebraic problem exactly at the end of each step.',
+			'The step ends on the solution point, so the last stage is already the answer. You get R at infinity equal to zero out of it, and the constraint of a differential algebraic problem holds exactly at the end of every step.',
 			'stiffly accurate'
 		)}
 	</div>
@@ -530,13 +530,13 @@
 		{@render term(
 			'algebraically stable',
 			'b \\ge 0 \\quad \\text{and} \\quad M = \\operatorname{diag}(b) A + A^{\\top} \\operatorname{diag}(b) - b b^{\\top} \\succeq 0',
-			'Two solutions of a contractive problem do not move apart under the method, at any step size. Implies B-stability. Linear stability does not decide it.',
+			'Two solutions of a contractive problem never drift apart under the method, at any step size at all. It implies B-stability, and linear stability tells you nothing about whether you have it.',
 			'algebraically stable'
 		)}
 		{@render term(
 			'strong stability preserving',
 			'\\begin{aligned} \\mathcal{C} = \\max\\{\\, r :\\;& (I + rA)^{-1} \\text{ exists}, \\\\ & rA(I + rA)^{-1} \\ge 0, \\\\ & r\\, b^{\\top}(I + rA)^{-1} \\ge 0, \\\\ & (I + rA)^{-1}\\mathbb{1} \\ge 0 \\,\\} \\end{aligned}',
-			'The radius of absolute monotonicity: the step is a convex combination of forward Euler steps of size h over C. Any bound forward Euler keeps is kept at a step C times as large.',
+			'The radius of absolute monotonicity. The step is a convex combination of forward Euler steps of size h over C, so anything Euler respects, you keep at a step C times as large.',
 			'strong stability preserving'
 		)}
 	</div>
@@ -548,13 +548,13 @@
 		{@render term(
 			'dispersion and dissipation order',
 			'W(y) = R(iy)\\,e^{-iy} = 1 + \\sum_{m \\ge 1} w_m y^m',
-			'The first term whose imaginary part does not vanish gives the order of the phase error; the first at which the modulus departs from one gives the order of the amplitude error.',
+			'The first term whose imaginary part does not vanish gives you the order of the phase error, and the first one where the modulus leaves one gives the order of the amplitude error.',
 			null
 		)}
 		{@render term(
 			'non dissipative',
 			'|R(iy)| = 1 \\quad \\text{for all real } y',
-			'No amplitude error at any order. Exact for the Gauss methods.',
+			'No amplitude error at all, at any order. The Gauss methods have this exactly.',
 			'non dissipative'
 		)}
 	</div>
@@ -566,13 +566,13 @@
 		{@render term(
 			'embedded pair',
 			'\\hat{y}_{n+1} = y_n + h \\sum_i \\hat{b}_i k_i, \\qquad \\text{err} = \\left\\| \\sum_i (b_i - \\hat{b}_i) k_i \\right\\|',
-			'A second set of weights on the same stages, one order lower. Their difference estimates the error at no further evaluations. Without one a method is stepped twice at half the size instead, at about three times the cost.',
+			'A second set of weights on the same stages, one order lower. The difference between them estimates the error and costs you no extra evaluations. Without one you step twice at half the size instead, for roughly three times the work.',
 			'embedded pair'
 		)}
 		{@render term(
 			'FSAL',
 			'a_{sj} = b_j \\quad \\text{and} \\quad c_s = 1',
-			'First same as last. The final stage of an explicit method is the first of the next step, so an accepted step costs one evaluation fewer.',
+			'First same as last. The final stage of an explicit method is the first stage of the next one, so an accepted step costs you one evaluation less.',
 			'FSAL'
 		)}
 	</div>

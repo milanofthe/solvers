@@ -168,7 +168,7 @@ impl TestProblem for NonlinearDecay {
         "Nonlinear decay"
     }
     fn description(&self) -> &'static str {
-        "Quadratically coupled decay with a closed form solution. The reference problem for measuring the true nonlinear order of a method."
+        "Quadratically coupled decay with a closed form solution. This is the one to measure a method's true nonlinear order on."
     }
     fn t_span(&self) -> (f64, f64) {
         (0.0, self.end)
@@ -284,7 +284,7 @@ impl TestProblem for Kaps {
         "Kaps problem"
     }
     fn description(&self) -> &'static str {
-        "Singularly perturbed system with an exact solution independent of the stiffness parameter, which exposes order reduction."
+        "Singularly perturbed system whose exact solution does not depend on the stiffness parameter at all, which is what makes order reduction show up here."
     }
     fn t_span(&self) -> (f64, f64) {
         (0.0, 1.0)
@@ -340,7 +340,7 @@ impl TestProblem for ProtheroRobinson {
         "Prothero-Robinson"
     }
     fn description(&self) -> &'static str {
-        "The canonical stiff scalar test. A method converging at its classical order here is stiffly accurate in practice."
+        "The canonical stiff scalar test. If a method still converges at its classical order here, it is stiffly accurate in practice."
     }
     fn t_span(&self) -> (f64, f64) {
         (0.0, 5.0)

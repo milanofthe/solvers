@@ -186,7 +186,7 @@ export function empty(message) {
 const stability = {
 	key: 'stability',
 	label: 'stability',
-	note: 'Banded log |R(z)| on the complex plane with the unit contour on top. The region it encloses is where the method does not amplify.',
+	note: 'Banded log |R(z)| over the complex plane, with the unit contour drawn on top. Inside that contour is where the method does not amplify anything.',
 	request(engine, method, priority, { box } = {}) {
 		const resolution = resolutionFor(method, box);
 		const aspect = aspectOf(box);
@@ -288,7 +288,7 @@ const stability = {
 const structure = {
 	key: 'structure',
 	label: 'structure',
-	note: 'The coefficient matrix itself. A strictly lower triangle is explicit, a filled diagonal needs one solve per stage, a full matrix couples all of them.',
+	note: 'The coefficient matrix itself. A strictly lower triangle means explicit, a filled diagonal means one solve per stage, and a full matrix couples all of them together.',
 	request(engine, method, priority) {
 		return engine.request(
 			'methodDetail',
@@ -390,7 +390,7 @@ const structure = {
 const damping = {
 	key: 'damping',
 	label: 'damping',
-	note: 'How far a decaying mode is damped, along the negative real axis. Staying under one is A-stability; falling away at the right is L-stability.',
+	note: 'How hard a decaying mode gets damped, along the negative real axis. Staying under one is A-stability, and falling off to nothing on the right is L-stability.',
 	request(engine, method, priority) {
 		return engine.request(
 			'methodSummary',
@@ -444,7 +444,7 @@ const damping = {
 const order = {
 	key: 'order',
 	label: 'order',
-	note: 'Fixed step error against step size. The dotted line is the slope the coefficients promise; the measurement lying on it is the method converging as advertised.',
+	note: 'Fixed step error against step size. The dotted line is the slope the coefficients promise, and the measurement sitting on it is the method doing what it says.',
 	request(engine, method, priority, context) {
 		const p = method.order;
 		const coarse = p >= 7 ? 0.5 : p >= 5 ? 0.4 : 0.3;
@@ -575,7 +575,7 @@ const order = {
 const cost = {
 	key: 'cost',
 	label: 'cost',
-	note: 'Achieved accuracy against the work it took, one adaptive run per tolerance. Accuracy improves to the right, so the lower curve is the cheaper method.',
+	note: 'Accuracy you actually got against the work it took, one adaptive run per tolerance. Accuracy improves to the right, so the lower curve is the cheaper method.',
 	request(engine, method, priority, context) {
 		return engine.request(
 			'workPrecision',
@@ -624,7 +624,7 @@ const cost = {
 const orderStar = {
 	key: 'orderStar',
 	label: 'order star',
-	note: 'log |R(z) exp(-z)|. Where the stability region says whether a mode decays, the star says whether the method tracks the exact solution: the sectors meeting at the origin count one more than the order, and a method is A-acceptable exactly when no sector reaches into the left half plane.',
+	note: 'log |R(z) exp(-z)|. The stability region tells you whether a mode decays, the star tells you whether the method is actually tracking the exact solution. Count the sectors meeting at the origin and you get one more than the order, and a method is A-acceptable exactly when no sector reaches into the left half plane.',
 	request(engine, method, priority, { box } = {}) {
 		if (method.class === 'linear_multistep') return Promise.resolve(null);
 		const view = orderStarWindow(method);
@@ -860,7 +860,7 @@ const phase = {
 const stiffness = {
 	key: 'stiffness',
 	label: 'stiffness',
-	note: 'The spectral abscissa of the Jacobian along the solution. Where it spikes is where an explicit method has to take tiny steps.',
+	note: 'The spectral abscissa of the Jacobian along the solution. Wherever it spikes is where an explicit method has to crawl.',
 	request: profileRequest,
 	figure(profile, problem, { compact = true } = {}) {
 		const y = profile.decayRate.map((v) => Math.max(v, 1e-6));
@@ -892,7 +892,7 @@ const stiffness = {
 const steps = {
 	key: 'steps',
 	label: 'step size',
-	note: 'The step size a high accuracy reference run needed, which is the same information seen from the solver side.',
+	note: 'The step size a high accuracy reference run needed, which is the same information again, seen from the solver side.',
 	request: profileRequest,
 	figure(profile, problem, { compact = true } = {}) {
 		const times = [];

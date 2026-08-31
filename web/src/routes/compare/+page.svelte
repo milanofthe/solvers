@@ -23,14 +23,14 @@
 			label: 'explicit pairs',
 			problem: 'lotka_volterra',
 			methods: ['rkbs32', 'rkf45', 'rkck54', 'rkdp54', 'rkv65', 'rkdp87'],
-			note: 'The embedded explicit pairs against each other on a smooth problem, which is the choice for anything non stiff.'
+			note: 'The embedded explicit pairs against each other on a smooth problem, which is what you reach for on anything non stiff.'
 		},
 		{
 			key: 'order-pays',
 			label: 'does order pay',
 			problem: 'arenstorf',
 			methods: ['rkbs32', 'rkdp54', 'rkv65', 'rkdp87'],
-			note: 'The same family at four orders. On a demanding orbit the high order methods reach an accuracy the low order ones cannot buy at any price.'
+			note: 'The same family at four orders. On a demanding orbit the high order ones get to an accuracy the low order ones cannot buy at any price.'
 		},
 		{
 			key: 'stiff-families',
@@ -44,7 +44,7 @@
 			label: 'BDF by order',
 			problem: 'robertson',
 			methods: ['bdf2', 'bdf3', 'bdf4', 'bdf5', 'bdf6'],
-			note: 'Higher order BDF is cheaper per digit but its stability wedge closes. On Robertson that trade is visible directly.'
+			note: 'Higher order BDF is cheaper per digit, but the stability wedge closes as you go up. On Robertson you can watch that trade happen.'
 		},
 		{
 			key: 'adams',
@@ -64,14 +64,14 @@
 				'gauss_legendre_6',
 				'lobatto_iiic_4'
 			],
-			note: 'Gauss, Radau and Lobatto on a problem built to expose order reduction.'
+			note: 'Gauss, Radau and Lobatto on a problem built to make order reduction show up.'
 		},
 		{
 			key: 'order-reduction',
 			label: 'order reduction',
 			problem: 'prothero_robinson',
 			methods: ['esdirk43', 'sdirk3', 'radau_iia_5', 'trapezoidal', 'bdf4'],
-			note: 'Prothero-Robinson punishes a low stage order. What each method converges at here is often not its classical order.'
+			note: 'Prothero-Robinson punishes a low stage order. What you measure here is often not the classical order at all.'
 		}
 	];
 
@@ -107,7 +107,7 @@
 	async function build() {
 		if (chosen.length === 0) {
 			figure = null;
-			status = 'Nothing selected. Take a preset, or choose cards in the library.';
+			status = 'Nothing selected yet. Take a preset, or pick cards over in the library.';
 			return;
 		}
 		if (ui.compareView === 'table') {
@@ -232,7 +232,7 @@
 				y: { type: 'log', range: logRange(allY, 0.12), title: axisTitle('rhs evaluations') }
 			});
 			status =
-				'Accuracy improves to the right, so the lower curve is the cheaper method at the same accuracy.';
+				'Accuracy improves to the right, so the lower curve is the method that gets there for less.';
 		} else if (view === 'order') {
 			heading = `convergence on ${problem}`;
 			base = layout({
@@ -249,14 +249,14 @@
 				.map((entry) => `${entry.method.id} at ${num(entry.data.local_order, 3)} instead of ${entry.method.order}`);
 			status = reduced.length
 				? `Order reduction here: ${reduced.join(', ')}.`
-				: 'Every selected method converges at the order its coefficients promise.';
+				: 'Every method here converges at the order its coefficients promise.';
 		} else {
 			heading = `step size on ${problem}, controller ${ui.compareController}`;
 			base = layout({
 				x: { range: linearRange(allX, 0.01), title: axisTitle('t') },
 				y: { type: 'log', range: logRange(allY, 0.1), title: axisTitle('step size h') }
 			});
-			status = 'Where the step size collapses is where the solution does something the method has to resolve.';
+			status = 'Wherever the step size collapses, the solution is doing something the method has to resolve.';
 		}
 
 		figure = { data: traces, layout: { ...base, showlegend: true }, config: config({}) };
