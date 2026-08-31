@@ -178,15 +178,47 @@ fn multisets(pool: &[Tree], start: usize, remaining: usize) -> Vec<Vec<Tree>> {
 /// are the same for every method that has such a rule; only the rule differs.
 pub trait StageWeights {
     fn stages(&self) -> usize;
-    fn weights(&self, tree: &Tree) -> Vec<Coeff>;
+
+    /// One node of the recursion: this node's stage weights from its children's.
+    ///
+    /// Every family builds `psi` the same way, one product over the children of
+    /// a matrix applied to each child, so a family only writes that step.
+    /// Naming it separately is also what lets the search reuse a subtree instead
+    /// of walking it again for every tree it appears in, which at order fourteen
+    /// is most of the work.
+    fn combine(&self, children: &[Vec<Coeff>]) -> Vec<Coeff>;
+
+    /// `psi(t)`, the stage weights for one tree.
+    fn weights(&self, tree: &Tree) -> Vec<Coeff> {
+        let children: Vec<Vec<Coeff>> = tree
+            .children
+            .iter()
+            .map(|child| self.weights(child))
+            .collect();
+        self.combine(&children)
+    }
 }
 
 impl StageWeights for RkTableau {
     fn stages(&self) -> usize {
         self.stages
     }
-    fn weights(&self, tree: &Tree) -> Vec<Coeff> {
-        stage_weights(self, tree)
+    fn combine(&self, children: &[Vec<Coeff>]) -> Vec<Coeff> {
+        let s = self.stages;
+        let mut psi = vec![Coeff::one(); s];
+        for child in children {
+            for j in 0..s {
+                let mut acc = Coeff::zero();
+                for k in 0..s {
+                    if self.a[(j, k)].is_zero() {
+                        continue;
+                    }
+                    acc = acc + self.a[(j, k)] * child[k];
+                }
+                psi[j] = psi[j] * acc;
+            }
+        }
+        psi
     }
 }
 
@@ -194,71 +226,39 @@ impl StageWeights for RosenbrockTableau {
     fn stages(&self) -> usize {
         self.stages
     }
-    fn weights(&self, tree: &Tree) -> Vec<Coeff> {
-        rosenbrock_stage_weights(self, tree)
-    }
-}
-
-/// Stage weights `k_j(t)` for a Rosenbrock method.
-fn rosenbrock_stage_weights(tableau: &RosenbrockTableau, tree: &Tree) -> Vec<Coeff> {
-    let s = tableau.stages;
-    let children: Vec<Vec<Coeff>> = tree
-        .children
-        .iter()
-        .map(|child| rosenbrock_stage_weights(tableau, child))
-        .collect();
-
-    let mut k = vec![Coeff::one(); s];
-    for i in 0..s {
-        for child in &children {
-            let mut acc = Coeff::zero();
-            for j in 0..s {
-                if tableau.alpha[(i, j)].is_zero() {
-                    continue;
-                }
-                acc = acc + tableau.alpha[(i, j)] * child[j];
-            }
-            k[i] = k[i] * acc;
-        }
-    }
-
-    // The Jacobian term. It reaches back to the stage's own diagonal, which is
-    // not circular: the value it needs there belongs to a strictly smaller tree
-    // and has already been computed.
-    if children.len() == 1 {
+    fn combine(&self, children: &[Vec<Coeff>]) -> Vec<Coeff> {
+        let s = self.stages;
+        let mut k = vec![Coeff::one(); s];
         for i in 0..s {
-            let mut acc = Coeff::zero();
-            for j in 0..s {
-                if tableau.gamma[(i, j)].is_zero() {
-                    continue;
+            for child in children {
+                let mut acc = Coeff::zero();
+                for j in 0..s {
+                    if self.alpha[(i, j)].is_zero() {
+                        continue;
+                    }
+                    acc = acc + self.alpha[(i, j)] * child[j];
                 }
-                acc = acc + tableau.gamma[(i, j)] * children[0][j];
+                k[i] = k[i] * acc;
             }
-            k[i] = k[i] + acc;
         }
+        // The Jacobian term, which only a node with a single child carries.
+        if children.len() == 1 {
+            for i in 0..s {
+                let mut acc = Coeff::zero();
+                for j in 0..s {
+                    if self.gamma[(i, j)].is_zero() {
+                        continue;
+                    }
+                    acc = acc + self.gamma[(i, j)] * children[0][j];
+                }
+                k[i] = k[i] + acc;
+            }
+        }
+        k
     }
-    k
 }
 
-/// Stage weights `psi_j(t)` for one tree.
-fn stage_weights(tableau: &RkTableau, tree: &Tree) -> Vec<Coeff> {
-    let s = tableau.stages;
-    let mut psi = vec![Coeff::one(); s];
-    for child in &tree.children {
-        let child_psi = stage_weights(tableau, child);
-        for j in 0..s {
-            let mut acc = Coeff::zero();
-            for k in 0..s {
-                if tableau.a[(j, k)].is_zero() {
-                    continue;
-                }
-                acc = acc + tableau.a[(j, k)] * child_psi[k];
-            }
-            psi[j] = psi[j] * acc;
-        }
-    }
-    psi
-}
+
 
 /// Elementary weight `Phi(t)` for a given set of weights.
 pub fn elementary_weight(method: &dyn StageWeights, weights: &[Coeff], tree: &Tree) -> Coeff {
@@ -273,6 +273,63 @@ pub fn elementary_weight(method: &dyn StageWeights, weights: &[Coeff], tree: &Tr
 /// residual is only small relative to the terms it came out of, never relative
 /// to the target alone. Judging it against the target is what makes a correctly
 /// transcribed double precision tableau look like a method of order one.
+/// Stage weights already computed, by the tree they belong to.
+///
+/// Only the small subtrees are kept. They are the ones that recur, the deep ones
+/// appear once or twice, and holding every tree of order fourteen for a thirty
+/// five stage method would cost tens of megabytes to save a second.
+#[derive(Default)]
+pub struct WeightCache {
+    entries: std::collections::HashMap<String, Vec<Coeff>>,
+}
+
+const CACHE_ORDER: usize = 10;
+
+impl WeightCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// `psi(t)`, from the cache where it is worth keeping.
+    pub fn weights(&mut self, method: &dyn StageWeights, tree: &Tree) -> Vec<Coeff> {
+        let order = tree.order();
+        let key = (order <= CACHE_ORDER).then(|| tree.to_string_compact());
+        if let Some(key) = &key {
+            if let Some(found) = self.entries.get(key) {
+                return found.clone();
+            }
+        }
+        let children: Vec<Vec<Coeff>> = tree
+            .children
+            .iter()
+            .map(|child| self.weights(method, child))
+            .collect();
+        let psi = method.combine(&children);
+        if let Some(key) = key {
+            self.entries.insert(key, psi.clone());
+        }
+        psi
+    }
+}
+
+/// The elementary weight and the size of its sum, reusing subtrees.
+pub fn elementary_weight_and_scale_cached(
+    method: &dyn StageWeights,
+    weights: &[Coeff],
+    tree: &Tree,
+    cache: &mut WeightCache,
+) -> (Coeff, f64) {
+    let psi = cache.weights(method, tree);
+    let mut acc = Coeff::zero();
+    let mut scale = 0.0;
+    for j in 0..method.stages() {
+        let term = weights[j] * psi[j];
+        acc = acc + term;
+        scale += term.value().abs();
+    }
+    (acc, scale)
+}
+
 pub fn elementary_weight_and_scale(
     method: &dyn StageWeights,
     weights: &[Coeff],
@@ -390,12 +447,14 @@ fn attained_order(
     // the search reaches them: most methods fail early and never pay for the
     // deep ones.
     let mut levels: Vec<Vec<Tree>> = vec![Vec::new()];
+    let mut cache = WeightCache::new();
     for n in 1..=max_order {
         levels.push(level_of_order(&levels, n));
         let mut all_ok = true;
         let mut level = Vec::new();
         for tree in &levels[n] {
-            let (weight, scale) = elementary_weight_and_scale(method, weights, tree);
+            let (weight, scale) =
+                elementary_weight_and_scale_cached(method, weights, tree, &mut cache);
             let target = Coeff::one() / tree.density();
             let residual = weight - target;
             let is_exact = weight.is_exact() && target.is_exact();
@@ -703,8 +762,8 @@ mod tests {
                     stripped.gamma[(i, j)] = Coeff::zero();
                 }
             }
-            let a = rosenbrock_stage_weights(&stripped, &tree);
-            let b = stage_weights(&rk, &tree);
+            let a = stripped.weights(&tree);
+            let b = rk.weights(&tree);
             for (x, y) in a.iter().zip(&b) {
                 assert_eq!(x.value(), y.value(), "tree {}", tree.to_string_compact());
             }
