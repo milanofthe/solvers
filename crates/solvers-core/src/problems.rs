@@ -12,6 +12,13 @@
 //!   Equations I", 2nd ed., Springer 1993, doi:10.1007/978-3-540-78862-1
 //! * E. Hairer, G. Wanner, "Solving Ordinary Differential Equations II",
 //!   2nd ed., Springer 1996, doi:10.1007/978-3-642-05221-7
+//!
+//! Where a problem splits the way an additive method wants, it says so. The
+//! split is never invented: it is the one the term structure already has, the
+//! stiff linear part on one side and what is left on the other, which is the
+//! situation IMEX methods were designed for. A problem that states no split
+//! gives everything to the implicit half, and an additive method run on it is
+//! its implicit tableau.
 
 use crate::linalg::Matrix;
 use crate::problem::Problem;
@@ -137,6 +144,20 @@ impl Problem for NonlinearDecay {
         j[(1, 0)] = 0.0;
         j[(1, 1)] = -1.0;
     }
+    // Decay implicitly, coupling explicitly: the pattern an IMEX method exists
+    // for, with the linear part on the side that can absorb it and the
+    // nonlinearity on the side that is cheap.
+    fn has_splitting(&self) -> bool {
+        true
+    }
+    fn rhs_explicit(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
+        dy[0] = y[1] * y[1];
+        dy[1] = 0.0;
+    }
+    fn rhs_implicit(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
+        dy[0] = -y[0];
+        dy[1] = -y[1];
+    }
 }
 
 impl TestProblem for NonlinearDecay {
@@ -239,6 +260,20 @@ impl Problem for Kaps {
         j[(1, 0)] = 1.0;
         j[(1, 1)] = -1.0 - 2.0 * y[1];
     }
+    // Everything carrying `1/epsilon` is the fast half, and it is the whole of
+    // the first equation's stiffness. What is left is order one in time.
+    fn has_splitting(&self) -> bool {
+        true
+    }
+    fn rhs_explicit(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
+        dy[0] = -2.0 * y[0];
+        dy[1] = y[0] - y[1] - y[1] * y[1];
+    }
+    fn rhs_implicit(&self, _t: f64, y: &[f64], dy: &mut [f64]) {
+        let inv = 1.0 / self.epsilon;
+        dy[0] = inv * (y[1] * y[1] - y[0]);
+        dy[1] = 0.0;
+    }
 }
 
 impl TestProblem for Kaps {
@@ -283,6 +318,17 @@ impl Problem for ProtheroRobinson {
     }
     fn jacobian(&self, _t: f64, _y: &[f64], j: &mut Matrix<f64>) {
         j[(0, 0)] = self.lambda;
+    }
+    // The stiffness is entirely in the first term and the second is a smooth
+    // forcing, so the split is the way the problem is written.
+    fn has_splitting(&self) -> bool {
+        true
+    }
+    fn rhs_explicit(&self, t: f64, _y: &[f64], dy: &mut [f64]) {
+        dy[0] = -t.sin();
+    }
+    fn rhs_implicit(&self, t: f64, y: &[f64], dy: &mut [f64]) {
+        dy[0] = self.lambda * (y[0] - t.cos());
     }
 }
 
