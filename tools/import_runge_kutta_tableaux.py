@@ -279,7 +279,9 @@ def translate(body):
             continue
         name, _, value = line.partition("=")
         name = name.strip()
-        if not re.fullmatch(r"[A-Za-z_]\w*", name):
+        # Greek letters are names too: the implicit families call their shared
+        # diagonal gamma and write it as one.
+        if not name.isidentifier():
             continue
         value = re.sub(r"(\d+)\s*//\s*(-?\d+)", r"Fraction(\1, \2)", value)
         value = value.replace("^", "**")

@@ -1,0 +1,27 @@
+{
+  "id": "kvaerno3",
+  "name": "Kvaerno 3(2)",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 3,
+  "embedded_order": 2,
+  "tableau": {
+    "a": [
+      [0, 0, 0, 0],
+      [0.4358665215, 0.4358665215, 0, 0],
+      [0.490563388419108, 0.073570090080892, 0.4358665215, 0],
+      [0.308809969973036, 1.490563388254106, -1.235239879727145, 0.4358665215]
+    ],
+    "b": [0.308809969973036, 1.490563388254106, -1.235239879727145, 0.4358665215],
+    "b_embedded": [0.127056551526964, 2.90755668642732, -2.90634628095429, 0.871733043]
+  },
+  "references": [
+    {
+      "authors": "Kvaerno, A.",
+      "title": "Singly diagonally implicit Runge-Kutta methods with an explicit first stage",
+      "year": 2004,
+      "source": "BIT Numerical Mathematics, 44(3), 489-502",
+      "doi": "10.1023/B:BITN.0000046811.70614.38"
+    }
+  ]
+}

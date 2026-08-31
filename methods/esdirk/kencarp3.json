@@ -1,0 +1,27 @@
+{
+  "id": "kencarp3",
+  "name": "Kennedy-Carpenter 3(2)",
+  "class": "runge_kutta",
+  "family": "esdirk",
+  "order": 3,
+  "embedded_order": 2,
+  "tableau": {
+    "a": [
+      [0, 0, 0, 0],
+      [0.435866521508459, 0.435866521508459, 0, 0],
+      [0.2576482460664272, -0.09351476757488625, 0.435866521508459, 0],
+      [0.18764102434672383, -0.595297473576955, 0.9717899277217721, 0.435866521508459]
+    ],
+    "b": [0.18764102434672383, -0.595297473576955, 0.9717899277217721, 0.435866521508459],
+    "b_embedded": [0.16054176247005852, -0.7054326832689708, 1.0748548529231567, 0.4700360678757556]
+  },
+  "references": [
+    {
+      "authors": "Kennedy, C. A., & Carpenter, M. H.",
+      "title": "Additive Runge-Kutta schemes for convection-diffusion-reaction equations",
+      "year": 2003,
+      "source": "Applied Numerical Mathematics, 44(1-2), 139-181",
+      "doi": "10.1016/S0168-9274(02)00138-1"
+    }
+  ]
+}
