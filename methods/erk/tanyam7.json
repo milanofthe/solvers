@@ -28,5 +28,11 @@
       "year": 1992,
       "source": "Information Processing Society of Japan, 33(12), 1512-1526"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "TanYam7"
+    }
   ]
 }

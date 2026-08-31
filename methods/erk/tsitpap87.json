@@ -32,5 +32,11 @@
       "source": "SIAM Journal on Scientific Computing, 20(6), 2067-2088",
       "doi": "10.1137/S1064827596302230"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "TsitPap8"
+    }
   ]
 }

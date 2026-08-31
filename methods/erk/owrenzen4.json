@@ -25,5 +25,11 @@
       "source": "SIAM Journal on Scientific and Statistical Computing, 13(6), 1488-1501",
       "doi": "10.1137/0913084"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "OwrenZen4"
+    }
   ]
 }

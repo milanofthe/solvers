@@ -32,5 +32,11 @@
       "source": "Numerical Algorithms, 53(2-3), 383-396",
       "doi": "10.1007/s11075-009-9290-3"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Vern8"
+    }
   ]
 }
