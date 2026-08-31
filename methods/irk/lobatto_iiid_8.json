@@ -1,0 +1,40 @@
+{
+  "id": "lobatto_iiid_8",
+  "name": "Lobatto IIID 8",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 8,
+  "properties": {
+    "a_stable": true,
+    "symplectic": true,
+    "symmetric": true,
+    "stage_order": 4
+  },
+  "tableau": {
+    "a": [
+      [0.025, -0.0583333333333333, 0.0666666666666667, -0.0583333333333333, 0.025],
+      [0.0607142857142857, 0.1361111111111111, -0.0404401124582146, 0.0270021659931149, -0.0107142857142857],
+      [0.040625, 0.3031841833230428, 0.1777777777777778, -0.0309619611008206, 0.009375],
+      [0.0607142857142857, 0.2452200562291073, 0.3959956680137702, 0.1361111111111111, -0.0107142857142857],
+      [0.025, 0.3305555555555555, 0.2888888888888889, 0.3305555555555555, 0.025]
+    ],
+    "b": [0.05, 0.2722222222222222, 0.3555555555555556, 0.2722222222222222, 0.05],
+    "c": [0.0, 0.1726731646460114, 0.5, 0.8273268353539885, 1.0]
+  },
+  "references": [
+    {
+      "authors": "Norsett, S. P., & Wanner, G.",
+      "title": "Perturbed collocation and Runge-Kutta methods",
+      "year": 1981,
+      "source": "Numerische Mathematik, 38(2), 193-208",
+      "doi": "10.1007/BF01397089"
+    },
+    {
+      "authors": "Hairer, E., Lubich, C., & Wanner, G.",
+      "title": "Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations",
+      "year": 2006,
+      "source": "Springer Series in Computational Mathematics, Vol. 31, 2nd edition",
+      "doi": "10.1007/3-540-30666-8"
+    }
+  ]
+}

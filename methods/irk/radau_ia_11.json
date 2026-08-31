@@ -1,0 +1,47 @@
+{
+  "id": "radau_ia_11",
+  "name": "Radau IA 11",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 11,
+  "properties": {
+    "a_stable": true,
+    "l_stable": true,
+    "stiffly_accurate": false,
+    "stage_order": 5
+  },
+  "tableau": {
+    "a": [
+      [0.0277777777777778, -0.063261464066155, 0.0684723634764559, -0.0562919977809452, 0.0338608381884115, -0.010557517595545],
+      [0.0277777777777778, 0.0924305343356996, -0.0377756551628867, 0.0266599980403185, -0.0151997270597959, 0.0046421578677131],
+      [0.0277777777777778, 0.1668484050121638, 0.131006023136043, -0.0318176890335232, 0.0150280382395433, -0.0043068284856407],
+      [0.0277777777777778, 0.1571340231533767, 0.2575421422597099, 0.1363146792730519, -0.0220396722783434, 0.0052962395670411],
+      [0.0277777777777778, 0.1611978723442881, 0.236319534545822, 0.2788583126348971, 0.1069755199373326, -0.0091424351137258],
+      [0.0277777777777778, 0.1590859355003601, 0.2458916108495301, 0.2526735304648218, 0.2238112773614008, 0.0509500109946406]
+    ],
+    "b": [0.0277777777777778, 0.1598203766102555, 0.242693594234485, 0.2604633915947875, 0.2084506671559539, 0.1007941926267404],
+    "c": [0.0, 0.0985350857988264, 0.3045357266463639, 0.5620251897526138, 0.8019865821263918, 0.9601901429485312]
+  },
+  "references": [
+    {
+      "authors": "Butcher, J. C.",
+      "title": "Implicit Runge-Kutta processes",
+      "year": 1964,
+      "source": "Mathematics of Computation, 18(85), 50-64",
+      "doi": "10.1090/S0025-5718-1964-0159424-9"
+    },
+    {
+      "authors": "Ehle, B. L.",
+      "title": "On Pade approximations to the exponential function and A-stable methods for the numerical solution of initial value problems",
+      "year": 1969,
+      "source": "Research Report CSRR 2010, University of Waterloo"
+    },
+    {
+      "authors": "Hairer, E., & Wanner, G.",
+      "title": "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems",
+      "year": 1996,
+      "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
+      "doi": "10.1007/978-3-642-05221-7"
+    }
+  ]
+}

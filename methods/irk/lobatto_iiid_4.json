@@ -1,0 +1,38 @@
+{
+  "id": "lobatto_iiid_4",
+  "name": "Lobatto IIID 4",
+  "class": "runge_kutta",
+  "family": "irk",
+  "order": 4,
+  "properties": {
+    "a_stable": true,
+    "symplectic": true,
+    "symmetric": true,
+    "stage_order": 2
+  },
+  "tableau": {
+    "a": [
+      [0.0833333333333333, -0.1666666666666667, 0.0833333333333333],
+      [0.2083333333333333, 0.3333333333333333, -0.0416666666666667],
+      [0.0833333333333333, 0.8333333333333334, 0.0833333333333333]
+    ],
+    "b": [0.1666666666666667, 0.6666666666666666, 0.1666666666666667],
+    "c": [0.0, 0.5, 1.0]
+  },
+  "references": [
+    {
+      "authors": "Norsett, S. P., & Wanner, G.",
+      "title": "Perturbed collocation and Runge-Kutta methods",
+      "year": 1981,
+      "source": "Numerische Mathematik, 38(2), 193-208",
+      "doi": "10.1007/BF01397089"
+    },
+    {
+      "authors": "Hairer, E., Lubich, C., & Wanner, G.",
+      "title": "Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations",
+      "year": 2006,
+      "source": "Springer Series in Computational Mathematics, Vol. 31, 2nd edition",
+      "doi": "10.1007/3-540-30666-8"
+    }
+  ]
+}

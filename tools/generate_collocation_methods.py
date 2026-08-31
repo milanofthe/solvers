@@ -14,6 +14,7 @@ All three node polynomials are the same object differentiated a different number
 of times,
 
   Gauss       d^s     / dx^s     [ x^s     (x-1)^s     ]
+  Radau IA    d^(s-1) / dx^(s-1) [ x^s     (x-1)^(s-1) ]
   Radau IIA   d^(s-1) / dx^(s-1) [ x^(s-1) (x-1)^s     ]
   Lobatto     d^(s-2) / dx^(s-2) [ x^(s-1) (x-1)^(s-1) ]
 
@@ -24,8 +25,9 @@ loses six digits: the coefficients would no longer satisfy the order conditions
 they were derived from, and the analysis would correctly report a method of
 lower order than the construction gives.
 
-Lobatto IIIB and IIIC are not collocation methods and are built from their own
-simplifying assumptions instead, which is noted where it happens.
+Radau IA, Lobatto IIIB, IIIC, IIIC* and IIID are not collocation methods and are
+built from their own simplifying assumptions instead, which is noted where it
+happens.
 """
 
 import io
@@ -60,6 +62,20 @@ HW2 = {
     "year": 1996,
     "source": "Springer Series in Computational Mathematics, Vol. 14, 2nd edition",
     "doi": "10.1007/978-3-642-05221-7",
+}
+HLW06 = {
+    "authors": "Hairer, E., Lubich, C., & Wanner, G.",
+    "title": "Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations",
+    "year": 2006,
+    "source": "Springer Series in Computational Mathematics, Vol. 31, 2nd edition",
+    "doi": "10.1007/3-540-30666-8",
+}
+NORSETT_WANNER81 = {
+    "authors": "Norsett, S. P., & Wanner, G.",
+    "title": "Perturbed collocation and Runge-Kutta methods",
+    "year": 1981,
+    "source": "Numerische Mathematik, 38(2), 193-208",
+    "doi": "10.1007/BF01397089",
 }
 BUTCHER16 = {
     "authors": "Butcher, J. C.",
@@ -121,6 +137,11 @@ def gauss_nodes(s):
     return roots_on_unit_interval(node_polynomial(s, s, s))
 
 
+def radau_ia_nodes(s):
+    """Radau IA points, which include the left endpoint and leave the right free."""
+    return roots_on_unit_interval(node_polynomial(s, s - 1, s - 1))
+
+
 def radau_iia_nodes(s):
     """Radau IIA points, which include the right endpoint and leave the left free."""
     return roots_on_unit_interval(node_polynomial(s - 1, s, s - 1))
@@ -178,9 +199,35 @@ def lobatto_iiic_matrix(c, b):
     return rows
 
 
-def lobatto_iiib_matrix(c, b):
-    """Lobatto IIIB is defined by the adjoint conditions, one column at a time:
-    sum_i b_i c_i^(k-1) a_ij = b_j (1 - c_j^k) / k."""
+def lobatto_iiic_star_matrix(c):
+    """Lobatto IIIC* pins the last column to zero and asks the rest to satisfy the
+    collocation conditions one degree short, the mirror image of IIIC. The first
+    stage is then explicit, which is what makes it the cheap partner of IIIC in a
+    pair."""
+    s = len(c)
+    head = c[:-1]
+    system = matrix([[head[j] ** k for j in range(s - 1)] for k in range(s - 1)])
+    rows = []
+    for i in range(s):
+        targets = matrix([c[i] ** (k + 1) / (k + 1) for k in range(s - 1)])
+        rows.append(list(lu_solve(system, targets)) + [mpf(0)])
+    return rows
+
+
+def lobatto_iiid_matrix(c, b):
+    """Lobatto IIID is the average of IIIC and IIIC*, which is what makes it
+    symmetric and symplectic where neither half is."""
+    left = lobatto_iiic_matrix(c, b)
+    right = lobatto_iiic_star_matrix(c)
+    s = len(c)
+    return [[(left[i][j] + right[i][j]) / 2 for j in range(s)] for i in range(s)]
+
+
+def adjoint_matrix(c, b):
+    """`A` from D(s), one column at a time:
+    sum_i b_i c_i^(k-1) a_ij = b_j (1 - c_j^k) / k.
+
+    Radau IA and Lobatto IIIB are both defined this way, on their own nodes."""
     s = len(c)
     system = matrix([[b[i] * c[i] ** k for i in range(s)] for k in range(s)])
     columns = []
@@ -188,6 +235,10 @@ def lobatto_iiib_matrix(c, b):
         targets = matrix([b[j] * (1 - c[j] ** (k + 1)) / (k + 1) for k in range(s)])
         columns.append(list(lu_solve(system, targets)))
     return [[columns[j][i] for j in range(s)] for i in range(s)]
+
+
+# The name Lobatto IIIB is the one the tables use; the construction is D(s).
+lobatto_iiib_matrix = adjoint_matrix
 
 
 def tableau(a, b, c):
@@ -222,7 +273,7 @@ written = []
 
 # Gauss-Legendre: the maximum order a Runge-Kutta method of s stages can reach,
 # and symplectic with it.
-for s in range(2, 9):
+for s in range(2, 11):
     c = gauss_nodes(s)
     b = quadrature_weights(c)
     a = collocation_matrix(c)
@@ -251,7 +302,7 @@ for s in range(2, 9):
 
 # Radau IIA: one order below Gauss, but L-stable and stiffly accurate, which is
 # what matters on a stiff problem.
-for s in range(2, 8):
+for s in range(2, 10):
     c = radau_iia_nodes(s)
     b = quadrature_weights(c)
     a = collocation_matrix(c)
@@ -277,8 +328,37 @@ for s in range(2, 8):
         )
     )
 
+# Radau IA: the same stability function as Radau IIA and the same order, on the
+# nodes that pin the left endpoint instead of the right. It is not stiffly
+# accurate, which is why Radau IIA is the one that gets used, but it is the
+# member of the pair that is defined by D(s).
+for s in range(2, 9):
+    c = radau_ia_nodes(s)
+    b = quadrature_weights(c)
+    a = adjoint_matrix(c, b)
+    written.append(
+        write(
+            "irk",
+            method(
+                f"radau_ia_{2 * s - 1}",
+                f"Radau IA {2 * s - 1}",
+                2 * s - 1,
+                a,
+                b,
+                c,
+                {
+                    "a_stable": True,
+                    "l_stable": True,
+                    "stiffly_accurate": False,
+                    "stage_order": s - 1,
+                },
+                [BUTCHER64, EHLE69, HW2],
+            ),
+        )
+    )
+
 # Lobatto, all three families on the same nodes.
-for s in range(2, 7):
+for s in range(2, 9):
     c = lobatto_nodes(s)
     b = quadrature_weights(c)
     if s >= 3:
@@ -335,6 +415,37 @@ for s in range(2, 7):
                     "stage_order": s - 1,
                 },
                 [BUTCHER64, EHLE69, HW2],
+            ),
+        )
+    )
+    written.append(
+        write(
+            "irk",
+            method(
+                f"lobatto_iiics_{2 * s - 2}",
+                f"Lobatto IIIC* {2 * s - 2}",
+                2 * s - 2,
+                lobatto_iiic_star_matrix(c),
+                b,
+                c,
+                {"stage_order": s - 1},
+                [BUTCHER64, HLW06],
+                aliases=[f"lobatto_iiic_bar_{2 * s - 2}"],
+            ),
+        )
+    )
+    written.append(
+        write(
+            "irk",
+            method(
+                f"lobatto_iiid_{2 * s - 2}",
+                f"Lobatto IIID {2 * s - 2}",
+                2 * s - 2,
+                lobatto_iiid_matrix(c, b),
+                b,
+                c,
+                {"a_stable": True, "symplectic": True, "symmetric": True, "stage_order": s - 1},
+                [NORSETT_WANNER81, HLW06],
             ),
         )
     )
