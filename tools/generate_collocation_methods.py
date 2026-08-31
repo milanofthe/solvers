@@ -92,7 +92,25 @@ def render(method):
     return text + "\n"
 
 
+# The low stage members are stated in closed form by the classical generator,
+# where sqrt(6) and sqrt(15) can be written down and the order conditions then
+# hold as identities rather than to fifty digits. Both tools would otherwise own
+# the same files, and whichever ran last would win.
+CLOSED_FORM = {
+    "gauss_legendre_4",
+    "gauss_legendre_6",
+    "radau_iia_3",
+    "radau_iia_5",
+    "lobatto_iiia_4",
+    "lobatto_iiib_4",
+    "lobatto_iiic_2",
+    "lobatto_iiic_4",
+}
+
+
 def write(directory, method):
+    if method["id"] in CLOSED_FORM:
+        return method["id"]
     folder = os.path.join(OUT, directory)
     os.makedirs(folder, exist_ok=True)
     with io.open(os.path.join(folder, method["id"] + ".json"), "w", encoding="utf-8") as handle:

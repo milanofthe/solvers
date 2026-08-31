@@ -14,11 +14,11 @@
   },
   "tableau": {
     "a": [
-      [0.25, -0.0386751345948129],
-      [0.5386751345948129, 0.25]
+      ["1/4", "1/4 - sqrt(3)/6"],
+      ["1/4 + sqrt(3)/6", "1/4"]
     ],
-    "b": [0.5, 0.5],
-    "c": [0.2113248654051871, 0.7886751345948129]
+    "b": ["1/2", "1/2"],
+    "c": ["1/2 - sqrt(3)/6", "1/2 + sqrt(3)/6"]
   },
   "references": [
     {
@@ -27,13 +27,6 @@
       "year": 1964,
       "source": "Mathematics of Computation, 18(85), 50-64",
       "doi": "10.1090/S0025-5718-1964-0159424-9"
-    },
-    {
-      "authors": "Butcher, J. C.",
-      "title": "Numerical Methods for Ordinary Differential Equations",
-      "year": 2016,
-      "source": "Wiley, 3rd edition",
-      "doi": "10.1002/9781119121534"
     },
     {
       "authors": "Hairer, E., & Wanner, G.",

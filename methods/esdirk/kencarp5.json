@@ -27,5 +27,11 @@
       "source": "Applied Numerical Mathematics, 44(1-2), 139-181",
       "doi": "10.1016/S0168-9274(02)00138-1"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "KenCarp5"
+    }
   ]
 }

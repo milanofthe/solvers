@@ -23,5 +23,11 @@
       "year": 2016,
       "source": "NASA/TM-2016-219173"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ESDIRK325L2SA"
+    }
   ]
 }

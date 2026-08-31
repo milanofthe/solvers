@@ -28,5 +28,11 @@
       "source": "Applied Numerical Mathematics, 136, 183-205",
       "doi": "10.1016/j.apnum.2018.10.007"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "ESDIRK659L2SA"
+    }
   ]
 }

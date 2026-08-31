@@ -23,5 +23,11 @@
       "source": "BIT Numerical Mathematics, 44(3), 489-502",
       "doi": "10.1023/B:BITN.0000046811.70614.38"
     }
+  ],
+  "implementations": [
+    {
+      "library": "OrdinaryDiffEq.jl",
+      "name": "Kvaerno3"
+    }
   ]
 }
