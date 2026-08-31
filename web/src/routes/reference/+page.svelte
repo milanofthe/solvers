@@ -68,14 +68,27 @@
 		{
 			heading: 'explicit',
 			families: [
-				{ name: 'Runge-Kutta', fill: 'strict', count: () => family('erk'), href: '/?tag=explicit' },
+				{
+					name: 'Runge-Kutta',
+					fill: 'strict',
+					count: () => family('erk'),
+					href: '/?tag=explicit',
+					what: 'Nothing on or above the diagonal, so every stage is a formula in the ones before it and a step costs one right hand side per stage. There is no solve and no A-stability: the step size is bounded by the stability region, whatever the accuracy asks for.'
+				},
 				{
 					name: 'strong stability preserving',
 					fill: 'strict',
 					count: () => family('ssprk'),
-					href: '/?tag=strong+stability+preserving'
+					href: '/?tag=strong+stability+preserving',
+					what: 'Explicit methods whose step is a convex combination of forward Euler steps. Whatever bound holds for Euler, positivity or a maximum principle or total variation, then survives the whole step up to a step size limit, and how large that limit is is the number these are optimised for.'
 				},
-				{ name: 'Chebyshev', fill: 'strict', count: () => family('rkc'), href: '/?family=rkc' }
+				{
+					name: 'Chebyshev',
+					fill: 'strict',
+					count: () => family('rkc'),
+					href: '/?family=rkc',
+					what: 'Explicit, with many stages spent stretching the stability region along the negative real axis instead of raising the order. Twenty stages reach past -700, which is what makes an explicit method usable on a problem whose stiffness is real and not oscillatory.'
+				}
 			]
 		},
 		{
@@ -85,19 +98,22 @@
 					name: 'diagonally implicit',
 					fill: 'lower',
 					count: () => family('dirk'),
-					href: '/?tag=singly+diagonal'
+					href: '/?tag=singly+diagonal',
+					what: 'The diagonal is filled and nothing above it, so the stages solve one after another, each of them a system the size of the problem rather than a multiple of it. Where the diagonal is one repeated value, a single factorization serves every stage of every step.'
 				},
 				{
 					name: 'explicit first stage',
 					fill: 'esdirk',
 					count: () => family('esdirk'),
-					href: '/?tag=explicit+first+stage'
+					href: '/?tag=explicit+first+stage',
+					what: 'The same, with the first stage left explicit. That one free stage is what lets the rest share a diagonal and still end the step on the solution point, which is why these are the usual choice for a stiff nonlinear problem today.'
 				},
 				{
 					name: 'fully implicit',
 					fill: 'full',
 					count: () => family('irk'),
-					href: '/?tag=fully+implicit'
+					href: '/?tag=fully+implicit',
+					what: 'Nothing is zero, so the stages are one coupled system of size s times n. It buys the most order a stage count can carry, twice the stages for Gauss, and the best stability there is, and it pays for both in the size of the solve.'
 				}
 			]
 		},
@@ -108,7 +124,20 @@
 					name: 'Rosenbrock-Wanner',
 					fill: 'lower',
 					count: () => family('rosenbrock'),
-					href: '/?tag=linearly+implicit'
+					href: '/?tag=linearly+implicit',
+					what: 'One linear solve per stage against the Jacobian and no iteration anywhere. On a linear problem that is exact; on a nonlinear one the Jacobian enters the order conditions, so the tableau carries a second matrix and the method is only what it claims to be with a Jacobian that is current.'
+				}
+			]
+		},
+		{
+			heading: 'additive',
+			families: [
+				{
+					name: 'implicit-explicit',
+					fill: 'additive',
+					count: () => family('imex'),
+					href: '/?family=imex',
+					what: 'Two tableaux on one set of stages: the explicit one integrates the part of the right hand side that is cheap, the implicit one the part that is stiff. Its order is not the order of either half. Every way the two interleave has to be right as well, which is a longer list of conditions than either half alone.'
 				}
 			]
 		},
@@ -119,25 +148,29 @@
 					name: 'Adams-Bashforth',
 					fill: 'past-explicit',
 					count: () => family('adams_bashforth'),
-					href: '/?family=adams_bashforth'
+					href: '/?family=adams_bashforth',
+					what: 'Keeps the last k right hand sides and integrates the polynomial through them. Order k for one evaluation a step, which no one step method comes close to, and in exchange a stability region that shrinks as the order rises and a history that has to be started by something else.'
 				},
 				{
 					name: 'Adams-Moulton',
 					fill: 'past',
 					count: () => family('adams_moulton'),
-					href: '/?family=adams_moulton'
+					href: '/?family=adams_moulton',
+					what: 'The same construction with the new point included in the polynomial. One order more from the same number of past points, and a solve to pay for it.'
 				},
 				{
 					name: 'backward differentiation',
 					fill: 'past',
 					count: () => family('bdf'),
-					href: '/?family=bdf'
+					href: '/?family=bdf',
+					what: 'Differentiates the polynomial through the last k solution values instead of integrating the one through the derivatives. A-stable at orders one and two, a stability wedge that closes as the order rises, and not zero stable at all past six.'
 				},
 				{
 					name: 'Nystrom and Milne-Simpson',
 					fill: 'past-explicit',
 					count: () => family('nystrom', 'milne_simpson'),
-					href: '/?family=nystrom'
+					href: '/?family=nystrom',
+					what: 'Step across two intervals rather than one, which puts a second root of the characteristic polynomial on the unit circle. That root never decays, so these are only weakly stable and cannot be run on a decaying problem at all.'
 				}
 			]
 		}
@@ -145,11 +178,21 @@
 
 	const SIDE = 5;
 
-	/** Which cells of the glyph are filled, for one structure. */
+	/**
+	 * Which cells of the glyph are filled, for one structure, and which of them
+	 * belong to the second matrix of a family that has two.
+	 */
 	function cells(fill) {
 		const out = [];
 		for (let i = 0; i < SIDE; i += 1) {
 			for (let j = 0; j < SIDE; j += 1) {
+				if (fill === 'additive') {
+					// The explicit half below the diagonal, the implicit half on
+					// it: the pair is what the two together allow.
+					if (j < i) out.push([i, j, false]);
+					else if (j === i && i > 0) out.push([i, j, true]);
+					continue;
+				}
 				const keep =
 					fill === 'strict'
 						? j < i
@@ -162,7 +205,7 @@
 									: fill === 'past'
 										? i === SIDE - 1
 										: /* past-explicit */ i === SIDE - 1 && j < SIDE - 1;
-				if (keep) out.push([i, j]);
+				if (keep) out.push([i, j, false]);
 			}
 		}
 		return out;
@@ -310,46 +353,52 @@
 {@render section('the problem', problem)}
 
 {#snippet families()}
-	<div class="grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
-		{#each GROUPS as group}
-			<div>
-				<p class="label mb-3">{group.heading}</p>
-				<div class="flex flex-col gap-4">
-					{#each group.families as entry}
-						<a href={entry.href} class="group flex items-center gap-3">
-							<svg viewBox="0 0 {SIDE} {SIDE}" class="h-9 w-9 shrink-0" aria-hidden="true">
-								<rect width={SIDE} height={SIDE} fill="#141413" />
-								{#each cells(entry.fill) as [i, j]}
-									<rect
-										x={j + 0.1}
-										y={i + 0.1}
-										width="0.8"
-										height="0.8"
-										class="fill-accent group-hover:fill-teal"
-									/>
-								{/each}
-							</svg>
-							<span class="min-w-0">
-								<span class="block truncate text-xs text-cream group-hover:text-teal"
-									>{entry.name}</span
-								>
-								<span class="block font-mono text-xs text-cream/40">{entry.count()}</span>
-							</span>
-						</a>
-					{/each}
-				</div>
-			</div>
-		{/each}
-	</div>
-	<p class="mt-6 text-xs text-cream/60">
-		The square is the coefficient matrix; the filled cells are the entries the family allows to be
-		nonzero. A multistep family has no such matrix, so the row shown is the past it reads.
+	<p class="mb-6 max-w-[52rem] text-xs text-cream/60">
+		The square beside each name is its coefficient matrix, and the filled cells are the entries the
+		family allows to be nonzero. That pattern is the family: it decides what a step costs, whether
+		there is a solve and how large it is, and how much stability is available at all. A multistep
+		family has no such matrix, so the row shown is the past it reads instead. The pair has two
+		matrices, and the lighter cells are what only its implicit half fills.
 	</p>
+	{#each GROUPS as group}
+		<div class="-mx-6 border-t border-cream/10 px-6 pt-5 first:border-t-0 first:pt-0">
+			<p class="label mb-4">{group.heading}</p>
+			{#each group.families as entry}
+				<div
+					class="mb-5 grid gap-x-8 gap-y-2 lg:grid-cols-[14rem_minmax(0,40rem)] lg:items-baseline"
+				>
+					<a href={entry.href} class="group flex items-center gap-3">
+						<svg viewBox="0 0 {SIDE} {SIDE}" class="h-9 w-9 shrink-0" aria-hidden="true">
+							<rect width={SIDE} height={SIDE} fill="#141413" />
+							{#each cells(entry.fill) as [i, j, second]}
+								<rect
+									x={j + 0.1}
+									y={i + 0.1}
+									width="0.8"
+									height="0.8"
+									class="{second
+										? 'fill-accent/40'
+										: 'fill-accent'} group-hover:fill-teal"
+								/>
+							{/each}
+						</svg>
+						<span class="min-w-0">
+							<span class="block text-xs text-cream group-hover:text-teal">{entry.name}</span>
+							<span class="block font-mono text-xs text-cream/40">{entry.count()}</span>
+						</span>
+					</a>
+					<p class="text-xs text-cream/60">{entry.what}</p>
+				</div>
+			{/each}
+		</div>
+	{/each}
 {/snippet}
 {@render section('families', families)}
 
 {#snippet forms()}
-	<div class="grid gap-x-12 gap-y-10 lg:grid-cols-3">
+	<!-- Two to a row rather than four: the Rosenbrock and additive forms are
+	     wide enough that a quarter of the page cuts them off. -->
+	<div class="grid gap-x-12 gap-y-10 lg:grid-cols-2">
 		<div>
 			<p class="label mb-3">Runge-Kutta</p>
 			<Math formula={'y_{n+1} = y_n + h\\sum_{i=1}^{s} b_i k_i'} display />
@@ -384,6 +433,22 @@
 			<p class="mt-3 text-xs text-cream/60">
 				<Math formula={'J = f\'(y_n)'} /> is part of the formula. A step is
 				<Math formula={'s'} /> linear solves fixed in advance, with nothing to iterate.
+			</p>
+		</div>
+		<div>
+			<p class="label mb-3">additive Runge-Kutta</p>
+			<Math
+				formula={'y_{n+1} = y_n + h\\sum_{i=1}^{s}\\left( b^{E}_i f_E(Y_i) + b^{I}_i f_I(Y_i) \\right)'}
+				display
+			/>
+			<Math
+				formula={'Y_i = y_n + h\\sum_{j=1}^{s}\\left( a^{E}_{ij} f_E(Y_j) + a^{I}_{ij} f_I(Y_j) \\right)'}
+				display
+			/>
+			<p class="mt-3 text-xs text-cream/60">
+				Two arrays for one right hand side split in two, on shared stages. The abscissae are not
+				shared: each half evaluates at its own <Math formula={'c_i'} />, and several published
+				pairs differ there.
 			</p>
 		</div>
 	</div>
