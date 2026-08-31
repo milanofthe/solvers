@@ -5,6 +5,7 @@
 //! a typo in a tableau shows up as a disagreement rather than as a method that
 //! quietly integrates at the wrong order.
 
+pub mod additive;
 pub mod convergence;
 pub mod cost;
 pub mod nonlinear;
@@ -318,6 +319,81 @@ pub fn analyze(method: &Method) -> MethodReport {
                 discrepancies,
             }
         }
+        MethodKind::Additive(pair) => {
+            let report = additive::verify(pair, additive::ADDITIVE_SEARCH_LIMIT);
+            // What an IMEX method is stable on is decided by the half that
+            // takes the stiff part, so that is the half these describe. The
+            // explicit half has no say in it: it is what the step size is
+            // chosen small enough for.
+            let function = StabilityFunction::from_tableau(&pair.implicit);
+            let a_stable = function.is_a_stable();
+            let l_stable = function.is_l_stable();
+
+            if let Some(declared) = method.declared_order {
+                if declared as usize != report.order {
+                    discrepancies.push(format!(
+                        "file claims order {declared}, the pair satisfies order {}",
+                        report.order
+                    ));
+                }
+            }
+            if let (Some(declared), Some(computed)) =
+                (method.declared_embedded_order, report.embedded_order)
+            {
+                if declared as usize != computed {
+                    discrepancies.push(format!(
+                        "file claims embedded order {declared}, the pair satisfies {computed}"
+                    ));
+                }
+            }
+            if let Some(claimed) = method.properties.a_stable {
+                if claimed != a_stable {
+                    discrepancies
+                        .push(format!("file claims a_stable = {claimed}, computed {a_stable}"));
+                }
+            }
+            if let Some(claimed) = method.properties.l_stable {
+                if claimed != l_stable {
+                    discrepancies
+                        .push(format!("file claims l_stable = {claimed}, computed {l_stable}"));
+                }
+            }
+            if !report.consistent_abscissae {
+                discrepancies.push("the two halves do not share their abscissae".to_string());
+            }
+
+            MethodReport {
+                id: method.id.clone(),
+                name: method.name.clone(),
+                family: method.family.clone(),
+                class: "additive_runge_kutta",
+                size: pair.stages(),
+                implicit: true,
+                adaptive: pair.has_embedded(),
+                declared_order: method.declared_order,
+                computed_order: report.order,
+                declared_embedded_order: method.declared_embedded_order,
+                computed_embedded_order: report.embedded_order,
+                stage_order: None,
+                consistent_abscissae: Some(report.consistent_abscissae),
+                exact_arithmetic: report.exact,
+                a_stable,
+                l_stable,
+                stiffly_accurate: Some(pair.implicit.stiffly_accurate),
+                damping_at_infinity: Some(function.at_infinity().into()),
+                alpha_angle: if a_stable { Some(90.0) } else { None },
+                real_stability_limit: Some(function.real_stability_limit().into()),
+                imaginary_stability_limit: Some(function.imaginary_stability_limit().into()),
+                zero_stable: None,
+                algebraically_stable: None,
+                ssp_coefficient: None,
+                dispersion_order: None,
+                dissipation_order: None,
+                error_constant: None,
+                stage_cost: pair.stages(),
+                discrepancies,
+            }
+        }
         MethodKind::LinearMultistep(family) => {
             let coefficients = family.uniform_coefficients();
             let (computed_order, polynomials) = match &coefficients {
@@ -413,6 +489,9 @@ pub fn region_boundary(
             let function = match &method.kind {
                 MethodKind::RungeKutta(tableau) => StabilityFunction::from_tableau(tableau),
                 MethodKind::Rosenbrock(tableau) => StabilityFunction::from_rosenbrock(tableau),
+                // The half that carries the stiff part is the one whose region
+                // the step size has to respect.
+                MethodKind::Additive(pair) => StabilityFunction::from_tableau(&pair.implicit),
                 MethodKind::LinearMultistep(_) => unreachable!(),
             };
             Some(stability::trace_zero_level(
@@ -454,6 +533,19 @@ pub fn stability_region(
         }
         MethodKind::Rosenbrock(tableau) => {
             let function = StabilityFunction::from_rosenbrock(tableau);
+            Some(stability::sample_region(
+                |z| function.eval(z).abs(),
+                re,
+                im,
+                width,
+                height,
+            ))
+        }
+        // For a pair, the region drawn is the implicit half's: it is the one
+        // the stiff part has to sit inside, and the only one that means
+        // anything on its own.
+        MethodKind::Additive(pair) => {
+            let function = StabilityFunction::from_tableau(&pair.implicit);
             Some(stability::sample_region(
                 |z| function.eval(z).abs(),
                 re,
@@ -633,6 +725,12 @@ impl Bounds {
 /// A generous first guess at the extent, only used to place the probe.
 fn probe_scale(method: &Method) -> f64 {
     let scale = match &method.kind {
+        MethodKind::Additive(pair) => {
+            return probe_scale(&Method {
+                kind: MethodKind::RungeKutta(pair.implicit.clone()),
+                ..method.clone()
+            })
+        }
         MethodKind::RungeKutta(tableau) => {
             let function = StabilityFunction::from_tableau(tableau);
             let poles = function.poles();

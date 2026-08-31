@@ -18,6 +18,26 @@ pub trait Problem {
     fn jacobian(&self, t: f64, y: &[f64], j: &mut Matrix<f64>) {
         finite_difference_jacobian(self, t, y, j)
     }
+
+    /// Whether the problem states a splitting `f = f_explicit + f_implicit`.
+    ///
+    /// Only the additive methods ask. Purely informational: the two halves
+    /// below are always answerable, and a problem that states no splitting
+    /// gives everything to the implicit one.
+    fn has_splitting(&self) -> bool {
+        false
+    }
+
+    /// The half an additive method integrates explicitly, zero by default.
+    fn rhs_explicit(&self, _t: f64, _y: &[f64], dy: &mut [f64]) {
+        dy.fill(0.0);
+    }
+
+    /// The half an additive method integrates implicitly, everything by
+    /// default. The two halves have to add up to `rhs`.
+    fn rhs_implicit(&self, t: f64, y: &[f64], dy: &mut [f64]) {
+        self.rhs(t, y, dy)
+    }
 }
 
 /// Forward difference Jacobian with the usual square root of eps scaling.

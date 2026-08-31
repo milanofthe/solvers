@@ -4,11 +4,13 @@
 //! carries the coefficients, the claimed properties and the reference to the
 //! paper it was published in. The code paths are generic over that data.
 
+pub mod additive;
 pub mod coeff_serde;
 pub mod lmm;
 pub mod rk;
 pub mod rosenbrock;
 
+pub use additive::{AdditiveFile, AdditiveTableau};
 pub use coeff_serde::{CoeffValue, Slot};
 pub use lmm::{LmmCoefficients, LmmFamily, LmmFile, Normalization};
 pub use rk::{RkRuntime, RkTableau, RkTableauFile, Structure};
@@ -24,6 +26,7 @@ pub enum MethodClass {
     RungeKutta,
     LinearMultistep,
     Rosenbrock,
+    AdditiveRungeKutta,
 }
 
 /// Bibliographic reference including the DOI of the original publication.
@@ -132,6 +135,8 @@ pub struct MethodFile {
     pub multistep: Option<LmmFile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rosenbrock: Option<RosenbrockFile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additive: Option<AdditiveFile>,
 }
 
 /// The coefficient carrying part of a method.
@@ -140,6 +145,7 @@ pub enum MethodKind {
     RungeKutta(RkTableau),
     LinearMultistep(LmmFamily),
     Rosenbrock(RosenbrockTableau),
+    Additive(AdditiveTableau),
 }
 
 /// A validated method: metadata plus coefficients.
@@ -185,18 +191,23 @@ impl Method {
             file.tableau.is_some(),
             file.multistep.is_some(),
             file.rosenbrock.is_some(),
+            file.additive.is_some(),
         );
         let kind = match (file.class, blocks) {
-            (MethodClass::RungeKutta, (true, false, false)) => MethodKind::RungeKutta(
+            (MethodClass::RungeKutta, (true, false, false, false)) => MethodKind::RungeKutta(
                 RkTableau::from_file(file.tableau.as_ref().unwrap())
                     .map_err(|e| invalid(e.to_string()))?,
             ),
-            (MethodClass::LinearMultistep, (false, true, false)) => MethodKind::LinearMultistep(
+            (MethodClass::LinearMultistep, (false, true, false, false)) => MethodKind::LinearMultistep(
                 LmmFamily::from_file(file.multistep.as_ref().unwrap())
                     .map_err(|e| invalid(e.to_string()))?,
             ),
-            (MethodClass::Rosenbrock, (false, false, true)) => MethodKind::Rosenbrock(
+            (MethodClass::Rosenbrock, (false, false, true, false)) => MethodKind::Rosenbrock(
                 RosenbrockTableau::from_file(file.rosenbrock.as_ref().unwrap())
+                    .map_err(|e| invalid(e.to_string()))?,
+            ),
+            (MethodClass::AdditiveRungeKutta, (false, false, false, true)) => MethodKind::Additive(
+                AdditiveTableau::from_file(file.additive.as_ref().unwrap())
                     .map_err(|e| invalid(e.to_string()))?,
             ),
             _ => return Err(invalid("the class and the coefficient block do not match".into())),
@@ -229,6 +240,14 @@ impl Method {
             MethodKind::RungeKutta(_) => MethodClass::RungeKutta,
             MethodKind::LinearMultistep(_) => MethodClass::LinearMultistep,
             MethodKind::Rosenbrock(_) => MethodClass::Rosenbrock,
+            MethodKind::Additive(_) => MethodClass::AdditiveRungeKutta,
+        }
+    }
+
+    pub fn additive(&self) -> Option<&AdditiveTableau> {
+        match &self.kind {
+            MethodKind::Additive(a) => Some(a),
+            _ => None,
         }
     }
 
@@ -260,6 +279,7 @@ impl Method {
             MethodKind::RungeKutta(t) => t.stages,
             MethodKind::LinearMultistep(m) => m.steps,
             MethodKind::Rosenbrock(r) => r.stages,
+            MethodKind::Additive(a) => a.stages(),
         }
     }
 
@@ -270,6 +290,9 @@ impl Method {
             // A Rosenbrock method solves a linear system at every stage. It
             // never iterates, but it is not explicit either.
             MethodKind::Rosenbrock(_) => true,
+            // Half of an additive pair is solved implicitly, which is the half
+            // that decides what a step costs.
+            MethodKind::Additive(_) => true,
         }
     }
 
@@ -280,6 +303,7 @@ impl Method {
             // which only exists while the family still has a shorter member.
             MethodKind::LinearMultistep(m) => m.steps > m.min_steps,
             MethodKind::Rosenbrock(r) => r.has_embedded(),
+            MethodKind::Additive(a) => a.has_embedded(),
         }
     }
 }

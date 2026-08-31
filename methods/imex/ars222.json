@@ -1,0 +1,34 @@
+{
+  "id": "ars222",
+  "name": "ARS(2,2,2)",
+  "class": "additive_runge_kutta",
+  "family": "imex",
+  "order": 2,
+  "additive": {
+    "explicit": {
+      "a": [
+        [],
+        [0.29289321881345254],
+        [-0.7071067811865472, 1.7071067811865472]
+      ],
+      "b": [-0.7071067811865472, 1.7071067811865472, 0]
+    },
+    "implicit": {
+      "a": [
+        [0, 0, 0],
+        [0, 0.29289321881345254, 0],
+        [0, 0.7071067811865475, 0.29289321881345254]
+      ],
+      "b": [0, 0.7071067811865475, 0.29289321881345254]
+    }
+  },
+  "references": [
+    {
+      "authors": "Ascher, U. M., Ruuth, S. J., & Spiteri, R. J.",
+      "title": "Implicit-explicit Runge-Kutta methods for time-dependent partial differential equations",
+      "year": 1997,
+      "source": "Applied Numerical Mathematics, 25(2-3), 151-167",
+      "doi": "10.1016/S0168-9274(97)00056-1"
+    }
+  ]
+}

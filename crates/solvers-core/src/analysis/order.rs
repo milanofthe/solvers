@@ -425,6 +425,10 @@ pub struct OrderReport {
 /// An exact coefficient has to give exactly zero. An approximate one is judged
 /// against `magnitude`, which callers pass as the larger of the target and the
 /// size of the sum the residual came out of.
+pub fn satisfied_residual(residual: Coeff, magnitude: f64) -> bool {
+    satisfied(residual, magnitude)
+}
+
 fn satisfied(residual: Coeff, magnitude: f64) -> bool {
     match residual {
         Coeff::Exact(r) => r.is_zero(),

@@ -29,6 +29,18 @@ pub fn tags(method: &Method, report: &MethodReport) -> Vec<Tag> {
 
     // Structure: how a step is actually computed.
     match &method.kind {
+        MethodKind::Additive(pair) => {
+            tags.push(tag("structure", "additive"));
+            if pair.implicit.singly_diagonal {
+                tags.push(tag("structure", "singly diagonal"));
+            }
+            if pair.implicit.explicit_first_stage {
+                tags.push(tag("structure", "explicit first stage"));
+            }
+            if pair.implicit.stiffly_accurate {
+                tags.push(tag("structure", "stiffly accurate"));
+            }
+        }
         MethodKind::RungeKutta(tableau) => {
             if tableau.is_explicit() {
                 tags.push(tag("structure", "explicit"));

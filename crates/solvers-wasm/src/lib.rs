@@ -91,6 +91,10 @@ fn stability_function_of(method: &solvers_core::Method) -> Option<stability::Sta
         MethodKind::Rosenbrock(tableau) => {
             Some(stability::StabilityFunction::from_rosenbrock(tableau))
         }
+        // The half that carries the stiff part.
+        MethodKind::Additive(pair) => {
+            Some(stability::StabilityFunction::from_tableau(&pair.implicit))
+        }
         MethodKind::LinearMultistep(_) => None,
     }
 }
@@ -128,6 +132,9 @@ fn tree_conditions(method: &solvers_core::Method) -> Option<TreeConditions<'_>> 
                 embedded_order: report.embedded_order,
             })
         }
+        // The conditions of an additive pair are indexed by two coloured trees,
+        // which is a different enumeration, so it has its own listing.
+        MethodKind::Additive(_) => None,
         MethodKind::LinearMultistep(_) => None,
     }
 }
@@ -187,6 +194,35 @@ pub fn method_detail(id: &str) -> Result<String, JsValue> {
                 "singlyDiagonal": tableau.singly_diagonal,
                 "stifflyAccurate": tableau.stiffly_accurate,
                 "diagonal": tableau.diagonal.map(|g| g.to_string()),
+            })
+        }
+        MethodKind::Additive(pair) => {
+            let row = |values: &[solvers_core::num::Coeff]| -> Vec<Value> {
+                values
+                    .iter()
+                    .map(|c| json!({ "text": c.to_string(), "value": c.value(), "exact": c.is_exact() }))
+                    .collect()
+            };
+            let half = |tableau: &solvers_core::method::RkTableau| {
+                let a: Vec<Vec<Value>> = (0..tableau.stages)
+                    .map(|i| row(&(0..tableau.stages).map(|j| tableau.a[(i, j)]).collect::<Vec<_>>()))
+                    .collect();
+                json!({
+                    "a": a,
+                    "b": row(&tableau.b),
+                    "bEmbedded": tableau.b_embedded.as_ref().map(|v| row(v)),
+                })
+            };
+            json!({
+                "kind": "additive_runge_kutta",
+                "stages": pair.stages(),
+                "c": row(&pair.implicit.c),
+                "explicit": half(&pair.explicit),
+                "implicit": half(&pair.implicit),
+                "singlyDiagonal": pair.implicit.singly_diagonal,
+                "explicitFirstStage": pair.implicit.explicit_first_stage,
+                "stifflyAccurate": pair.implicit.stiffly_accurate,
+                "gamma": pair.implicit.gamma.map(|g| g.to_string()),
             })
         }
         MethodKind::LinearMultistep(family) => {

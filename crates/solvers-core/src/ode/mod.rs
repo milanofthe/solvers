@@ -6,7 +6,8 @@
 //! the tableau and the multistep coefficient pattern already carry everything
 //! that distinguishes the individual methods.
 
-pub mod decouple;
+pub mod additive;
+mod decouple;
 pub mod lmm;
 mod newton_matrix;
 pub mod rk;
@@ -16,6 +17,7 @@ pub use decouple::{DecoupledLinear, StageDecoupling};
 pub use lmm::LmmStepper;
 pub use newton_matrix::NewtonMatrix;
 pub use rk::RkStepper;
+use additive::AdditiveStepper;
 use rosenbrock::RosenbrockStepper;
 
 use crate::control::{Controller, ControllerConfig};
@@ -202,6 +204,13 @@ pub fn stepper_for<P: Problem + ?Sized>(
         MethodKind::LinearMultistep(family) => {
             Box::new(LmmStepper::with_startup(family, dim, options, startup_for(family, dim, options)))
         }
+        MethodKind::Additive(pair) => Box::new(AdditiveStepper::new(
+            pair,
+            method.declared_order.unwrap_or(1) as usize,
+            method.declared_embedded_order.map(|v| v as usize),
+            dim,
+            options,
+        )),
         MethodKind::Rosenbrock(tableau) => Box::new(RosenbrockStepper::new(
             tableau,
             method.declared_order.unwrap_or(1) as usize,

@@ -558,19 +558,19 @@ impl<P: Problem + ?Sized> Stepper<P> for RkStepper {
 
 /// Stage equation of a diagonally implicit method,
 /// `G(k) = k - f(t_i, base + h*a_ii*k)`.
-struct DirkResidual<'a, P: Problem + ?Sized> {
-    problem: &'a P,
-    stats: &'a mut Stats,
-    linear: &'a mut NewtonMatrix,
+pub(crate) struct DirkResidual<'a, P: Problem + ?Sized> {
+    pub problem: &'a P,
+    pub stats: &'a mut Stats,
+    pub linear: &'a mut NewtonMatrix,
     /// Point the Jacobian is anchored at, the start of the step.
-    anchor_t: f64,
-    anchor_y: Vec<f64>,
-    t: f64,
-    base: Vec<f64>,
-    h_gamma: f64,
-    max_age: u32,
-    work: Vec<f64>,
-    full_newton: bool,
+    pub anchor_t: f64,
+    pub anchor_y: Vec<f64>,
+    pub t: f64,
+    pub base: Vec<f64>,
+    pub h_gamma: f64,
+    pub max_age: u32,
+    pub work: Vec<f64>,
+    pub full_newton: bool,
 }
 
 impl<'a, P: Problem + ?Sized> Residual for DirkResidual<'a, P> {
