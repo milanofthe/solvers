@@ -6,9 +6,13 @@
 //! the stages are shared, so the two are evaluated at the same points and the
 //! coupling between them is what has to be right.
 //!
-//! Sharing the stages is not decoration, it is the condition that makes the
-//! pair a method at all: the abscissae of the two tableaux have to agree, and a
-//! file whose halves disagree on them is refused here rather than analysed.
+//! The stages are shared, the abscissae need not be. Each half evaluates its
+//! own right hand side at its own `c_i`, which is the row sums of its own
+//! matrix, and several published pairs use two different sets: the strong
+//! stability preserving ones put the explicit half on `[0, 1]` while the
+//! implicit half sits elsewhere. On an autonomous problem it makes no
+//! difference at all, and the order conditions never mention `c`. Whether the
+//! two agree is therefore reported and not required.
 
 use super::rk::{RkTableau, RkTableauFile, TableauError};
 use crate::num::Field;
@@ -41,15 +45,6 @@ impl AdditiveTableau {
                 explicit.stages, implicit.stages
             )));
         }
-        for i in 0..explicit.stages {
-            let (left, right) = (explicit.c[i].value(), implicit.c[i].value());
-            if (left - right).abs() > 1e-12 * left.abs().max(1.0) {
-                return Err(TableauError(format!(
-                    "the halves disagree on abscissa {}: {left} and {right}",
-                    i + 1
-                )));
-            }
-        }
         if !explicit.is_explicit() {
             return Err(TableauError(
                 "the explicit half is not explicit".to_string(),
@@ -60,6 +55,14 @@ impl AdditiveTableau {
 
     pub fn stages(&self) -> usize {
         self.explicit.stages
+    }
+
+    /// Whether the two halves evaluate at the same points in time.
+    pub fn shares_abscissae(&self) -> bool {
+        (0..self.stages()).all(|i| {
+            let (left, right) = (self.explicit.c[i].value(), self.implicit.c[i].value());
+            (left - right).abs() <= 1e-12 * left.abs().max(1.0)
+        })
     }
 
     /// An additive pair estimates its error from both halves, so it is adaptive

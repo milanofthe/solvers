@@ -1,0 +1,34 @@
+{
+  "id": "imexssp3332",
+  "name": "IMEX-SSP3(3,3,2)",
+  "class": "additive_runge_kutta",
+  "family": "imex",
+  "order": 2,
+  "additive": {
+    "explicit": {
+      "a": [
+        [],
+        [1],
+        ["1/4", "1/4"]
+      ],
+      "b": ["1/6", "1/6", "2/3"]
+    },
+    "implicit": {
+      "a": [
+        [0.29289321881345254, 0, 0],
+        [0.41421356237309515, 0.29289321881345254, 0],
+        [0.20710678118654746, 0, 0.29289321881345254]
+      ],
+      "b": ["1/6", "1/6", "2/3"]
+    }
+  },
+  "references": [
+    {
+      "authors": "Pareschi, L., & Russo, G.",
+      "title": "Implicit-explicit Runge-Kutta schemes and applications to hyperbolic systems with relaxation",
+      "year": 2005,
+      "source": "Journal of Scientific Computing, 25(1), 129-155",
+      "doi": "10.1007/s10915-004-4636-4"
+    }
+  ]
+}

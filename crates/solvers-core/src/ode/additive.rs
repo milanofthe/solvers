@@ -11,10 +11,13 @@
 //! the explicit half contributes nothing on its diagonal:
 //!
 //! ```text
-//! kI_i = f_I(t_i, base_i + h aI_ii kI_i)
+//! kI_i = f_I(t_n + cI_i h, base_i + h aI_ii kI_i)
 //! Y_i  = base_i + h aI_ii kI_i
-//! kE_i = f_E(t_i, Y_i)
+//! kE_i = f_E(t_n + cE_i h, Y_i)
 //! ```
+//!
+//! The two abscissae are read separately because the halves are allowed to
+//! differ on them, and some published pairs do.
 //!
 //! That first equation is the stage equation of a diagonally implicit method
 //! with `f_I` in place of `f`, so it is solved by the same residual the DIRK
@@ -223,7 +226,7 @@ impl<P: Problem + ?Sized> Stepper<P> for AdditiveStepper {
 
         for i in 0..s {
             self.base_point(i, h);
-            let ti = t + self.explicit.c[i] * h;
+            let ti = t + self.implicit.c[i] * h;
             let diagonal = self.implicit.a[(i, i)];
 
             if diagonal.abs() < 1e-14 {
@@ -272,7 +275,7 @@ impl<P: Problem + ?Sized> Stepper<P> for AdditiveStepper {
 
             stats.rhs_evals += 1;
             let mut out = std::mem::take(&mut self.ke[i]);
-            problem.rhs_explicit(ti, &self.stage_value, &mut out);
+            problem.rhs_explicit(t + self.explicit.c[i] * h, &self.stage_value, &mut out);
             self.ke[i] = out;
 
             if !self.ki[i].iter().all(|v| v.is_finite())

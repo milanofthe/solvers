@@ -358,10 +358,6 @@ pub fn analyze(method: &Method) -> MethodReport {
                         .push(format!("file claims l_stable = {claimed}, computed {l_stable}"));
                 }
             }
-            if !report.consistent_abscissae {
-                discrepancies.push("the two halves do not share their abscissae".to_string());
-            }
-
             MethodReport {
                 id: method.id.clone(),
                 name: method.name.clone(),

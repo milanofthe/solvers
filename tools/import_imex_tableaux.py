@@ -77,7 +77,27 @@ WANTED = [
 
 MATRIX = re.compile(r"^\s*(Ai|Ae)\[\s*(\d+)\s*,\s*(\d+)\s*\]\s*=\s*(.+?)\s*$")
 VECTOR = re.compile(r"^\s*(bi|be)\[\s*(\d+)\s*\]\s*=\s*(.+?)\s*$")
+# The weights are written either entry by entry or as one array literal.
+LITERAL = re.compile(r"^\s*(bi|be)\s*=\s*T\[(.+)\]\s*$")
 SIZE = re.compile(r"^\s*s\s*=\s*(\d+)\s*$")
+
+
+def split_arguments(text):
+    """The entries of an array literal, respecting the brackets inside them."""
+    parts, depth, current = [], 0, ""
+    for character in text:
+        if character in "([":
+            depth += 1
+        elif character in ")]":
+            depth -= 1
+        if character == "," and depth == 0:
+            parts.append(current)
+            current = ""
+            continue
+        current += character
+    if current.strip():
+        parts.append(current)
+    return parts
 
 
 def value(expression, scope):
@@ -139,6 +159,17 @@ def read(body):
             if got is None:
                 return None
             b[match.group(1)][int(match.group(2)) - 1] = got
+            continue
+        match = LITERAL.match(stripped)
+        if match:
+            entries = split_arguments(match.group(2))
+            if len(entries) != size:
+                return None
+            for index, entry in enumerate(entries):
+                got = value(entry, scope)
+                if got is None:
+                    return None
+                b[match.group(1)][index] = got
 
     if not any(any(row) for row in a["Ae"]) or not any(b["be"]):
         return None

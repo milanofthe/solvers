@@ -194,7 +194,8 @@ pub struct AdditiveReport {
     pub embedded_order: Option<usize>,
     /// The conditions that fail at the first order that is not attained.
     pub failing: Vec<Condition>,
-    /// Whether the two halves share their abscissae, which they have to.
+    /// Whether the two halves evaluate at the same points in time. They need
+    /// not, and several published pairs do not.
     pub consistent_abscissae: bool,
 }
 
@@ -273,15 +274,7 @@ pub fn verify(method: &AdditiveTableau, max_order: usize) -> AdditiveReport {
     };
 
     let half = |single: &crate::method::RkTableau| super::order::verify(single, max_order).order;
-    let mut consistent = method.explicit.stages == method.implicit.stages;
-    if consistent {
-        for i in 0..method.stages() {
-            let d = (method.explicit.c[i].value() - method.implicit.c[i].value()).abs();
-            if d > 1e-12 * method.explicit.c[i].value().abs().max(1.0) {
-                consistent = false;
-            }
-        }
-    }
+    let consistent = method.shares_abscissae();
 
     AdditiveReport {
         order,
